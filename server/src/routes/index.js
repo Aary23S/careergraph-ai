@@ -1,0 +1,30 @@
+import { Router } from 'express';
+import healthRoutes from './health.routes.js';
+import authRoutes from '../modules/auth.routes.js';
+import profileRoutes from '../modules/profile.routes.js';
+import preferenceRoutes from '../modules/preferences.routes.js';
+import resumeRoutes from '../modules/resumes.routes.js';
+import connectionRoutes from '../modules/connections.routes.js';
+import jobRoutes from '../modules/jobs.routes.js';
+import applicationRoutes from '../modules/applications.routes.js';
+import outreachRoutes from '../modules/outreach.routes.js';
+import notificationRoutes from '../modules/notifications.routes.js';
+import dashboardRoutes from '../modules/dashboard.routes.js';
+import noteRoutes from '../modules/notes.routes.js';
+
+const router = Router();
+
+router.use('/health', healthRoutes);
+router.use('/auth', authRoutes);
+router.use('/profile', profileRoutes);
+router.use('/preferences', preferenceRoutes);
+router.use('/resumes', resumeRoutes);
+router.use('/connections', connectionRoutes);
+router.use('/jobs', jobRoutes);
+router.use('/applications', applicationRoutes);
+router.use('/outreach', outreachRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/notes', noteRoutes);
+
+export default router;

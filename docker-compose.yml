@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: careergraph-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: careergraph
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: [PASSWORD]
+    ports:
+      - "5432:5432"
+    volumes:
+      - careergraph_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d careergraph"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./server
+    container_name: careergraph-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:REMOVED_SECRET_POSTGRES@postgres:5432/careergraph
+      CORS_ORIGIN: http://localhost:5173
+      JWT_ACCESS_SECRET: REMOVED_SECRET_JWT_ACCESS
+      JWT_REFRESH_SECRET: REMOVED_SECRET_JWT_REFRESH=
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./client
+    container_name: careergraph-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  careergraph_postgres_data:
