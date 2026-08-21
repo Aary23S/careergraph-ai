@@ -11,6 +11,7 @@ import { createNotification } from '../lib/notifications.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { calculateReferralScore } from '../services/intelligence.service.js';
+import { getDashboardOverview } from '../services/connection-dashboard.service.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -403,6 +404,14 @@ router.get(
 
     const items = await Promise.all(rows.map(serializeConnection));
     ok(res, items, makePageMeta({ ...pagination, total: count }), 200, filters);
+  }),
+);
+
+router.get(
+  '/overview',
+  asyncHandler(async (req, res) => {
+    const overview = await getDashboardOverview(req.auth.userId);
+    ok(res, overview);
   }),
 );
 

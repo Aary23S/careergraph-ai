@@ -44,6 +44,12 @@ function App() {
   const [newNoteContent, setNewNoteContent] = useState('');
   const [newTagText, setNewTagText] = useState('');
 
+  // Overview dashboard states
+  const [connectionSubTab, setConnectionSubTab] = useState('overview'); // 'overview', 'all'
+  const [dashboardOverview, setDashboardOverview] = useState(null);
+  const [loadingOverview, setLoadingOverview] = useState(false);
+  const [overviewError, setOverviewError] = useState(null);
+
   // Auth Forms State
   const [authTab, setAuthTab] = useState('login'); // 'login', 'register', 'forgot'
   const [authEmail, setAuthEmail] = useState('');
@@ -82,6 +88,25 @@ function App() {
       loadConnectionDetail(activeConnectionId);
     }
   }, [isAuthenticated, activeTab, activeConnectionId]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'connections' && connectionSubTab === 'overview') {
+      loadDashboardOverview();
+    }
+  }, [isAuthenticated, activeTab, connectionSubTab]);
+
+  const loadDashboardOverview = async () => {
+    setLoadingOverview(true);
+    setOverviewError(null);
+    try {
+      const res = await api.request('/connections/overview');
+      setDashboardOverview(res.data);
+    } catch (e) {
+      setOverviewError(e.message || 'Failed to load dashboard overview.');
+    } finally {
+      setLoadingOverview(false);
+    }
+  };
 
   const loadConnectionDetail = async (id) => {
     setLoadingDetail(true);
@@ -735,7 +760,7 @@ function App() {
         {activeTab === 'connections' && (
           <div>
             <div className="page-header">
-              <h1 className="page-title">Connections Directory</h1>
+              <h1 className="page-title">Connections CRM</h1>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button className="btn btn-secondary" onClick={() => setModal('csv')}>
                   Import CSV
@@ -746,131 +771,485 @@ function App() {
               </div>
             </div>
 
-            {/* Filter Bar */}
-            <div className="filter-bar">
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Search Query</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Name, title, company..."
-                  value={connFilters.q}
-                  onChange={(e) => setConnFilters({ ...connFilters, q: e.target.value, page: 1 })}
-                />
-              </div>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Filter Company</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Google"
-                  value={connFilters.company}
-                  onChange={(e) => setConnFilters({ ...connFilters, company: e.target.value, page: 1 })}
-                />
-              </div>
-              <button className="btn btn-secondary" onClick={loadConnections}>Apply</button>
+            {/* Sub Tabs Selection */}
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <button
+                className={`btn ${connectionSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                onClick={() => setConnectionSubTab('overview')}
+              >
+                Network Overview
+              </button>
+              <button
+                className={`btn ${connectionSubTab === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                onClick={() => setConnectionSubTab('all')}
+              >
+                All Connections Directory
+              </button>
             </div>
 
-            <div className="card-panel">
-              {connections.length === 0 ? (
-                <div className="empty-state">No connection CRM records matching query.</div>
-              ) : (
-                <div className="data-table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Company & Title</th>
-                        <th>Email / Location</th>
-                        <th>Relationship Status</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {connections.map((c) => (
-                        <tr key={c.id}>
-                          <td style={{ fontWeight: 600 }}>{c.name}</td>
-                          <td>
-                            <div>{c.title || 'No Title'}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{c.company || 'Unknown'}</div>
-                          </td>
-                          <td>
-                            <div>{c.email || 'No email'}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{c.location || 'Unknown'}</div>
-                          </td>
-                          <td>
-                            <span className="badge badge-info">{c.relationshipStatus || 'Not Contacted'}</span>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button
-                              className="btn btn-primary"
-                              style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
+            {/* OVERVIEW SUB-TAB */}
+            {connectionSubTab === 'overview' && (
+              <div>
+                {loadingOverview && <div className="empty-state">Loading network insights...</div>}
+                {overviewError && <div className="empty-state" style={{ color: 'var(--danger)' }}>{overviewError}</div>}
+
+                {!loadingOverview && !overviewError && dashboardOverview && (
+                  <div>
+                    {/* KPI Cards Grid */}
+                    <div className="metrics-grid" style={{ marginBottom: '24px' }}>
+                      <div className="metric-card">
+                        <div className="metric-label">Total Connections</div>
+                        <div className="metric-value">{dashboardOverview.summary.totalConnections}</div>
+                      </div>
+                      <div className="metric-card">
+                        <div className="metric-label">Companies</div>
+                        <div className="metric-value">{dashboardOverview.summary.companies}</div>
+                      </div>
+                      <div className="metric-card">
+                        <div className="metric-label">High Priority</div>
+                        <div className="metric-value" style={{ color: 'var(--warning)' }}>
+                          {dashboardOverview.summary.highPriority}
+                        </div>
+                      </div>
+                      <div className="metric-card">
+                        <div className="metric-label">Never Contacted</div>
+                        <div className="metric-value">{dashboardOverview.summary.neverContacted}</div>
+                      </div>
+                      <div className="metric-card">
+                        <div className="metric-label">Follow-ups Due</div>
+                        <div className="metric-value" style={{ color: dashboardOverview.summary.followUpsDue > 0 ? 'var(--danger)' : '#fff' }}>
+                          {dashboardOverview.summary.followUpsDue}
+                        </div>
+                      </div>
+                      <div className="metric-card">
+                        <div className="metric-label">With Email</div>
+                        <div className="metric-value">{dashboardOverview.summary.withEmail}</div>
+                      </div>
+                    </div>
+
+                    {/* Second Row: Growth & Followups */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                      {/* Growth timeline list */}
+                      <div className="card-panel">
+                        <h2 className="card-title">Network Growth History</h2>
+                        {dashboardOverview.growth && dashboardOverview.growth.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+                            {dashboardOverview.growth.slice(-6).map((item) => (
+                              <div key={item.month} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <span style={{ width: '80px', fontWeight: 600 }}>{item.month}</span>
+                                <div style={{ flex: 1, background: 'var(--bg-secondary)', height: '16px', borderRadius: '4px', overflow: 'hidden' }}>
+                                  <div style={{ background: 'var(--primary)', height: '100%', width: `${Math.min(100, (item.total / dashboardOverview.summary.totalConnections) * 100)}%` }} />
+                                </div>
+                                <span style={{ width: '100px', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                  {item.total} total (+{item.added})
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="empty-state">No connection dates recorded.</div>
+                        )}
+                      </div>
+
+                      {/* Follow-up center card */}
+                      <div className="card-panel">
+                        <h2 className="card-title">Follow-up Summary</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', borderLeft: '4px solid var(--danger)', borderRadius: '6px' }}>
+                            <span style={{ fontWeight: 600, color: 'var(--danger)' }}>🔴 Overdue</span>
+                            <strong style={{ fontSize: '1.2rem' }}>{dashboardOverview.followUps.overdue}</strong>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(245, 158, 11, 0.1)', borderLeft: '4px solid var(--warning)', borderRadius: '6px' }}>
+                            <span style={{ fontWeight: 600, color: 'var(--warning)' }}>🟠 Today</span>
+                            <strong style={{ fontSize: '1.2rem' }}>{dashboardOverview.followUps.today}</strong>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(59, 130, 246, 0.1)', borderLeft: '4px solid var(--info)', borderRadius: '6px' }}>
+                            <span style={{ fontWeight: 600, color: 'var(--info)' }}>🟡 This Week</span>
+                            <strong style={{ fontSize: '1.2rem' }}>{dashboardOverview.followUps.thisWeek}</strong>
+                          </div>
+                          <button
+                            className="btn btn-secondary"
+                            style={{ width: '100%', padding: '10px' }}
+                            onClick={() => {
+                              setConnFilters({ ...connFilters, followUpDue: true, page: 1 });
+                              setConnectionSubTab('all');
+                            }}
+                          >
+                            View All Due Follow-ups
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Third Row: Top Companies & Role Distribution */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                      
+                      {/* Top Companies */}
+                      <div className="card-panel">
+                        <h2 className="card-title">Top Companies</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                          {dashboardOverview.topCompanies && dashboardOverview.topCompanies.length > 0 ? (
+                            dashboardOverview.topCompanies.map((c) => (
+                              <div
+                                key={c.normalizedName}
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
+                                className="activity-item"
+                                onClick={() => {
+                                  setConnFilters({ ...connFilters, company: c.name, page: 1 });
+                                  setConnectionSubTab('all');
+                                }}
+                              >
+                                <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{c.name}</span>
+                                <span className="badge badge-info">{c.count} connections</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="empty-state">No company aggregates available.</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Role Distribution */}
+                      <div className="card-panel">
+                        <h2 className="card-title">Role Distribution</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                          {dashboardOverview.roles && dashboardOverview.roles.length > 0 ? (
+                            dashboardOverview.roles.map((r) => (
+                              <div
+                                key={r.category}
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
+                                className="activity-item"
+                                onClick={() => {
+                                  setConnFilters({ ...connFilters, title: r.category, page: 1 });
+                                  setConnectionSubTab('all');
+                                }}
+                              >
+                                <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{r.category.replace('_', ' ')}</span>
+                                <span className="badge badge-success">{r.count}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="empty-state">No role category aggregates available.</div>
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Fourth Row: Seniority & Relationship Health */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                      
+                      {/* Seniority Distribution */}
+                      <div className="card-panel">
+                        <h2 className="card-title">Seniority Distribution</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                          {dashboardOverview.seniority && dashboardOverview.seniority.length > 0 ? (
+                            dashboardOverview.seniority.map((s) => (
+                              <div
+                                key={s.level}
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
+                                className="activity-item"
+                                onClick={() => {
+                                  setConnFilters({ ...connFilters, title: s.level, page: 1 });
+                                  setConnectionSubTab('all');
+                                }}
+                              >
+                                <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{s.level}</span>
+                                <span className="badge badge-info">{s.count}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="empty-state">No seniority level aggregates available.</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Relationship Health */}
+                      <div className="card-panel">
+                        <h2 className="card-title">Relationship Health</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                          {dashboardOverview.relationships && dashboardOverview.relationships.length > 0 ? (
+                            dashboardOverview.relationships.map((rel) => (
+                              <div
+                                key={rel.status}
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
+                                className="activity-item"
+                                onClick={() => {
+                                  setConnFilters({ ...connFilters, relationshipStatus: rel.status, page: 1 });
+                                  setConnectionSubTab('all');
+                                }}
+                              >
+                                <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{rel.status.replace('_', ' ')}</span>
+                                <span className="badge badge-warning">{rel.count}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="empty-state">No relationship status aggregates available.</div>
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Fifth Row: High Priority Connections */}
+                    <div className="card-panel" style={{ marginBottom: '24px' }}>
+                      <h2 className="card-title">High Priority Connections</h2>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                        {dashboardOverview.highPriorityConnections && dashboardOverview.highPriorityConnections.length > 0 ? (
+                          dashboardOverview.highPriorityConnections.map((h) => (
+                            <div
+                              key={h.id}
+                              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '12px', borderRadius: '6px' }}
+                              className="activity-item"
                               onClick={() => {
-                                setActiveConnectionId(c.id);
+                                setActiveConnectionId(h.id);
                                 setActiveTab('connection-detail');
                               }}
                             >
-                              View
-                            </button>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={() => {
-                                setEditItem(c);
-                                setModal('outreach');
-                              }}
-                            >
-                              Log Outreach
-                            </button>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={() => {
-                                setEditItem(c);
-                                setModal('connection');
-                              }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-danger"
-                              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={async () => {
-                                if (confirm('Delete this connection record?')) {
-                                  await api.deleteConnection(c.id);
-                                  loadConnections();
-                                }
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                              <div>
+                                <span style={{ fontWeight: 600, fontSize: '1.05rem', color: '#fff' }}>{h.name}</span>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{h.title || 'No Title'} &bull; {h.company || 'Unknown Company'}</div>
+                              </div>
+                              <span className="badge badge-success">Score: {h.connectionScore}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="empty-state">No high priority connections set. Go to All Connections to mark priority.</div>
+                        )}
+                      </div>
+                    </div>
 
-                  {/* Pagination */}
-                  <div className="pagination">
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* DIRECTORY LIST SUB-TAB */}
+            {connectionSubTab === 'all' && (
+              <div>
+                {/* Filter Bar */}
+                <div className="filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
+                  <div className="form-group" style={{ margin: 0, minWidth: '150px' }}>
+                    <label className="form-label">Search Query</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Name, title, company..."
+                      value={connFilters.q || ''}
+                      onChange={(e) => setConnFilters({ ...connFilters, q: e.target.value, page: 1 })}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: 0, minWidth: '120px' }}>
+                    <label className="form-label">Filter Company</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Google"
+                      value={connFilters.company || ''}
+                      onChange={(e) => setConnFilters({ ...connFilters, company: e.target.value, page: 1 })}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: 0, minWidth: '120px' }}>
+                    <label className="form-label">Filter Title/Role</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Engineer"
+                      value={connFilters.title || ''}
+                      onChange={(e) => setConnFilters({ ...connFilters, title: e.target.value, page: 1 })}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: 0, minWidth: '120px' }}>
+                    <label className="form-label">Email Filter</label>
+                    <select
+                      className="form-input"
+                      value={connFilters.hasEmail === undefined ? '' : String(connFilters.hasEmail)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setConnFilters({
+                          ...connFilters,
+                          hasEmail: val === '' ? undefined : val === 'true',
+                          page: 1
+                        });
+                      }}
+                    >
+                      <option value="">All Connections</option>
+                      <option value="true">Has Email Only</option>
+                      <option value="false">No Email Only</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ margin: 0, minWidth: '120px' }}>
+                    <label className="form-label">Relationship Status</label>
+                    <select
+                      className="form-input"
+                      value={connFilters.relationshipStatus || ''}
+                      onChange={(e) => setConnFilters({ ...connFilters, relationshipStatus: e.target.value || undefined, page: 1 })}
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="not_contacted">Not Contacted</option>
+                      <option value="researching">Researching</option>
+                      <option value="contacted">Contacted</option>
+                      <option value="replied">Replied</option>
+                      <option value="conversation">Conversation</option>
+                      <option value="referral_requested">Referral Requested</option>
+                      <option value="referral_received">Referral Received</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ margin: 0, minWidth: '140px' }}>
+                    <label className="form-label">Sort By</label>
+                    <select
+                      className="form-input"
+                      value={connFilters.sortBy || 'connectedDate'}
+                      onChange={(e) => setConnFilters({ ...connFilters, sortBy: e.target.value, page: 1 })}
+                    >
+                      <option value="connectedDate">Connected Date</option>
+                      <option value="connectionScore">Connection Score</option>
+                      <option value="name">Name</option>
+                      <option value="company">Company</option>
+                      <option value="title">Title</option>
+                      <option value="lastContactedDate">Last Contacted</option>
+                      <option value="nextFollowUpDate">Next Follow-up</option>
+                      <option value="priority">Priority</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ margin: 0, minWidth: '100px' }}>
+                    <label className="form-label">Sort Order</label>
+                    <select
+                      className="form-input"
+                      value={connFilters.sortOrder || 'desc'}
+                      onChange={(e) => setConnFilters({ ...connFilters, sortOrder: e.target.value, page: 1 })}
+                    >
+                      <option value="desc">Descending</option>
+                      <option value="asc">Ascending</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '8px' }}>
+                    <input
+                      type="checkbox"
+                      id="followUpDueOnly"
+                      checked={!!connFilters.followUpDue}
+                      onChange={(e) => setConnFilters({ ...connFilters, followUpDue: e.target.checked ? true : undefined, page: 1 })}
+                    />
+                    <label htmlFor="followUpDueOnly" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Follow-up Due</label>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="btn btn-secondary" onClick={loadConnections}>Apply</button>
                     <button
                       className="btn btn-secondary"
-                      disabled={connFilters.page <= 1}
-                      onClick={() => setConnFilters({ ...connFilters, page: connFilters.page - 1 })}
+                      onClick={() => {
+                        setConnFilters({ page: 1, pageSize: 10, q: '', company: '', title: '' });
+                      }}
                     >
-                      Previous
-                    </button>
-                    <span>Page {connFilters.page} of {connMeta.totalPages || 1}</span>
-                    <button
-                      className="btn btn-secondary"
-                      disabled={connFilters.page >= connMeta.totalPages}
-                      onClick={() => setConnFilters({ ...connFilters, page: connFilters.page + 1 })}
-                    >
-                      Next
+                      Reset
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
+
+                <div className="card-panel">
+                  {connections.length === 0 ? (
+                    <div className="empty-state">No connection CRM records matching query.</div>
+                  ) : (
+                    <div className="data-table-container">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Company & Title</th>
+                            <th>Email / Location</th>
+                            <th>Relationship Status</th>
+                            <th style={{ textAlign: 'right' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {connections.map((c) => (
+                            <tr key={c.id}>
+                              <td style={{ fontWeight: 600 }}>{c.name}</td>
+                              <td>
+                                <div>{c.title || 'No Title'}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{c.company || 'Unknown'}</div>
+                              </td>
+                              <td>
+                                <div>{c.email || 'No email'}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{c.location || 'Unknown'}</div>
+                              </td>
+                              <td>
+                                <span className="badge badge-info">{c.relationshipStatus || 'Not Contacted'}</span>
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                <button
+                                  className="btn btn-primary"
+                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
+                                  onClick={() => {
+                                    setActiveConnectionId(c.id);
+                                    setActiveTab('connection-detail');
+                                  }}
+                                >
+                                  View
+                                </button>
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
+                                  onClick={() => {
+                                    setEditItem(c);
+                                    setModal('outreach');
+                                  }}
+                                >
+                                  Log Outreach
+                                </button>
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
+                                  onClick={() => {
+                                    setEditItem(c);
+                                    setModal('connection');
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-danger"
+                                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                                  onClick={async () => {
+                                    if (confirm('Delete this connection record?')) {
+                                      await api.deleteConnection(c.id);
+                                      loadConnections();
+                                    }
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Pagination */}
+                      <div className="pagination">
+                        <button
+                          className="btn btn-secondary"
+                          disabled={connFilters.page <= 1}
+                          onClick={() => setConnFilters({ ...connFilters, page: connFilters.page - 1 })}
+                        >
+                          Previous
+                        </button>
+                        <span>Page {connFilters.page} of {connMeta.totalPages || 1}</span>
+                        <button
+                          className="btn btn-secondary"
+                          disabled={connFilters.page >= connMeta.totalPages}
+                          onClick={() => setConnFilters({ ...connFilters, page: connFilters.page + 1 })}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
