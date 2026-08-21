@@ -197,6 +197,12 @@ router.post(
     if (typeof body.externalLinks === 'string') {
       body.externalLinks = body.externalLinks.split(',').map(l => l.trim()).filter(Boolean);
     }
+    const dateFields = ['nextFollowUpDate', 'lastContactedDate', 'connectedDate'];
+    dateFields.forEach(field => {
+      if (body[field] === '') {
+        body[field] = null;
+      }
+    });
     const connection = await models.Connection.create({
       user_id: req.auth.userId,
       ...body,
@@ -822,6 +828,12 @@ router.put(
     if (typeof body.externalLinks === 'string') {
       body.externalLinks = body.externalLinks.split(',').map(l => l.trim()).filter(Boolean);
     }
+    const dateFields = ['nextFollowUpDate', 'lastContactedDate', 'connectedDate'];
+    dateFields.forEach(field => {
+      if (body[field] === '') {
+        body[field] = null;
+      }
+    });
     await connection.update(body);
     await upsertTags(connection, req.auth.userId, req.body.tags);
     ok(res, await serializeConnection(connection));
