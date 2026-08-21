@@ -142,6 +142,8 @@ export function enrichConnectionData(connection) {
     connection.relationshipStrength,
     connection.seniorityLevel
   );
-  connection.priority = determinePriority(connection.seniorityLevel, connection.relationshipStrength);
+  if (!connection.priority) {
+    connection.priority = determinePriority(connection.seniorityLevel, connection.relationshipStrength);
+  }
   connection.lastEnrichedAt = new Date();
 }
