@@ -6,8 +6,14 @@ if (typeof pdf !== 'function' && pdf.default) {
 }
 
 export async function parseLinkedInPDF(buffer) {
-  const data = await pdf(buffer);
-  const text = data.text || '';
+  const parser = new pdf.PDFParse({ data: buffer });
+  let text = '';
+  try {
+    const result = await parser.getText();
+    text = result.text || '';
+  } finally {
+    await parser.destroy();
+  }
   
   // Clean text lines
   const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
