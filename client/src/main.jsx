@@ -1434,7 +1434,7 @@ function App() {
                     {/* Quick Stats Grid */}
                     <div className="metrics-grid" style={{ marginBottom: '24px' }}>
                       <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
-                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, page: 1 });
+                        setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], page: 1 });
                         setConnectionSubTab('all');
                       }}>
                         <div className="metric-label">Total Connections</div>
@@ -1442,7 +1442,7 @@ function App() {
                         <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View all &rarr;</div>
                       </div>
                       <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
-                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, roleCategory: 'recruiting', page: 1 });
+                        setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], roleCategory: ['recruiting'], page: 1 });
                         setConnectionSubTab('all');
                       }}>
                         <div className="metric-label">Recruiters</div>
@@ -1450,7 +1450,7 @@ function App() {
                         <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
                       </div>
                       <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
-                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, roleCategory: 'engineering', page: 1 });
+                        setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], roleCategory: ['engineering'], page: 1 });
                         setConnectionSubTab('all');
                       }}>
                         <div className="metric-label">Engineering Leaders</div>
@@ -1458,7 +1458,7 @@ function App() {
                         <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
                       </div>
                       <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
-                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, priority: 'high', page: 1 });
+                        setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], priority: ['high'], page: 1 });
                         setConnectionSubTab('all');
                       }}>
                         <div className="metric-label">High Priority</div>
@@ -1466,7 +1466,7 @@ function App() {
                         <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
                       </div>
                       <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
-                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, relationshipStatus: 'not_contacted', page: 1 });
+                        setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], relationshipStatus: 'not_contacted', page: 1 });
                         setConnectionSubTab('all');
                       }}>
                         <div className="metric-label">Not Contacted</div>
@@ -1487,7 +1487,7 @@ function App() {
                                 className="activity-item"
                                 style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', cursor: 'pointer' }}
                                 onClick={() => {
-                                  setConnFilters({ ...connFilters, companies: companyDetailData.companyName, roleCategory: r.category, page: 1 });
+                                  setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], roleCategory: [r.category], page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
@@ -1512,7 +1512,7 @@ function App() {
                                 className="activity-item"
                                 style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', cursor: 'pointer' }}
                                 onClick={() => {
-                                  setConnFilters({ ...connFilters, companies: companyDetailData.companyName, seniority: s.level, page: 1 });
+                                  setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], seniority: [s.level], page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
