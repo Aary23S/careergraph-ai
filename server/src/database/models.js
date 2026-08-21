@@ -1,4 +1,5 @@
 import { DataTypes } from 'sequelize';
+import { enrichConnectionData } from '../services/enrichment.service.js';
 
 export const APPLICATION_STATUSES = [
   'saved',
@@ -108,8 +109,25 @@ export function initializeModels(sequelize) {
       lastContactedDate: { type: DataTypes.DATEONLY, field: 'last_contacted_date' },
       nextFollowUpDate: { type: DataTypes.DATEONLY, field: 'next_follow_up_date' },
       importBatchId: { type: DataTypes.STRING, field: 'import_batch_id' },
+      
+      normalizedCompany: { type: DataTypes.STRING, field: 'normalized_company' },
+      normalizedPosition: { type: DataTypes.STRING, field: 'normalized_position' },
+      seniorityLevel: { type: DataTypes.STRING, field: 'seniority_level' },
+      roleCategory: { type: DataTypes.STRING, field: 'role_category' },
+      priority: { type: DataTypes.STRING, field: 'priority' },
+      connectionScore: { type: DataTypes.INTEGER, field: 'connection_score' },
+      profileCompleteness: { type: DataTypes.INTEGER, field: 'profile_completeness' },
+      lastEnrichedAt: { type: DataTypes.DATE, field: 'last_enriched_at' },
     },
-    { ...baseOptions, tableName: 'connections' },
+    {
+      ...baseOptions,
+      tableName: 'connections',
+      hooks: {
+        beforeSave: (connection) => {
+          enrichConnectionData(connection);
+        },
+      },
+    },
   );
 
   const ConnectionTag = sequelize.define(

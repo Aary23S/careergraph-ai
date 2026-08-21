@@ -20,8 +20,8 @@ const createSchema = Joi.object({
   company: Joi.string().allow('', null),
   title: Joi.string().allow('', null),
   location: Joi.string().allow('', null),
-  email: Joi.string().email().allow('', null),
-  profileUrl: Joi.string().uri().allow('', null),
+  email: Joi.string().allow('', null),
+  profileUrl: Joi.string().allow('', null),
   connectedDate: Joi.string().allow('', null),
   industry: Joi.string().allow('', null),
   notes: Joi.string().allow('', null),
@@ -46,14 +46,21 @@ const querySchema = Joi.object({
 });
 
 function mapCsvRecord(record) {
+  const firstName = record['First Name'] || record['first name'] || record.first_name || '';
+  const lastName = record['Last Name'] || record['last name'] || record.last_name || '';
+  let name = record.name || record.Name || '';
+  if (!name && (firstName || lastName)) {
+    name = `${firstName} ${lastName}`.trim();
+  }
+
   return {
-    name: record.name || record.Name,
+    name,
     company: record.company || record.Company || null,
-    title: record.title || record.Title || null,
+    title: record.title || record.Title || record.Position || record.position || null,
     location: record.location || record.Location || null,
-    email: record.email || record.Email || null,
-    profileUrl: record.profile_url || record['profile url'] || record['Profile URL'] || null,
-    connectedDate: record.connected_date || record['connected date'] || null,
+    email: record.email || record.Email || record['Email Address'] || record['email address'] || null,
+    profileUrl: record.profile_url || record['profile url'] || record['Profile URL'] || record.URL || record.url || null,
+    connectedDate: record.connected_date || record['connected date'] || record['Connected On'] || record['connected on'] || null,
     industry: record.industry || record.Industry || null,
     notes: record.notes || record.Notes || null,
     relationshipStatus:
@@ -137,12 +144,18 @@ router.post(
   '/import',
   upload.single('file'),
   asyncHandler(async (req, res) => {
-    const csvContent = req.file
+    let csvContent = req.file
       ? req.file.buffer.toString('utf8')
       : req.body.csvContent;
 
     if (!csvContent) {
       throw new AppError(400, 'CSV_REQUIRED', 'CSV content is required.');
+    }
+
+    // Strip LinkedIn intro notes/lines if present
+    const headerMatch = csvContent.match(/(?:^|\n)(["']?First Name["']?|["']?Name["']?)/i);
+    if (headerMatch) {
+      csvContent = csvContent.substring(headerMatch.index).trim();
     }
 
     const records = parse(csvContent, {

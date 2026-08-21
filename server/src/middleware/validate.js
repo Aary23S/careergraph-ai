@@ -14,7 +14,14 @@ export function validate(schema, property = 'body') {
       return;
     }
 
-    req[property] = value;
+    if (property === 'query') {
+      for (const key of Object.keys(req.query)) {
+        delete req.query[key];
+      }
+      Object.assign(req.query, value);
+    } else {
+      req[property] = value;
+    }
     next();
   };
 }
