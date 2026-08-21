@@ -217,6 +217,7 @@ export function initializeModels(sequelize) {
       followUpDate: { type: DataTypes.DATEONLY, field: 'follow_up_date' },
       notes: { type: DataTypes.TEXT },
       outcome: { type: DataTypes.TEXT },
+      jobId: { type: DataTypes.UUID, allowNull: true, field: 'job_id' },
     },
     { ...baseOptions, tableName: 'outreach' },
   );
@@ -314,6 +315,9 @@ export function initializeModels(sequelize) {
   Job.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
   Company.hasMany(Job, { foreignKey: 'company_id', as: 'jobs' });
   Job.belongsTo(Company, { foreignKey: 'company_id', as: 'company' });
+
+  Job.hasMany(Outreach, { foreignKey: 'job_id', as: 'outreachItems' });
+  Outreach.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
 
   User.hasMany(Application, { foreignKey: 'user_id', as: 'applications' });
   Application.belongsTo(User, { foreignKey: 'user_id', as: 'user' });

@@ -58,6 +58,23 @@ function App() {
   const [newViewName, setNewViewName] = useState('');
   const [newViewDesc, setNewViewDesc] = useState('');
 
+  // Job Network Workspace States
+  const [jobNetworkSubTab, setJobNetworkSubTab] = useState('overview'); // 'overview', 'application', 'network'
+  const [jobNetworkDetails, setJobNetworkDetails] = useState(null);
+  const [jobNetworkFilters, setJobNetworkFilters] = useState({
+    page: 1,
+    limit: 10,
+    roleCategory: '',
+    seniority: '',
+    relationshipStatus: '',
+    relationshipStrength: '',
+    priority: '',
+    sortBy: 'referralScore',
+    sortOrder: 'desc'
+  });
+  const [jobNetworkMeta, setJobNetworkMeta] = useState({ total: 0, totalPages: 1 });
+  const [jobNetworkLoading, setJobNetworkLoading] = useState(false);
+
   // Auth Forms State
   const [authTab, setAuthTab] = useState('login'); // 'login', 'register', 'forgot'
   const [authEmail, setAuthEmail] = useState('');
@@ -519,6 +536,33 @@ function App() {
       console.error(e);
     }
   };
+
+  const loadJobNetwork = async (jobId, filters = jobNetworkFilters) => {
+    setJobNetworkLoading(true);
+    try {
+      const query = new URLSearchParams();
+      Object.keys(filters).forEach(key => {
+        if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+          query.set(key, filters[key]);
+        }
+      });
+      const res = await api.request(`/jobs/${jobId}/network?${query.toString()}`);
+      setJobNetworkDetails(res.data);
+      if (res.data && res.data.pagination) {
+        setJobNetworkMeta(res.data.pagination);
+      }
+    } catch (e) {
+      console.error('Failed to load job network workspace', e);
+    } finally {
+      setJobNetworkLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && modal === 'job_detail' && editItem?.id) {
+      loadJobNetwork(editItem.id, jobNetworkFilters);
+    }
+  }, [isAuthenticated, modal, editItem?.id, jobNetworkFilters]);
 
   // Auth handlers
   const handleAuthSubmit = async (e) => {
@@ -2723,81 +2767,346 @@ function App() {
       {/* Job Detail Intelligence Modal */}
       {modal === 'job_detail' && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '700px' }}>
-            <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>🔍 Job Intel: {editItem?.title}</span>
+          <div className="modal-content" style={{ maxWidth: '750px', width: '90%' }}>
+            <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span>🔍 Job Workspace: {editItem?.title}</span>
               <span className="badge badge-info">{editItem?.status}</span>
             </h2>
-            <div style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{editItem?.companyName} &bull; {editItem?.location}</div>
-            
-            <div className="metrics-grid" style={{ marginBottom: '24px' }}>
-              <div className="metric-card">
-                <div className="metric-label">Match Score</div>
-                <div className="metric-value" style={{ color: 'var(--success)' }}>{editItem?.matchScore}%</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-label">Opportunity Score</div>
-                <div className="metric-value" style={{ color: 'var(--primary)' }}>{editItem?.opportunityScore}%</div>
-              </div>
+            <div style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
+              {editItem?.companyName} &bull; {editItem?.location}
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Action Recommendation</label>
-              <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '16px', borderRadius: '8px', color: '#fff', fontWeight: 600 }}>
-                💡 {editItem?.recommendedAction}
-              </div>
+            {/* Navigation tabs inside the Job details modal */}
+            <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--bg-secondary)', marginBottom: '16px', paddingBottom: '8px' }}>
+              <button
+                className={`btn ${jobNetworkSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                onClick={() => setJobNetworkSubTab('overview')}
+              >
+                Overview & Match
+              </button>
+              <button
+                className={`btn ${jobNetworkSubTab === 'application' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                onClick={() => setJobNetworkSubTab('application')}
+              >
+                Application Tracker
+              </button>
+              <button
+                className={`btn ${jobNetworkSubTab === 'network' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                onClick={() => setJobNetworkSubTab('network')}
+              >
+                Referral Network Workspace
+              </button>
             </div>
 
-            <div className="form-row" style={{ gap: '24px' }}>
-              <div className="form-group">
-                <label className="form-label">Matched Skills</label>
-                <div className="tags-list">
-                  {editItem?.matchedSkills?.length === 0 ? (
-                    <span style={{ color: 'var(--text-muted)' }}>None matched</span>
-                  ) : (
-                    editItem?.matchedSkills?.map(s => <span key={s} className="badge badge-success">{s}</span>)
-                  )}
+            {/* TAB 1: OVERVIEW & MATCH */}
+            {jobNetworkSubTab === 'overview' && (
+              <div>
+                <div className="metrics-grid" style={{ marginBottom: '24px' }}>
+                  <div className="metric-card">
+                    <div className="metric-label">Match Score</div>
+                    <div className="metric-value" style={{ color: 'var(--success)' }}>{editItem?.matchScore}%</div>
+                  </div>
+                  <div className="metric-card">
+                    <div className="metric-label">Opportunity Score</div>
+                    <div className="metric-value" style={{ color: 'var(--primary)' }}>{editItem?.opportunityScore}%</div>
+                  </div>
                 </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Missing Skills</label>
-                <div className="tags-list">
-                  {editItem?.missingSkills?.length === 0 ? (
-                    <span style={{ color: 'var(--text-muted)' }}>None missing</span>
-                  ) : (
-                    editItem?.missingSkills?.map(s => <span key={s} className="badge badge-warning">{s}</span>)
-                  )}
-                </div>
-              </div>
-            </div>
 
-            <div className="form-group" style={{ marginTop: '16px' }}>
-              <label className="form-label">Recommended Referral Contacts</label>
-              {editItem?.recommendedContacts?.length === 0 ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No connections found at {editItem?.companyName}. Add some to get referrals!</div>
-              ) : (
-                <div className="activity-list">
-                  {editItem?.recommendedContacts?.map(contact => (
-                    <div className="activity-item" key={contact.id} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontWeight: 600 }}>{contact.name}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{contact.title} &bull; Relationship Strength: {contact.relationshipStrength || 'Unknown'}</div>
+                <div className="form-group">
+                  <label className="form-label">Action Recommendation</label>
+                  <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '16px', borderRadius: '8px', color: '#fff', fontWeight: 600 }}>
+                    💡 {editItem?.recommendedAction}
+                  </div>
+                </div>
+
+                <div className="form-row" style={{ gap: '24px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Matched Skills</label>
+                    <div className="tags-list">
+                      {editItem?.matchedSkills?.length === 0 ? (
+                        <span style={{ color: 'var(--text-muted)' }}>None matched</span>
+                      ) : (
+                        editItem?.matchedSkills?.map(s => <span key={s} className="badge badge-success">{s}</span>)
+                      )}
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Missing Skills</label>
+                    <div className="tags-list">
+                      {editItem?.missingSkills?.length === 0 ? (
+                        <span style={{ color: 'var(--text-muted)' }}>None missing</span>
+                      ) : (
+                        editItem?.missingSkills?.map(s => <span key={s} className="badge badge-warning">{s}</span>)
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {editItem?.description && (
+                  <div className="form-group" style={{ marginTop: '16px' }}>
+                    <label className="form-label">Description</label>
+                    <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', maxHeight: '180px', overflowY: 'auto' }}>
+                      {editItem.description}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 2: APPLICATION LIFE CYCLE TRACKER */}
+            {jobNetworkSubTab === 'application' && (
+              <div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target);
+                  const data = Object.fromEntries(formData.entries());
+                  try {
+                    await api.updateApplicationStatus(editItem.id, data.status, data.notes);
+                    // reload matching parent status
+                    const updated = await api.request(`/jobs/${editItem.id}`);
+                    setEditItem(updated.data);
+                    alert('Job application status updated!');
+                  } catch (err) {
+                    alert(err.message);
+                  }
+                }}>
+                  <div className="form-group">
+                    <label className="form-label">Pipeline Stage</label>
+                    <select name="status" className="form-input" defaultValue={editItem?.status || 'saved'}>
+                      <option value="saved">Saved / Watchlist</option>
+                      <option value="applied">Applied</option>
+                      <option value="screening">Screening</option>
+                      <option value="interview">Interview</option>
+                      <option value="offer">Offer</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="withdrawn">Withdrawn</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Interaction Log / Message Notes</label>
+                    <textarea name="notes" className="form-input" rows="4" placeholder="Log referral response, interviews, next steps..."></textarea>
+                  </div>
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Update Status</button>
+                </form>
+              </div>
+            )}
+
+            {/* TAB 3: REFERRAL NETWORK WORKSPACE */}
+            {jobNetworkSubTab === 'network' && (
+              <div>
+                {jobNetworkLoading ? (
+                  <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading referral candidates...</div>
+                ) : (
+                  <div>
+                    {/* Summary Metrics */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
+                      <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)' }}>
+                          {jobNetworkDetails?.summary?.totalConnections || 0}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Connections</div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span className="badge badge-info">Referral Score: {contact.referralScore}</span>
-                        <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => {
-                          setEditItem(contact);
-                          setModal('outreach');
-                        }}>Contact</button>
+                      <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--success)' }}>
+                          {jobNetworkDetails?.summary?.relevantConnections || 0}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Relevant</div>
+                      </div>
+                      <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--warning)' }}>
+                          {jobNetworkDetails?.summary?.highPotential || 0}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>High Potential</div>
+                      </div>
+                      <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>
+                          {jobNetworkDetails?.summary?.recruiters || 0}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Recruiters</div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+
+                    {/* Filters Bar */}
+                    <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', marginBottom: '16px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flexGrow: 1 }}>
+                        <select
+                          className="form-input"
+                          style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
+                          value={jobNetworkFilters.roleCategory}
+                          onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, roleCategory: e.target.value, page: 1 })}
+                        >
+                          <option value="">All Roles</option>
+                          <option value="engineering">Engineering Only</option>
+                          <option value="other">Other Roles</option>
+                        </select>
+
+                        <select
+                          className="form-input"
+                          style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
+                          value={jobNetworkFilters.seniority}
+                          onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, seniority: e.target.value, page: 1 })}
+                        >
+                          <option value="">All Seniorities</option>
+                          <option value="senior">Senior</option>
+                          <option value="lead">Lead</option>
+                          <option value="manager">Manager</option>
+                          <option value="director">Director</option>
+                          <option value="executive">Executive</option>
+                          <option value="founder">Founder</option>
+                        </select>
+
+                        <select
+                          className="form-input"
+                          style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
+                          value={jobNetworkFilters.relationshipStatus}
+                          onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, relationshipStatus: e.target.value, page: 1 })}
+                        >
+                          <option value="">All Statuses</option>
+                          <option value="not_contacted">Not Contacted</option>
+                          <option value="researching">Researching</option>
+                          <option value="contacted">Contacted</option>
+                          <option value="replied">Replied</option>
+                          <option value="conversation">Conversation</option>
+                          <option value="referral_requested">Referral Requested</option>
+                          <option value="referral_received">Referral Received</option>
+                        </select>
+
+                        <select
+                          className="form-input"
+                          style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
+                          value={jobNetworkFilters.priority}
+                          onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, priority: e.target.value, page: 1 })}
+                        >
+                          <option value="">All Priorities</option>
+                          <option value="high">High</option>
+                          <option value="medium">Medium</option>
+                          <option value="low">Low</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Sort:</span>
+                        <select
+                          className="form-input"
+                          style={{ padding: '6px', fontSize: '0.8rem', minWidth: '130px' }}
+                          value={jobNetworkFilters.sortBy}
+                          onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, sortBy: e.target.value, page: 1 })}
+                        >
+                          <option value="referralScore">Referral Score</option>
+                          <option value="connectionScore">Connection Score</option>
+                          <option value="seniority">Seniority</option>
+                          <option value="relationshipStrength">Strength</option>
+                          <option value="lastContactedDate">Last Contacted</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Recommended Actions */}
+                    {jobNetworkDetails?.candidates?.length > 0 && (
+                      <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--primary)', marginBottom: '6px' }}>⭐ Recommended Workspace Actions</div>
+                        <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.8rem', color: '#fff' }}>
+                          {jobNetworkDetails.candidates.slice(0, 3).map((candidate, idx) => {
+                            let action = 'Research relationship details';
+                            if (candidate.relationshipStatus === 'not_contacted') {
+                              action = `Initiate outreach to request a referral for this ${editItem?.title} role`;
+                            } else if (candidate.relationshipStatus === 'contacted') {
+                              action = 'Follow up to see if they received your request';
+                            } else if (candidate.relationshipStatus === 'referral_received') {
+                              action = 'Proceed with submitting application on company portal';
+                            }
+                            return (
+                              <li key={idx} style={{ marginBottom: '4px' }}>
+                                <strong>Contact {candidate.connection.name}</strong>: {action}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Candidates List */}
+                    {jobNetworkDetails?.candidates?.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '24px', background: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        No referral candidates match your filter criteria at {editItem?.companyName}.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {jobNetworkDetails?.candidates?.map((candidate) => (
+                          <div
+                            key={candidate.connection.id}
+                            style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '4px solid var(--primary)' }}
+                          >
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>{candidate.connection.name}</span>
+                                <span className={`badge ${candidate.relationshipStatus === 'not_contacted' ? 'badge-info' : 'badge-success'}`} style={{ fontSize: '0.75rem' }}>
+                                  {candidate.relationshipStatus.replace('_', ' ')}
+                                </span>
+                                {candidate.priority && candidate.priority !== 'none' && (
+                                  <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>{candidate.priority} priority</span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                {candidate.connection.title} &bull; {candidate.connection.company}
+                              </div>
+                              {/* Explainable scoring reasons */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                                {candidate.reasons?.map((reason, ridx) => (
+                                  <span key={ridx} style={{ fontSize: '0.75rem', background: 'var(--bg-tertiary)', padding: '4px 8px', borderRadius: '4px', color: 'var(--primary)' }}>
+                                    ✓ {reason}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+                              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)' }}>
+                                {candidate.referralScore}
+                              </div>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                                  onClick={async () => {
+                                    try {
+                                      const res = await api.request(`/connections/${candidate.connection.id}`);
+                                      setEditItem(res.data);
+                                      setModal('connection_detail');
+                                    } catch (err) {
+                                      alert(err.message);
+                                    }
+                                  }}
+                                >
+                                  View CRM
+                                </button>
+                                <button
+                                  className="btn btn-primary"
+                                  style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                                  onClick={() => {
+                                    setEditItem({
+                                      ...candidate.connection,
+                                      job_id: editItem.id // pass selected job_id context
+                                    });
+                                    setModal('outreach');
+                                  }}
+                                >
+                                  Log Outreach
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setModal(null)}>Close Intel</button>
+              <button className="btn btn-secondary" onClick={() => { setModal(null); setJobNetworkSubTab('overview'); }}>Close Intel</button>
             </div>
           </div>
         </div>
