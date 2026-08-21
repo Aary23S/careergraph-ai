@@ -1,6 +1,7 @@
 export function getPagination(query) {
   const page = Math.max(Number(query.page) || 1, 1);
-  const pageSize = Math.min(Math.max(Number(query.pageSize) || 10, 1), 100);
+  const rawPageSize = query.limit || query.pageSize;
+  const pageSize = Math.min(Math.max(Number(rawPageSize) || 50, 1), 100);
 
   return {
     page,
@@ -10,11 +11,17 @@ export function getPagination(query) {
   };
 }
 
-export function makePageMeta({ page, pageSize, total }) {
+export function makePageMeta({ page, pageSize, limit, total }) {
+  const finalLimit = limit || pageSize || 50;
+  const totalPages = Math.max(Math.ceil(total / finalLimit), 1);
+  
   return {
     page,
-    pageSize,
+    pageSize: finalLimit,
+    limit: finalLimit,
     total,
-    totalPages: Math.max(Math.ceil(total / pageSize), 1),
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1,
   };
 }

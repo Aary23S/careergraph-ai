@@ -34,15 +34,40 @@ const createSchema = Joi.object({
 
 const querySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  pageSize: Joi.number().integer().min(1).max(100).default(10),
+  limit: Joi.number().integer().valid(25, 50, 100).default(50),
+  pageSize: Joi.number().integer().min(1).max(100), // backward compatibility
+  search: Joi.string().allow('', null),
   q: Joi.string().allow('', null),
   company: Joi.string().allow('', null),
-  title: Joi.string().allow('', null),
-  location: Joi.string().allow('', null),
-  industry: Joi.string().allow('', null),
-  relationship: Joi.string().allow('', null),
-  contacted: Joi.boolean(),
+  companies: Joi.string().allow('', null),
+  position: Joi.string().allow('', null),
+  positions: Joi.string().allow('', null),
+  seniority: Joi.string().allow('', null),
+  roleCategory: Joi.string().allow('', null),
+  relationshipStatus: Joi.string().allow('', null),
+  relationship: Joi.string().allow('', null), // backward compatibility
+  relationshipStrength: Joi.string().allow('', null),
+  priority: Joi.string().allow('', null),
+  hasEmail: Joi.boolean(),
+  connectedFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).message('connectedFrom must be in format YYYY-MM-DD').allow('', null),
+  connectedTo: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).message('connectedTo must be in format YYYY-MM-DD').allow('', null),
+  lastContactedFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).message('lastContactedFrom must be in format YYYY-MM-DD').allow('', null),
+  lastContactedTo: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).message('lastContactedTo must be in format YYYY-MM-DD').allow('', null),
+  followUpFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).message('followUpFrom must be in format YYYY-MM-DD').allow('', null),
+  followUpTo: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).message('followUpTo must be in format YYYY-MM-DD').allow('', null),
   followUpDue: Joi.boolean(),
+  sortBy: Joi.string().valid(
+    'name',
+    'company',
+    'title',
+    'connectedDate',
+    'lastContactedDate',
+    'nextFollowUpDate',
+    'priority',
+    'connectionScore',
+    'seniority'
+  ).default('connectedDate'),
+  sortOrder: Joi.string().lowercase().valid('asc', 'desc').default('desc'),
 });
 
 function mapCsvRecord(record) {
@@ -209,42 +234,174 @@ router.post(
   }),
 );
 
+export function parseConnectionFilters(query) {
+  return {
+    search: query.search || query.q || null,
+    companies: query.companies || query.company || null,
+    positions: query.positions || query.position || null,
+    seniority: query.seniority || null,
+    roleCategory: query.roleCategory || null,
+    relationshipStatus: query.relationshipStatus || query.relationship || null,
+    relationshipStrength: query.relationshipStrength || null,
+    priority: query.priority || null,
+    hasEmail: (query.hasEmail !== undefined && query.hasEmail !== null && query.hasEmail !== '')
+      ? (query.hasEmail === true || query.hasEmail === 'true')
+      : undefined,
+    connectedFrom: query.connectedFrom || null,
+    connectedTo: query.connectedTo || null,
+    lastContactedFrom: query.lastContactedFrom || null,
+    lastContactedTo: query.lastContactedTo || null,
+    followUpFrom: query.followUpFrom || null,
+    followUpTo: query.followUpTo || null,
+    followUpDue: (query.followUpDue !== undefined && query.followUpDue !== null && query.followUpDue !== '')
+      ? (query.followUpDue === true || query.followUpDue === 'true')
+      : undefined,
+  };
+}
+
+export function buildConnectionWhereClause(userId, filters) {
+  const where = { user_id: userId };
+  const parseCsvFilter = (val) => val.split(',').map(v => v.trim()).filter(Boolean);
+
+  // 1. Search Query
+  if (filters.search) {
+    where[Op.or] = [
+      { name: { [Op.iLike]: `%${filters.search}%` } },
+      { email: { [Op.iLike]: `%${filters.search}%` } },
+      { company: { [Op.iLike]: `%${filters.search}%` } },
+      { normalizedCompany: { [Op.iLike]: `%${filters.search}%` } },
+      { title: { [Op.iLike]: `%${filters.search}%` } },
+      { normalizedPosition: { [Op.iLike]: `%${filters.search}%` } },
+      { profileUrl: { [Op.iLike]: `%${filters.search}%` } },
+    ];
+  }
+
+  // 2. CSV Filters list
+  const addCsvFilter = (field, filterVal, matchNormalizedField = null) => {
+    if (filterVal) {
+      const list = parseCsvFilter(filterVal);
+      where[Op.and] = where[Op.and] || [];
+      if (matchNormalizedField) {
+        const lowerList = list.map(v => v.toLowerCase());
+        where[Op.and].push({
+          [Op.or]: [
+            { [field]: { [Op.in]: list } },
+            { [matchNormalizedField]: { [Op.in]: lowerList } }
+          ]
+        });
+      } else {
+        where[Op.and].push({ [field]: { [Op.in]: list } });
+      }
+    }
+  };
+
+  addCsvFilter('company', filters.companies, 'normalizedCompany');
+  addCsvFilter('title', filters.positions, 'normalizedPosition');
+  addCsvFilter('seniorityLevel', filters.seniority);
+  addCsvFilter('roleCategory', filters.roleCategory);
+  addCsvFilter('relationshipStatus', filters.relationshipStatus);
+  addCsvFilter('relationshipStrength', filters.relationshipStrength);
+  addCsvFilter('priority', filters.priority);
+
+  // 3. hasEmail
+  if (filters.hasEmail === true) {
+    where[Op.and] = where[Op.and] || [];
+    where[Op.and].push({
+      email: {
+        [Op.not]: null,
+        [Op.ne]: '',
+      }
+    });
+  } else if (filters.hasEmail === false) {
+    where[Op.and] = where[Op.and] || [];
+    where[Op.and].push({
+      [Op.or]: [
+        { email: null },
+        { email: '' }
+      ]
+    });
+  }
+
+  // 4. followUpDue
+  if (filters.followUpDue === true) {
+    where[Op.and] = where[Op.and] || [];
+    where[Op.and].push({
+      nextFollowUpDate: {
+        [Op.not]: null,
+        [Op.lte]: new Date().toISOString().slice(0, 10)
+      }
+    });
+  } else if (filters.followUpDue === false) {
+    where[Op.and] = where[Op.and] || [];
+    where[Op.and].push({
+      [Op.or]: [
+        { nextFollowUpDate: null },
+        { nextFollowUpDate: { [Op.gt]: new Date().toISOString().slice(0, 10) } }
+      ]
+    });
+  }
+
+  // 5. Date Ranges
+  const addDateRange = (field, from, to) => {
+    if (from || to) {
+      const conditions = [];
+      if (from) conditions.push({ [Op.gte]: from });
+      if (to) conditions.push({ [Op.lte]: to });
+      where[field] = { [Op.and]: conditions };
+    }
+  };
+
+  addDateRange('connectedDate', filters.connectedFrom, filters.connectedTo);
+  addDateRange('lastContactedDate', filters.lastContactedFrom, filters.lastContactedTo);
+  addDateRange('nextFollowUpDate', filters.followUpFrom, filters.followUpTo);
+
+  return where;
+}
+
+export function buildConnectionOrder(sortBy, sortOrder) {
+  const mapSortBy = (val) => {
+    switch (val) {
+      case 'seniority': return 'seniorityLevel';
+      default: return val;
+    }
+  };
+  const column = mapSortBy(sortBy || 'connectedDate');
+  const direction = (sortOrder || 'desc').toUpperCase();
+  return [[column, direction]];
+}
+
+export async function queryConnections(userId, filters, sortBy, sortOrder, limit, offset) {
+  const where = buildConnectionWhereClause(userId, filters);
+  const order = buildConnectionOrder(sortBy, sortOrder);
+
+  const { rows, count } = await models.Connection.findAndCountAll({
+    where,
+    order,
+    limit,
+    offset,
+  });
+
+  return { rows, count };
+}
+
 router.get(
   '/',
   validate(querySchema, 'query'),
   asyncHandler(async (req, res) => {
     const pagination = getPagination(req.query);
-    const where = { user_id: req.auth.userId };
+    const filters = parseConnectionFilters(req.query);
 
-    if (req.query.q) {
-      where[Op.or] = [
-        { name: { [Op.like]: `%${req.query.q}%` } },
-        { company: { [Op.like]: `%${req.query.q}%` } },
-        { title: { [Op.like]: `%${req.query.q}%` } },
-        { email: { [Op.like]: `%${req.query.q}%` } },
-      ];
-    }
-
-    if (req.query.company) where.company = req.query.company;
-    if (req.query.title) where.title = req.query.title;
-    if (req.query.location) where.location = req.query.location;
-    if (req.query.industry) where.industry = req.query.industry;
-    if (req.query.relationship) where.relationshipStatus = req.query.relationship;
-    if (req.query.contacted === true) where.lastContactedDate = { [Op.not]: null };
-    if (req.query.contacted === false) where.lastContactedDate = null;
-    if (req.query.followUpDue) {
-      where.nextFollowUpDate = { [Op.lte]: new Date().toISOString().slice(0, 10) };
-    }
-
-    const { rows, count } = await models.Connection.findAndCountAll({
-      where,
-      order: [['created_at', 'DESC']],
-      limit: pagination.limit,
-      offset: pagination.offset,
-    });
+    const { rows, count } = await queryConnections(
+      req.auth.userId,
+      filters,
+      req.query.sortBy,
+      req.query.sortOrder,
+      pagination.limit,
+      pagination.offset
+    );
 
     const items = await Promise.all(rows.map(serializeConnection));
-    ok(res, items, makePageMeta({ ...pagination, total: count }));
+    ok(res, items, makePageMeta({ ...pagination, total: count }), 200, filters);
   }),
 );
 
