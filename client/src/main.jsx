@@ -3548,7 +3548,35 @@ function App() {
               )}
             </div>
 
-            <div className="modal-actions">
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
+              <label className="form-label" style={{ fontWeight: 600 }}>Enrich Profile via LinkedIn PDF</label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '8px' }}>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className="form-input"
+                  style={{ maxWidth: '300px' }}
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    setEnrichmentLoading(true);
+                    setEnrichmentError(null);
+                    setModal('linkedin_pdf');
+                    try {
+                      const res = await api.importLinkedInPdf(file);
+                      setEnrichmentPreview(res.data);
+                    } catch (err) {
+                      setEnrichmentError(err.message || 'Failed to parse PDF profile.');
+                    } finally {
+                      setEnrichmentLoading(false);
+                    }
+                  }}
+                />
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Upload PDF to update skills, headline, summary.</span>
+              </div>
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: '24px' }}>
               <button className="btn btn-secondary" onClick={() => setModal(null)}>Close Intel</button>
             </div>
           </div>
