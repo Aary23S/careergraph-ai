@@ -65,6 +65,17 @@ function App() {
   const [enrichmentPreview, setEnrichmentPreview] = useState(null);
   const [enrichmentLoading, setEnrichmentLoading] = useState(false);
   const [enrichmentError, setEnrichmentError] = useState(null);
+  const [pdfObjectURL, setPdfObjectURL] = useState(null);
+
+  const closeEnrichmentModal = () => {
+    if (pdfObjectURL) {
+      URL.revokeObjectURL(pdfObjectURL);
+      setPdfObjectURL(null);
+    }
+    setEnrichmentPreview(null);
+    setEnrichmentError(null);
+    setModal(null);
+  };
 
   // Saved Views States
   const [savedViews, setSavedViews] = useState([]);
@@ -2491,6 +2502,8 @@ function App() {
                             setEnrichmentError(null);
                             setModal('linkedin_pdf');
                             try {
+                              const objectUrl = URL.createObjectURL(file);
+                              setPdfObjectURL(objectUrl);
                               const res = await api.importLinkedInPdf(file);
                               setEnrichmentPreview(res.data);
                             } catch (err) {
@@ -3005,6 +3018,24 @@ function App() {
               <div className="form-group">
                 <label className="form-label">Next Follow Up Date</label>
                 <input type="date" name="nextFollowUpDate" className="form-input" defaultValue={editItem?.nextFollowUpDate || ''} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Headline (LinkedIn / Professional Tagline)</label>
+                <input type="text" name="headline" className="form-input" defaultValue={editItem?.headline || ''} placeholder="e.g. Senior Machine Learning Engineer" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Profile Summary</label>
+                <textarea name="profileSummary" className="form-input" rows="3" defaultValue={editItem?.profileSummary || ''} placeholder="Add a short professional bio or summary..." />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Skills (Comma-separated)</label>
+                  <input type="text" name="skills" className="form-input" defaultValue={editItem?.skills?.join(', ') || ''} placeholder="React, Node.js, Python" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Profile Links (Comma-separated URLs)</label>
+                  <input type="text" name="externalLinks" className="form-input" defaultValue={editItem?.externalLinks?.join(', ') || ''} placeholder="github.com/user, portfolio.com" />
+                </div>
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
@@ -3641,6 +3672,8 @@ function App() {
                     setEnrichmentError(null);
                     setModal('linkedin_pdf');
                     try {
+                      const objectUrl = URL.createObjectURL(file);
+                      setPdfObjectURL(objectUrl);
                       const res = await api.importLinkedInPdf(file);
                       setEnrichmentPreview(res.data);
                     } catch (err) {
@@ -3661,9 +3694,9 @@ function App() {
         </div>
       )}
 
-      {modal === 'linkedin_pdf' && (
+       {modal === 'linkedin_pdf' && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '650px', width: '90%' }}>
+          <div className="modal-content" style={{ maxWidth: pdfObjectURL ? '1100px' : '650px', width: '95%', transition: 'max-width 0.3s ease' }}>
             <h2 className="modal-title">LinkedIn PDF Profile Enrichment</h2>
             
             {enrichmentLoading && (
@@ -3689,6 +3722,8 @@ function App() {
                 setEnrichmentLoading(true);
                 setEnrichmentError(null);
                 try {
+                  const objectUrl = URL.createObjectURL(file);
+                  setPdfObjectURL(objectUrl);
                   const res = await api.importLinkedInPdf(file);
                   setEnrichmentPreview(res.data);
                 } catch (err) {
@@ -3705,42 +3740,96 @@ function App() {
                   <input type="file" name="pdfFile" className="form-input" accept=".pdf" required />
                 </div>
                 <div className="modal-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="button" className="btn btn-secondary" onClick={closeEnrichmentModal}>Cancel</button>
                   <button type="submit" className="btn btn-primary">Parse PDF</button>
                 </div>
               </form>
             )}
 
             {!enrichmentLoading && !enrichmentError && enrichmentPreview && (
-              <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
-                  Profile Extracted: <span style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.name}</span>
-                </h3>
+              <div style={{ display: 'flex', gap: '24px', flexDirection: pdfObjectURL ? 'row' : 'column', alignItems: 'stretch', marginTop: '16px' }}>
+                {pdfObjectURL && (
+                  <div style={{ flex: 1.2, minWidth: '350px', background: 'var(--bg-tertiary)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '12px' }}>Uploaded Profile PDF</h3>
+                    <iframe src={pdfObjectURL} width="100%" height="450px" style={{ border: 'none', borderRadius: '6px', background: '#fff' }}></iframe>
+                  </div>
+                )}
+                
+                <div style={{ flex: 1, minWidth: '300px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
+                    Profile Extracted: <span style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.name}</span>
+                  </h3>
 
-                <div style={{ background: 'var(--bg-tertiary)', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
-                  {enrichmentPreview.parsed.headline && <div><strong>Headline:</strong> {enrichmentPreview.parsed.headline}</div>}
-                  {enrichmentPreview.parsed.email && <div style={{ marginTop: '6px' }}><strong>Email:</strong> {enrichmentPreview.parsed.email}</div>}
-                  {enrichmentPreview.parsed.profileUrl && <div style={{ marginTop: '6px' }}><strong>LinkedIn URL:</strong> <a href={enrichmentPreview.parsed.profileUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.profileUrl}</a></div>}
-                  {enrichmentPreview.parsed.skills && <div style={{ marginTop: '6px' }}><strong>Skills Extracted:</strong> {enrichmentPreview.parsed.skills.join(', ')}</div>}
-                </div>
+                  <div style={{ background: 'var(--bg-tertiary)', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
+                    {enrichmentPreview.parsed.headline && <div><strong>Headline:</strong> {enrichmentPreview.parsed.headline}</div>}
+                    {enrichmentPreview.parsed.email && <div style={{ marginTop: '6px' }}><strong>Email:</strong> {enrichmentPreview.parsed.email}</div>}
+                    {enrichmentPreview.parsed.profileUrl && <div style={{ marginTop: '6px' }}><strong>LinkedIn URL:</strong> <a href={enrichmentPreview.parsed.profileUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.profileUrl}</a></div>}
+                    {enrichmentPreview.parsed.skills && <div style={{ marginTop: '6px' }}><strong>Skills Extracted:</strong> {enrichmentPreview.parsed.skills.join(', ')}</div>}
+                  </div>
 
-                {enrichmentPreview.matched.length > 0 ? (
-                  <div style={{ border: '1px solid var(--warning)', background: 'var(--warning-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
-                    <h4 style={{ color: 'var(--warning)', fontWeight: 700, marginBottom: '8px' }}>Existing Contact Matched</h4>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                      We found a matched profile in your CRM network: <strong>{enrichmentPreview.matched[0].name}</strong> at <strong>{enrichmentPreview.matched[0].company || 'No Company'}</strong> ({enrichmentPreview.matched[0].title || 'No Title'}).
-                    </p>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                  {enrichmentPreview.matched.length > 0 ? (
+                    <div style={{ border: '1px solid var(--warning)', background: 'var(--warning-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
+                      <h4 style={{ color: 'var(--warning)', fontWeight: 700, marginBottom: '8px' }}>Existing Contact Matched</h4>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                        We found a matched profile in your CRM network: <strong>{enrichmentPreview.matched[0].name}</strong> at <strong>{enrichmentPreview.matched[0].company || 'No Company'}</strong> ({enrichmentPreview.matched[0].title || 'No Title'}).
+                      </p>
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <button className="btn btn-primary" onClick={async () => {
+                          setEnrichmentLoading(true);
+                          try {
+                            await api.confirmEnrichment({
+                              action: 'enrich',
+                              parsed: enrichmentPreview.parsed,
+                              connectionId: enrichmentPreview.matched[0].id
+                            });
+                            alert('Connection enriched successfully!');
+                            closeEnrichmentModal();
+                            loadConnections();
+                          } catch (err) {
+                            alert(err.message);
+                          } finally {
+                            setEnrichmentLoading(false);
+                          }
+                        }}>
+                          Enrich Matched Contact
+                        </button>
+                        <button className="btn btn-secondary" onClick={async () => {
+                          if (confirm('Create a new duplicate connection anyway?')) {
+                            setEnrichmentLoading(true);
+                            try {
+                              await api.confirmEnrichment({
+                                action: 'create',
+                                parsed: enrichmentPreview.parsed
+                              });
+                              alert('New duplicate connection created!');
+                              closeEnrichmentModal();
+                              loadConnections();
+                            } catch (err) {
+                              alert(err.message);
+                            } finally {
+                              setEnrichmentLoading(false);
+                            }
+                          }
+                        }}>
+                          Import as New Instead
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ border: '1px solid var(--success)', background: 'var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
+                      <h4 style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '8px' }}>No matches found</h4>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                        This profile does not match any existing contacts in your CRM. Do you want to import them as a new connection?
+                      </p>
                       <button className="btn btn-primary" onClick={async () => {
                         setEnrichmentLoading(true);
                         try {
                           await api.confirmEnrichment({
-                            action: 'enrich',
-                            parsed: enrichmentPreview.parsed,
-                            connectionId: enrichmentPreview.matched[0].id
+                            action: 'create',
+                            parsed: enrichmentPreview.parsed
                           });
-                          alert('Connection enriched successfully!');
-                          setModal(null);
+                          alert('New contact imported successfully!');
+                          closeEnrichmentModal();
                           loadConnections();
                         } catch (err) {
                           alert(err.message);
@@ -3748,59 +3837,14 @@ function App() {
                           setEnrichmentLoading(false);
                         }
                       }}>
-                        Enrich Matched Contact
-                      </button>
-                      <button className="btn btn-secondary" onClick={async () => {
-                        if (confirm('Create a new duplicate connection anyway?')) {
-                          setEnrichmentLoading(true);
-                          try {
-                            await api.confirmEnrichment({
-                              action: 'create',
-                              parsed: enrichmentPreview.parsed
-                            });
-                            alert('New duplicate connection created!');
-                            setModal(null);
-                            loadConnections();
-                          } catch (err) {
-                            alert(err.message);
-                          } finally {
-                            setEnrichmentLoading(false);
-                          }
-                        }
-                      }}>
-                        Import as New Instead
+                        Create New Connection
                       </button>
                     </div>
-                  </div>
-                ) : (
-                  <div style={{ border: '1px solid var(--success)', background: 'var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
-                    <h4 style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '8px' }}>No matches found</h4>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                      This profile does not match any existing contacts in your CRM. Do you want to import them as a new connection?
-                    </p>
-                    <button className="btn btn-primary" onClick={async () => {
-                      setEnrichmentLoading(true);
-                      try {
-                        await api.confirmEnrichment({
-                          action: 'create',
-                          parsed: enrichmentPreview.parsed
-                        });
-                        alert('New contact imported successfully!');
-                        setModal(null);
-                        loadConnections();
-                      } catch (err) {
-                        alert(err.message);
-                      } finally {
-                        setEnrichmentLoading(false);
-                      }
-                    }}>
-                      Create New Connection
-                    </button>
-                  </div>
-                )}
+                  )}
 
-                <div className="modal-actions">
-                  <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                  <div className="modal-actions">
+                    <button className="btn btn-secondary" onClick={closeEnrichmentModal}>Cancel</button>
+                  </div>
                 </div>
               </div>
             )}
