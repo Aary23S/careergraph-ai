@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import { enrichConnectionData } from '../services/enrichment.service.js';
+import { enrichConnectionData } from '../services/connection-intelligence.service.js';
 
 export const APPLICATION_STATUSES = [
   'saved',
