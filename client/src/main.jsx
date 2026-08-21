@@ -2544,6 +2544,53 @@ function App() {
                       </div>
                     </div>
 
+                    {/* ENRICHED PROFILE INFORMATION */}
+                    {(connectionDetail.headline || connectionDetail.profileSummary || (connectionDetail.skills && connectionDetail.skills.length > 0) || (connectionDetail.externalLinks && connectionDetail.externalLinks.length > 0)) && (
+                      <div className="card-panel" style={{ borderLeft: '4px solid var(--success)' }}>
+                        <h2 className="card-title" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>✨ Enriched LinkedIn Profile Intel</span>
+                        </h2>
+
+                        {connectionDetail.headline && (
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Headline</div>
+                            <div style={{ fontWeight: 500, color: '#fff', fontSize: '1.05rem' }}>{connectionDetail.headline}</div>
+                          </div>
+                        )}
+
+                        {connectionDetail.profileSummary && (
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Profile Summary</div>
+                            <div style={{ fontSize: '0.95rem', background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '6px', whiteSpace: 'pre-line' }}>{connectionDetail.profileSummary}</div>
+                          </div>
+                        )}
+
+                        {connectionDetail.skills && connectionDetail.skills.length > 0 && (
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Extracted Skills</div>
+                            <div className="tags-list">
+                              {connectionDetail.skills.map(s => (
+                                <span key={s} className="badge badge-success">{s}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {connectionDetail.externalLinks && connectionDetail.externalLinks.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Profile Links</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {connectionDetail.externalLinks.map(link => (
+                                <a key={link} href={link.startsWith('http') ? link : `https://${link}`} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline', fontSize: '0.9rem' }}>
+                                  {link}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                   </div>
 
                   {/* Right Column */}
