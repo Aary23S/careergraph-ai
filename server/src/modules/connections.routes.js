@@ -655,6 +655,13 @@ router.post(
       );
     }
 
+    if (!matchedConnection && parsed.name) {
+      const targetName = parsed.name.toLowerCase();
+      matchedConnection = allConnections.find(c => 
+        c.name && c.name.toLowerCase() === targetName
+      );
+    }
+
     ok(res, {
       matched: matchedConnection ? [await serializeConnection(matchedConnection)] : [],
       new: matchedConnection ? [] : [parsed],
