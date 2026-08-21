@@ -7,11 +7,13 @@ export class AppError extends Error {
   }
 }
 
-export function ok(res, data, meta, status = 200) {
+export function ok(res, data, meta, status = 200, filters = undefined) {
   return res.status(status).json({
     success: true,
     data,
     meta: meta ?? undefined,
+    pagination: meta ?? undefined,
+    filters: filters ?? undefined,
   });
 }
 
