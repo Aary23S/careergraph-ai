@@ -50,6 +50,14 @@ function App() {
   const [loadingOverview, setLoadingOverview] = useState(false);
   const [overviewError, setOverviewError] = useState(null);
 
+  // Saved Views States
+  const [savedViews, setSavedViews] = useState([]);
+  const [activeViewId, setActiveViewId] = useState('all'); // 'all', 'high_priority', 'never_contacted', 'follow_ups', or view UUID
+  const [activeViewName, setActiveViewName] = useState('All Connections');
+  const [showSaveViewModal, setShowSaveViewModal] = useState(false);
+  const [newViewName, setNewViewName] = useState('');
+  const [newViewDesc, setNewViewDesc] = useState('');
+
   // Auth Forms State
   const [authTab, setAuthTab] = useState('login'); // 'login', 'register', 'forgot'
   const [authEmail, setAuthEmail] = useState('');
@@ -106,6 +114,253 @@ function App() {
     } finally {
       setLoadingOverview(false);
     }
+  };
+
+  const loadSavedViews = async () => {
+    try {
+      const res = await api.request('/connections/views');
+      setSavedViews(res.data || []);
+    } catch (e) {
+      console.error('Failed to load saved views', e);
+    }
+  };
+
+  // URL synchronization
+  const updateURLFromFilters = (filters) => {
+    const query = new URLSearchParams();
+    Object.keys(filters).forEach((key) => {
+      const val = filters[key];
+      if (val !== undefined && val !== null && val !== '') {
+        if (Array.isArray(val)) {
+          if (val.length > 0) {
+            query.set(key, val.join(','));
+          }
+        } else {
+          query.set(key, val);
+        }
+      }
+    });
+    const newRelativePathQuery = window.location.pathname + '?' + query.toString();
+    window.history.pushState(null, '', newRelativePathQuery);
+  };
+
+  const loadFiltersFromURL = () => {
+    const params = new URLSearchParams(window.location.search);
+    const filters = { page: 1, pageSize: 10 };
+    
+    if (params.get('q')) filters.q = params.get('q');
+    if (params.get('company')) filters.company = params.get('company');
+    if (params.get('title')) filters.title = params.get('title');
+    if (params.get('hasEmail')) filters.hasEmail = params.get('hasEmail') === 'true';
+    if (params.get('relationshipStatus')) filters.relationshipStatus = params.get('relationshipStatus');
+    if (params.get('followUpDue')) filters.followUpDue = params.get('followUpDue') === 'true';
+    
+    if (params.get('companies')) filters.companies = params.get('companies').split(',');
+    if (params.get('seniority')) filters.seniority = params.get('seniority').split(',');
+    if (params.get('roleCategory')) filters.roleCategory = params.get('roleCategory').split(',');
+    if (params.get('priority')) filters.priority = params.get('priority').split(',');
+
+    if (params.get('sortBy')) filters.sortBy = params.get('sortBy');
+    if (params.get('sortOrder')) filters.sortOrder = params.get('sortOrder');
+    
+    return filters;
+  };
+
+  useEffect(() => {
+    if (window.location.search) {
+      const parsedFilters = loadFiltersFromURL();
+      setConnFilters(prev => ({ ...prev, ...parsedFilters }));
+      setConnectionSubTab('all');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'connections') {
+      updateURLFromFilters(connFilters);
+    }
+  }, [connFilters, activeTab]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'connections') {
+      loadSavedViews();
+    }
+  }, [isAuthenticated, activeTab]);
+
+  const handleSaveView = async () => {
+    if (!newViewName.trim()) return;
+    try {
+      const payload = {
+        name: newViewName.trim(),
+        description: newViewDesc.trim() || null,
+        filters: {
+          q: connFilters.q || undefined,
+          company: connFilters.company || undefined,
+          companies: connFilters.companies || undefined,
+          title: connFilters.title || undefined,
+          seniority: connFilters.seniority || undefined,
+          roleCategory: connFilters.roleCategory || undefined,
+          relationshipStatus: connFilters.relationshipStatus || undefined,
+          priority: connFilters.priority || undefined,
+          hasEmail: connFilters.hasEmail !== undefined ? connFilters.hasEmail : undefined,
+          followUpDue: connFilters.followUpDue || undefined,
+        },
+        sort: {
+          sortBy: connFilters.sortBy || 'connectedDate',
+          sortOrder: connFilters.sortOrder || 'desc',
+        }
+      };
+
+      let res;
+      if (activeViewId && activeViewId !== 'all' && activeViewId !== 'high_priority' && activeViewId !== 'never_contacted' && activeViewId !== 'follow_ups') {
+        res = await api.request(`/connections/views/${activeViewId}`, {
+          method: 'PUT',
+          body: payload
+        });
+        alert('View updated successfully!');
+      } else {
+        res = await api.request('/connections/views', {
+          method: 'POST',
+          body: payload
+        });
+        alert('New view saved successfully!');
+      }
+      setShowSaveViewModal(false);
+      setNewViewName('');
+      setNewViewDesc('');
+      loadSavedViews();
+      if (res && res.data) {
+        setActiveViewId(res.data.id);
+        setActiveViewName(res.data.name);
+      }
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const handleSaveAsNewView = async () => {
+    const name = prompt('Enter a name for the new saved view:');
+    if (!name || !name.trim()) return;
+    try {
+      const payload = {
+        name: name.trim(),
+        filters: {
+          q: connFilters.q || undefined,
+          company: connFilters.company || undefined,
+          companies: connFilters.companies || undefined,
+          title: connFilters.title || undefined,
+          seniority: connFilters.seniority || undefined,
+          roleCategory: connFilters.roleCategory || undefined,
+          relationshipStatus: connFilters.relationshipStatus || undefined,
+          priority: connFilters.priority || undefined,
+          hasEmail: connFilters.hasEmail !== undefined ? connFilters.hasEmail : undefined,
+          followUpDue: connFilters.followUpDue || undefined,
+        },
+        sort: {
+          sortBy: connFilters.sortBy || 'connectedDate',
+          sortOrder: connFilters.sortOrder || 'desc',
+        }
+      };
+
+      const res = await api.request('/connections/views', {
+        method: 'POST',
+        body: payload
+      });
+      alert('View saved successfully!');
+      loadSavedViews();
+      if (res && res.data) {
+        setActiveViewId(res.data.id);
+        setActiveViewName(res.data.name);
+      }
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const handleDuplicateView = async (id) => {
+    try {
+      await api.request(`/connections/views/${id}/duplicate`, { method: 'POST' });
+      alert('View duplicated successfully!');
+      loadSavedViews();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const handleDeleteView = async (id) => {
+    if (!confirm('Are you sure you want to delete this saved view? Connections will not be deleted.')) return;
+    try {
+      await api.request(`/connections/views/${id}`, { method: 'DELETE' });
+      alert('View deleted successfully!');
+      if (activeViewId === id) {
+        handleApplyBuiltinView('all');
+      }
+      loadSavedViews();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const handleRenameView = async (id, currentName) => {
+    const name = prompt('Enter new name:', currentName);
+    if (!name || !name.trim() || name.trim() === currentName) return;
+    try {
+      await api.request(`/connections/views/${id}`, {
+        method: 'PUT',
+        body: { name: name.trim() }
+      });
+      alert('View renamed successfully!');
+      if (activeViewId === id) {
+        setActiveViewName(name.trim());
+      }
+      loadSavedViews();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  const handleLoadSavedView = (view) => {
+    setActiveViewId(view.id);
+    setActiveViewName(view.name);
+    
+    const filters = {
+      page: 1,
+      pageSize: 10,
+      q: view.filtersJson.q || '',
+      company: view.filtersJson.company || '',
+      companies: view.filtersJson.companies || [],
+      title: view.filtersJson.title || '',
+      seniority: view.filtersJson.seniority || [],
+      roleCategory: view.filtersJson.roleCategory || [],
+      relationshipStatus: view.filtersJson.relationshipStatus || '',
+      priority: view.filtersJson.priority || [],
+      hasEmail: view.filtersJson.hasEmail,
+      followUpDue: view.filtersJson.followUpDue,
+      sortBy: view.sortJson.sortBy || 'connectedDate',
+      sortOrder: view.sortJson.sortOrder || 'desc',
+    };
+    
+    setConnFilters(filters);
+    setConnectionSubTab('all');
+    api.request(`/connections/views/${view.id}`).catch(() => {});
+  };
+
+  const handleApplyBuiltinView = (type) => {
+    setActiveViewId(type);
+    let filters = { page: 1, pageSize: 10, q: '', company: '', title: '' };
+    if (type === 'all') {
+      setActiveViewName('All Connections');
+    } else if (type === 'high_priority') {
+      setActiveViewName('High Priority');
+      filters.priority = ['high'];
+    } else if (type === 'never_contacted') {
+      setActiveViewName('Never Contacted');
+      filters.relationshipStatus = 'not_contacted';
+    } else if (type === 'follow_ups') {
+      setActiveViewName('Follow-ups Due');
+      filters.followUpDue = true;
+    }
+    setConnFilters(filters);
+    setConnectionSubTab('all');
   };
 
   const loadConnectionDetail = async (id) => {
@@ -1029,8 +1284,164 @@ function App() {
             {/* DIRECTORY LIST SUB-TAB */}
             {connectionSubTab === 'all' && (
               <div>
+                {/* Saved Views Control Panel */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px', borderLeft: '4px solid var(--primary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 600 }}>Active Segment:</span>
+                    <div className="dropdown" style={{ position: 'relative', display: 'inline-block' }}>
+                      <select
+                        className="form-input"
+                        style={{ minWidth: '220px', fontWeight: 600, background: 'var(--bg-primary)', color: 'var(--primary)' }}
+                        value={activeViewId || 'all'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === 'all' || val === 'high_priority' || val === 'never_contacted' || val === 'follow_ups') {
+                            handleApplyBuiltinView(val);
+                          } else {
+                            const found = savedViews.find(v => v.id === val);
+                            if (found) handleLoadSavedView(found);
+                          }
+                        }}
+                      >
+                        <optgroup label="System Views">
+                          <option value="all">All Connections</option>
+                          <option value="high_priority">High Priority Only</option>
+                          <option value="never_contacted">Never Contacted</option>
+                          <option value="follow_ups">Follow-ups Due</option>
+                        </optgroup>
+                        {savedViews.length > 0 && (
+                          <optgroup label="Custom Saved Views">
+                            {savedViews.map(view => (
+                              <option key={view.id} value={view.id}>{view.name}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </select>
+                    </div>
+
+                    <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+                      {activeViewName}
+                      {activeViewId && activeViewId !== 'all' && activeViewId !== 'high_priority' && activeViewId !== 'never_contacted' && activeViewId !== 'follow_ups' && (
+                        <span>
+                          {(() => {
+                            const active = savedViews.find(v => v.id === activeViewId);
+                            if (active) {
+                              const cleanFilters = (f) => ({
+                                q: f.q || '',
+                                company: f.company || '',
+                                title: f.title || '',
+                                hasEmail: f.hasEmail,
+                                relationshipStatus: f.relationshipStatus || '',
+                                followUpDue: !!f.followUpDue,
+                                companies: f.companies || [],
+                                seniority: f.seniority || [],
+                                roleCategory: f.roleCategory || [],
+                                priority: f.priority || []
+                              });
+                              const diff = JSON.stringify(cleanFilters(connFilters)) !== JSON.stringify(cleanFilters(active.filtersJson)) ||
+                                           (connFilters.sortBy || 'connectedDate') !== (active.sortJson.sortBy || 'connectedDate') ||
+                                           (connFilters.sortOrder || 'desc') !== (active.sortJson.sortOrder || 'desc');
+                              return diff ? ' * (unsaved changes)' : '';
+                            }
+                            return '';
+                          })()}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {activeViewId && activeViewId !== 'all' && activeViewId !== 'high_priority' && activeViewId !== 'never_contacted' && activeViewId !== 'follow_ups' && (
+                      <>
+                        <button className="btn btn-primary" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={handleSaveView}>Save Changes</button>
+                        <button className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={() => handleRenameView(activeViewId, activeViewName)}>Rename</button>
+                        <button className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={() => handleDuplicateView(activeViewId)}>Duplicate</button>
+                        <button className="btn btn-danger" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={() => handleDeleteView(activeViewId)}>Delete View</button>
+                      </>
+                    )}
+                    <button className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={() => {
+                      setNewViewName(activeViewId && activeViewId !== 'all' && activeViewId !== 'high_priority' && activeViewId !== 'never_contacted' && activeViewId !== 'follow_ups' ? `${activeViewName} Copy` : 'My Custom View');
+                      setShowSaveViewModal(true);
+                    }}>Save View As...</button>
+                  </div>
+                </div>
+
+                {/* Active Filter Chips */}
+                {(() => {
+                  const chips = [];
+                  if (connFilters.q) chips.push({ label: `Search: ${connFilters.q}`, key: 'q', value: '' });
+                  if (connFilters.company) chips.push({ label: `Company: ${connFilters.company}`, key: 'company', value: '' });
+                  if (connFilters.title) chips.push({ label: `Title: ${connFilters.title}`, key: 'title', value: '' });
+                  if (connFilters.hasEmail !== undefined) chips.push({ label: connFilters.hasEmail ? 'Has Email' : 'No Email', key: 'hasEmail', value: undefined });
+                  if (connFilters.relationshipStatus) chips.push({ label: `Status: ${connFilters.relationshipStatus}`, key: 'relationshipStatus', value: undefined });
+                  if (connFilters.followUpDue) chips.push({ label: `Follow-up Due`, key: 'followUpDue', value: undefined });
+
+                  if (connFilters.companies && connFilters.companies.length > 0) {
+                    connFilters.companies.forEach(c => {
+                      chips.push({ label: `Company: ${c}`, key: 'companies', value: c });
+                    });
+                  }
+                  if (connFilters.seniority && connFilters.seniority.length > 0) {
+                    connFilters.seniority.forEach(s => {
+                      chips.push({ label: `Seniority: ${s}`, key: 'seniority', value: s });
+                    });
+                  }
+                  if (connFilters.roleCategory && connFilters.roleCategory.length > 0) {
+                    connFilters.roleCategory.forEach(r => {
+                      chips.push({ label: `Role: ${r}`, key: 'roleCategory', value: r });
+                    });
+                  }
+                  if (connFilters.priority && connFilters.priority.length > 0) {
+                    connFilters.priority.forEach(p => {
+                      chips.push({ label: `Priority: ${p}`, key: 'priority', value: p });
+                    });
+                  }
+
+                  if (chips.length === 0) return null;
+
+                  return (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Active Filters:</span>
+                      {chips.map((chip, idx) => (
+                        <span key={idx} className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', fontSize: '0.85rem' }}>
+                          {chip.label}
+                          <span
+                            style={{ cursor: 'pointer', fontWeight: 'bold', marginLeft: '4px' }}
+                            onClick={() => {
+                              if (chip.key === 'companies' || chip.key === 'seniority' || chip.key === 'roleCategory' || chip.key === 'priority') {
+                                setConnFilters({
+                                  ...connFilters,
+                                  [chip.key]: connFilters[chip.key].filter(v => v !== chip.value),
+                                  page: 1
+                                });
+                              } else {
+                                setConnFilters({
+                                  ...connFilters,
+                                  [chip.key]: chip.value,
+                                  page: 1
+                                });
+                              }
+                            }}
+                          >
+                            &times;
+                          </span>
+                        </span>
+                      ))}
+                      <button
+                        className="btn-link"
+                        style={{ fontSize: '0.85rem', color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer' }}
+                        onClick={() => {
+                          setConnFilters({ page: 1, pageSize: 10, q: '', company: '', title: '' });
+                        }}
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  );
+                })()}
+
                 {/* Filter Bar */}
-                <div className="filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
+                <div className="filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
                   <div className="form-group" style={{ margin: 0, minWidth: '150px' }}>
                     <label className="form-label">Search Query</label>
                     <input
@@ -1147,6 +1558,76 @@ function App() {
                     </button>
                   </div>
                 </div>
+
+                {/* Collapsible Advanced Filters Drawer */}
+                <details style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--primary)' }}>Advanced Attribute Filters</summary>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginTop: '12px' }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>Seniority</h4>
+                      {['mid', 'senior', 'junior', 'intern', 'lead', 'manager', 'director', 'executive', 'founder', 'unknown'].map(lvl => (
+                        <label key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', marginBottom: '4px', textTransform: 'capitalize', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={connFilters.seniority?.includes(lvl) || false}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              const current = connFilters.seniority || [];
+                              setConnFilters({
+                                ...connFilters,
+                                seniority: checked ? [...current, lvl] : current.filter(v => v !== lvl),
+                                page: 1
+                              });
+                            }}
+                          />
+                          {lvl}
+                        </label>
+                      ))}
+                    </div>
+                    <div>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>Role Category</h4>
+                      {['engineering', 'data', 'product', 'recruiting', 'sales', 'marketing', 'design', 'finance', 'other'].map(cat => (
+                        <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', marginBottom: '4px', textTransform: 'capitalize', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={connFilters.roleCategory?.includes(cat) || false}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              const current = connFilters.roleCategory || [];
+                              setConnFilters({
+                                ...connFilters,
+                                roleCategory: checked ? [...current, cat] : current.filter(v => v !== cat),
+                                page: 1
+                              });
+                            }}
+                          />
+                          {cat.replace('_', ' ')}
+                        </label>
+                      ))}
+                    </div>
+                    <div>
+                      <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>Priority</h4>
+                      {['high', 'medium', 'low', 'none'].map(prio => (
+                        <label key={prio} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', marginBottom: '4px', textTransform: 'capitalize', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={connFilters.priority?.includes(prio) || false}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              const current = connFilters.priority || [];
+                              setConnFilters({
+                                ...connFilters,
+                                priority: checked ? [...current, prio] : current.filter(v => v !== prio),
+                                page: 1
+                              });
+                            }}
+                          />
+                          {prio}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </details>
 
                 <div className="card-panel">
                   {connections.length === 0 ? (
@@ -2382,6 +2863,38 @@ function App() {
 
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setModal(null)}>Close Intel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSaveViewModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '450px' }}>
+            <h2 className="modal-title">Save Connection Segment View</h2>
+            <div className="form-group">
+              <label className="form-label">View Name</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. Google Recruiters"
+                value={newViewName}
+                onChange={(e) => setNewViewName(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Description (Optional)</label>
+              <textarea
+                className="form-input"
+                rows="3"
+                placeholder="Senior Engineering Recruiters in SF"
+                value={newViewDesc}
+                onChange={(e) => setNewViewDesc(e.target.value)}
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setShowSaveViewModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSaveView}>Save View</button>
             </div>
           </div>
         </div>

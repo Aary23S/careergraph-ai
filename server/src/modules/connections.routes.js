@@ -57,7 +57,6 @@ const querySchema = Joi.object({
   lastContactedTo: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).message('lastContactedTo must be in format YYYY-MM-DD').allow('', null),
   followUpFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).message('followUpFrom must be in format YYYY-MM-DD').allow('', null),
   followUpTo: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).message('followUpTo must be in format YYYY-MM-DD').allow('', null),
-  followUpDue: Joi.boolean(),
   sortBy: Joi.string().valid(
     'name',
     'company',
@@ -70,6 +69,46 @@ const querySchema = Joi.object({
     'seniority'
   ).default('connectedDate'),
   sortOrder: Joi.string().lowercase().valid('asc', 'desc').default('desc'),
+});
+
+const savedViewFiltersSchema = Joi.object({
+  search: Joi.string().allow('', null),
+  q: Joi.string().allow('', null),
+  company: Joi.string().allow('', null),
+  companies: Joi.array().items(Joi.string()).allow(null),
+  position: Joi.string().allow('', null),
+  positions: Joi.array().items(Joi.string()).allow(null),
+  seniority: Joi.array().items(Joi.string()).allow(null),
+  roleCategory: Joi.array().items(Joi.string()).allow(null),
+  relationshipStatus: Joi.array().items(Joi.string()).allow(null),
+  relationshipStrength: Joi.array().items(Joi.string()).allow(null),
+  priority: Joi.array().items(Joi.string()).allow(null),
+  hasEmail: Joi.boolean().allow(null),
+  connectedFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).allow('', null),
+  connectedTo: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).allow('', null),
+  lastContactedFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).allow('', null),
+  lastContactedTo: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).allow('', null),
+  followUpDue: Joi.boolean().allow(null),
+}).unknown(true);
+
+const savedViewCreateSchema = Joi.object({
+  name: Joi.string().max(100).required(),
+  description: Joi.string().allow('', null),
+  filters: savedViewFiltersSchema.required(),
+  sort: Joi.object({
+    sortBy: Joi.string().valid('connectedDate', 'connectionScore', 'name', 'company', 'title', 'lastContactedDate', 'nextFollowUpDate', 'priority').default('connectedDate'),
+    sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
+  }).required(),
+});
+
+const savedViewUpdateSchema = Joi.object({
+  name: Joi.string().max(100),
+  description: Joi.string().allow('', null),
+  filters: savedViewFiltersSchema,
+  sort: Joi.object({
+    sortBy: Joi.string().valid('connectedDate', 'connectionScore', 'name', 'company', 'title', 'lastContactedDate', 'nextFollowUpDate', 'priority'),
+    sortOrder: Joi.string().valid('asc', 'desc'),
+  }),
 });
 
 function mapCsvRecord(record) {
@@ -413,6 +452,133 @@ router.get(
     const overview = await getDashboardOverview(req.auth.userId);
     ok(res, overview);
   }),
+);
+
+router.get(
+  '/views',
+  asyncHandler(async (req, res) => {
+    const views = await models.SavedConnectionView.findAll({
+      where: { user_id: req.auth.userId },
+      order: [['updatedAt', 'DESC']],
+    });
+    ok(res, views);
+  })
+);
+
+router.post(
+  '/views',
+  validate(savedViewCreateSchema),
+  asyncHandler(async (req, res) => {
+    const existing = await models.SavedConnectionView.findOne({
+      where: { user_id: req.auth.userId, name: req.body.name }
+    });
+    if (existing) {
+      throw new AppError(409, 'DUPLICATE_NAME', 'A saved view with this name already exists.');
+    }
+
+    const view = await models.SavedConnectionView.create({
+      user_id: req.auth.userId,
+      name: req.body.name,
+      description: req.body.description || null,
+      filtersJson: req.body.filters,
+      sortJson: req.body.sort,
+      filterVersion: 1,
+    });
+    created(res, view);
+  })
+);
+
+router.get(
+  '/views/:id',
+  asyncHandler(async (req, res) => {
+    const view = await models.SavedConnectionView.findOne({
+      where: { id: req.params.id, user_id: req.auth.userId },
+    });
+    if (!view) {
+      throw new AppError(404, 'NOT_FOUND', 'Saved view not found.');
+    }
+    await view.update({ lastUsedAt: new Date() });
+    ok(res, view);
+  })
+);
+
+router.put(
+  '/views/:id',
+  validate(savedViewUpdateSchema),
+  asyncHandler(async (req, res) => {
+    const view = await models.SavedConnectionView.findOne({
+      where: { id: req.params.id, user_id: req.auth.userId },
+    });
+    if (!view) {
+      throw new AppError(404, 'NOT_FOUND', 'Saved view not found.');
+    }
+
+    if (req.body.name && req.body.name !== view.name) {
+      const existing = await models.SavedConnectionView.findOne({
+        where: { user_id: req.auth.userId, name: req.body.name }
+      });
+      if (existing) {
+        throw new AppError(409, 'DUPLICATE_NAME', 'A saved view with this name already exists.');
+      }
+    }
+
+    await view.update({
+      name: req.body.name !== undefined ? req.body.name : view.name,
+      description: req.body.description !== undefined ? req.body.description : view.description,
+      filtersJson: req.body.filters !== undefined ? req.body.filters : view.filtersJson,
+      sortJson: req.body.sort !== undefined ? req.body.sort : view.sortJson,
+    });
+    ok(res, view);
+  })
+);
+
+router.delete(
+  '/views/:id',
+  asyncHandler(async (req, res) => {
+    const view = await models.SavedConnectionView.findOne({
+      where: { id: req.params.id, user_id: req.auth.userId },
+    });
+    if (!view) {
+      throw new AppError(404, 'NOT_FOUND', 'Saved view not found.');
+    }
+    await view.destroy();
+    ok(res, { message: 'Saved view deleted successfully.' });
+  })
+);
+
+router.post(
+  '/views/:id/duplicate',
+  asyncHandler(async (req, res) => {
+    const view = await models.SavedConnectionView.findOne({
+      where: { id: req.params.id, user_id: req.auth.userId },
+    });
+    if (!view) {
+      throw new AppError(404, 'NOT_FOUND', 'Saved view not found.');
+    }
+    
+    let name = `${view.name} (Copy)`;
+    let existing = await models.SavedConnectionView.findOne({
+      where: { user_id: req.auth.userId, name }
+    });
+    let counter = 1;
+    while (existing) {
+      name = `${view.name} (Copy ${counter})`;
+      existing = await models.SavedConnectionView.findOne({
+        where: { user_id: req.auth.userId, name }
+      });
+      counter++;
+    }
+
+    const dup = await models.SavedConnectionView.create({
+      user_id: req.auth.userId,
+      name,
+      description: view.description,
+      filtersJson: view.filtersJson,
+      sortJson: view.sortJson,
+      filterVersion: view.filterVersion,
+    });
+    created(res, dup);
+  })
 );
 
 router.get(

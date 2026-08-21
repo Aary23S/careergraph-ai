@@ -10,7 +10,6 @@ describe('CareerGraph Phase 2.5-D: Individual Connection CRM Detail Tests', () =
   let userIdA;
   let userIdB;
   let connA;
-  let connB;
 
   beforeAll(async () => {
     app = createApp();
@@ -45,7 +44,7 @@ describe('CareerGraph Phase 2.5-D: Individual Connection CRM Detail Tests', () =
     });
 
     // Create Connection for User B
-    connB = await models.Connection.create({
+    await models.Connection.create({
       user_id: userIdB,
       name: 'Bob Connection',
       company: 'Apple',

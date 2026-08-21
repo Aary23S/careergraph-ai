@@ -279,6 +279,20 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'user_preferences' },
   );
 
+  const SavedConnectionView = sequelize.define(
+    'SavedConnectionView',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      name: { type: DataTypes.STRING, allowNull: false },
+      description: { type: DataTypes.TEXT, allowNull: true },
+      filtersJson: { type: DataTypes.JSON, allowNull: false, field: 'filters_json' },
+      sortJson: { type: DataTypes.JSON, allowNull: false, field: 'sort_json' },
+      filterVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'filter_version' },
+      lastUsedAt: { type: DataTypes.DATE, allowNull: true, field: 'last_used_at' },
+    },
+    { ...baseOptions, tableName: 'saved_connection_views' },
+  );
+
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -330,6 +344,9 @@ export function initializeModels(sequelize) {
   User.hasOne(UserPreference, { foreignKey: 'user_id', as: 'preferences' });
   UserPreference.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+  User.hasMany(SavedConnectionView, { foreignKey: 'user_id', as: 'savedViews' });
+  SavedConnectionView.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
   return {
     User,
     RefreshToken,
@@ -346,5 +363,6 @@ export function initializeModels(sequelize) {
     Note,
     Notification,
     UserPreference,
+    SavedConnectionView,
   };
 }
