@@ -2472,6 +2472,37 @@ function App() {
                       </div>
                     </div>
 
+                    {/* LinkedIn PDF Enrichment Panel */}
+                    <div className="card-panel">
+                      <h2 className="card-title" style={{ marginBottom: '12px' }}>Enrich via LinkedIn PDF</h2>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>
+                        Upload a LinkedIn profile PDF to automatically extract and enrich headline, summary, links, and top skills for {connectionDetail.name}.
+                      </p>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          className="form-input"
+                          style={{ maxWidth: '300px' }}
+                          onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            setEnrichmentLoading(true);
+                            setEnrichmentError(null);
+                            setModal('linkedin_pdf');
+                            try {
+                              const res = await api.importLinkedInPdf(file);
+                              setEnrichmentPreview(res.data);
+                            } catch (err) {
+                              setEnrichmentError(err.message || 'Failed to parse PDF profile.');
+                            } finally {
+                              setEnrichmentLoading(false);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
                     {/* PROFESSIONAL Information */}
                     <div className="card-panel">
                       <h2 className="card-title" style={{ marginBottom: '16px' }}>Professional Profile</h2>
