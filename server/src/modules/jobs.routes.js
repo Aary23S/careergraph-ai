@@ -13,6 +13,7 @@ import {
   determineActionRecommendation,
   extractSkillsFromText,
 } from '../services/intelligence.service.js';
+import { getJobNetworkDetails } from '../services/job-network.service.js';
 
 const router = Router();
 
@@ -245,6 +246,14 @@ router.get(
     const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
     const items = await Promise.all(rows.map(row => serializeJob(row, profile, req.auth.userId)));
     ok(res, items, makePageMeta({ ...pagination, total: count }));
+  }),
+);
+
+router.get(
+  '/:jobId/network',
+  asyncHandler(async (req, res) => {
+    const details = await getJobNetworkDetails(req.auth.userId, req.params.jobId, req.query);
+    ok(res, details);
   }),
 );
 
