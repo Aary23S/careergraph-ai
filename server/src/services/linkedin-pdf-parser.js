@@ -27,13 +27,49 @@ export async function parseLinkedInPDF(buffer) {
   let externalLinks = [];
 
   // 1. Extract Name & Headline
-  // Typically, name is the very first line or top line, followed by the headline.
-  if (lines.length > 0) {
-    name = lines[0];
+  // Typically, we want the first real line that is NOT a handle, email, link, or header.
+  let nameIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lower = line.toLowerCase();
     
-    // Find headline (often line 2, but make sure it isn't a section header like "Contact" or "Summary")
-    if (lines.length > 1 && !['contact', 'summary', 'skills', 'experience', 'education'].includes(lines[1].toLowerCase())) {
-      headline = lines[1];
+    if (
+      lower.includes('(linkedin)') ||
+      lower.includes('linkedin.com') ||
+      lower.includes('@') ||
+      ['contact', 'summary', 'skills', 'experience', 'education', 'about', 'top skills'].includes(lower) ||
+      /page\s+\d+/i.test(lower)
+    ) {
+      continue;
+    }
+    
+    name = line;
+    nameIdx = i;
+    break;
+  }
+  
+  if (!name) {
+    name = 'Unknown Contact';
+  }
+
+  // Extract Headline (first valid line immediately following the name)
+  if (nameIdx !== -1 && nameIdx + 1 < lines.length) {
+    for (let i = nameIdx + 1; i < lines.length; i++) {
+      const line = lines[i];
+      const lower = line.toLowerCase();
+      
+      if (
+        lower.includes('(linkedin)') ||
+        lower.includes('linkedin.com') ||
+        lower.includes('@') ||
+        ['contact', 'summary', 'skills', 'experience', 'education', 'about', 'top skills'].includes(lower) ||
+        /page\s+\d+/i.test(lower)
+      ) {
+        continue;
+      }
+      
+      headline = line;
+      break;
     }
   }
 
@@ -90,15 +126,9 @@ export async function parseLinkedInPDF(buffer) {
     }
   }
 
-  // Fallback to name extraction if name is missing or matches contact keyword
-  if (!name || name.toLowerCase() === 'contact') {
-    // Look for first line that is not a section heading or email/url
-    name = lines.find(l => {
-      const lower = l.toLowerCase();
-      return !['contact', 'summary', 'skills', 'experience', 'education', 'about'].includes(lower) && 
-             !lower.includes('@') && 
-             !lower.includes('linkedin.com');
-    }) || 'Unknown Contact';
+  // Fallback check (already handled by main loop above)
+  if (!name) {
+    name = 'Unknown Contact';
   }
 
   let company = null;
