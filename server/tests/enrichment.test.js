@@ -9,7 +9,7 @@ import {
   calculateProfileCompleteness,
   calculateConnectionScore,
   determinePriority
-} from '../src/services/enrichment.service.js';
+} from '../src/services/connection-intelligence.service.js';
 
 describe('CareerGraph Connection Enrichment Tests', () => {
   let app;
@@ -33,20 +33,20 @@ describe('CareerGraph Connection Enrichment Tests', () => {
   });
 
   describe('1. Company and Position Normalization', () => {
-    it('normalizes company names by stripping common suffixes and title-casing', () => {
-      expect(normalizeCompany('stripe inc.')).toBe('Stripe');
-      expect(normalizeCompany('google llc')).toBe('Google');
-      expect(normalizeCompany('Microsoft Corp')).toBe('Microsoft');
-      expect(normalizeCompany('Acme Co.  ')).toBe('Acme');
-      expect(normalizeCompany('Siemens gmbh')).toBe('Siemens');
+    it('normalizes company names by stripping common suffixes and lowercasing', () => {
+      expect(normalizeCompany('stripe inc.')).toBe('stripe');
+      expect(normalizeCompany('google llc')).toBe('google');
+      expect(normalizeCompany('Microsoft Corp')).toBe('microsoft');
+      expect(normalizeCompany('Acme Co.  ')).toBe('acme');
+      expect(normalizeCompany('Siemens gmbh')).toBe('siemens');
       expect(normalizeCompany(null)).toBeNull();
     });
 
-    it('normalizes position titles by replacing abbreviations and title-casing', () => {
-      expect(normalizePosition('sr. software eng')).toBe('Senior Software Engineer');
-      expect(normalizePosition('jr. dev')).toBe('Junior Dev');
-      expect(normalizePosition('vp of product')).toBe('Vice President Of Product');
-      expect(normalizePosition('engineering mgr')).toBe('Engineering Manager');
+    it('normalizes position titles by replacing abbreviations and lowercasing', () => {
+      expect(normalizePosition('sr. software eng')).toBe('senior software engineer');
+      expect(normalizePosition('jr. dev')).toBe('junior dev');
+      expect(normalizePosition('vp of product')).toBe('vice president of product');
+      expect(normalizePosition('engineering mgr')).toBe('engineering manager');
       expect(normalizePosition(null)).toBeNull();
     });
   });
@@ -62,7 +62,7 @@ describe('CareerGraph Connection Enrichment Tests', () => {
       expect(classifySeniority('Director of Engineering')).toBe('director');
       expect(classifySeniority('CTO')).toBe('executive');
       expect(classifySeniority('Co-Founder')).toBe('founder');
-      expect(classifySeniority('Associate Specialist')).toBe('entry');
+      expect(classifySeniority('Associate Specialist')).toBe('junior');
       expect(classifySeniority('Software Engineer')).toBe('mid');
       expect(classifySeniority(null)).toBe('unknown');
     });
@@ -157,8 +157,8 @@ describe('CareerGraph Connection Enrichment Tests', () => {
 
       expect(res.status).toBe(201);
       const conn = res.body.data;
-      expect(conn.normalizedCompany).toBe('Stripe');
-      expect(conn.normalizedPosition).toBe('Senior Backend Developer');
+      expect(conn.normalizedCompany).toBe('stripe');
+      expect(conn.normalizedPosition).toBe('senior backend developer');
       expect(conn.seniorityLevel).toBe('senior');
       expect(conn.roleCategory).toBe('backend');
       expect(conn.priority).toBe('medium');
