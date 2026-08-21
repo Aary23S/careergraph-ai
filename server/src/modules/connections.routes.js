@@ -27,6 +27,7 @@ const createSchema = Joi.object({
   notes: Joi.string().allow('', null),
   relationshipStatus: Joi.string().allow('', null),
   relationshipStrength: Joi.string().allow('', null),
+  priority: Joi.string().allow('', null),
   lastContactedDate: Joi.string().allow('', null),
   nextFollowUpDate: Joi.string().allow('', null),
   tags: Joi.array().items(Joi.string()).default([]),
@@ -437,15 +438,24 @@ router.get(
       referralScore: calculateReferralScore(connection, job)
     }));
 
+    const notes = await models.Note.findAll({
+      where: { user_id: req.auth.userId, entityType: 'connection', entityId: connection.id },
+      order: [['created_at', 'DESC']]
+    });
+
+    const outreachEvents = outreach ? (outreach.events || []) : [];
+
     ok(res, {
       ...base,
-      relevantCompanies: connection.company ? [connection.company] : [],
-      relevantRoles: connection.title ? [connection.title] : [],
-      associatedJobs,
-      referralOpportunities,
-      outreachHistory: outreach ? outreach.events : [],
+      tags: base.tags || [],
+      notes,
+      outreach: outreachEvents,
+      outreachHistory: outreachEvents,
       outreachNotes: outreach ? outreach.notes : '',
       outreachStatus: outreach ? outreach.status : 'not_contacted',
+      relatedJobs: associatedJobs,
+      associatedJobs,
+      referralOpportunities,
       followUpDate: connection.nextFollowUpDate
     });
   }),

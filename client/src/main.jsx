@@ -36,6 +36,14 @@ function App() {
   const [jobFilters, setJobFilters] = useState({ page: 1, pageSize: 10, q: '', company: '', location: '', status: '', archived: false });
   const [jobMeta, setJobMeta] = useState({ total: 0, totalPages: 1 });
 
+  // Connection detail states
+  const [activeConnectionId, setActiveConnectionId] = useState(null);
+  const [connectionDetail, setConnectionDetail] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState(null);
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [newTagText, setNewTagText] = useState('');
+
   // Auth Forms State
   const [authTab, setAuthTab] = useState('login'); // 'login', 'register', 'forgot'
   const [authEmail, setAuthEmail] = useState('');
@@ -68,6 +76,85 @@ function App() {
       loadNotifications();
     }
   }, [isAuthenticated, activeTab, connFilters.page, jobFilters.page, jobFilters.archived]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'connection-detail' && activeConnectionId) {
+      loadConnectionDetail(activeConnectionId);
+    }
+  }, [isAuthenticated, activeTab, activeConnectionId]);
+
+  const loadConnectionDetail = async (id) => {
+    setLoadingDetail(true);
+    setDetailError(null);
+    try {
+      const res = await api.request(`/connections/${id}`);
+      setConnectionDetail(res.data);
+    } catch (e) {
+      setDetailError(e.message || 'Failed to load connection details.');
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const handleAddNote = async (e) => {
+    e.preventDefault();
+    if (!newNoteContent.trim() || !activeConnectionId) return;
+    try {
+      await api.request('/notes', {
+        method: 'POST',
+        body: {
+          entityType: 'connection',
+          entityId: activeConnectionId,
+          content: newNoteContent.trim()
+        }
+      });
+      setNewNoteContent('');
+      loadConnectionDetail(activeConnectionId);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleAddTag = async (tagText) => {
+    if (!tagText.trim() || !activeConnectionId || !connectionDetail) return;
+    const currentTags = connectionDetail.tags || [];
+    if (currentTags.includes(tagText.trim())) {
+      alert('Tag already exists on this connection.');
+      return;
+    }
+    const updatedTags = [...currentTags, tagText.trim()];
+    try {
+      await api.request(`/connections/${activeConnectionId}`, {
+        method: 'PUT',
+        body: {
+          name: connectionDetail.name,
+          tags: updatedTags
+        }
+      });
+      setNewTagText('');
+      loadConnectionDetail(activeConnectionId);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleRemoveTag = async (tagToRemove) => {
+    if (!activeConnectionId || !connectionDetail) return;
+    const currentTags = connectionDetail.tags || [];
+    const updatedTags = currentTags.filter(t => t !== tagToRemove);
+    try {
+      await api.request(`/connections/${activeConnectionId}`, {
+        method: 'PUT',
+        body: {
+          name: connectionDetail.name,
+          tags: updatedTags
+        }
+      });
+      loadConnectionDetail(activeConnectionId);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const loadSession = async () => {
     try {
@@ -718,14 +805,9 @@ function App() {
                             <button
                               className="btn btn-primary"
                               style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={async () => {
-                                try {
-                                  const data = await api.request(`/connections/${c.id}`);
-                                  setEditItem(data.data);
-                                  setModal('connection_detail');
-                                } catch (err) {
-                                  alert(err.message);
-                                }
+                              onClick={() => {
+                                setActiveConnectionId(c.id);
+                                setActiveTab('connection-detail');
                               }}
                             >
                               View
@@ -1044,6 +1126,404 @@ function App() {
             </div>
           </div>
         )}
+        {/* CONNECTION DETAIL TAB */}
+        {activeTab === 'connection-detail' && (
+          <div>
+            <div style={{ marginBottom: '16px' }}>
+              <button className="btn btn-secondary" onClick={() => setActiveTab('connections')}>
+                &larr; Back to Connections
+              </button>
+            </div>
+
+            {loadingDetail && <div className="empty-state">Loading connection details...</div>}
+            {detailError && <div className="empty-state" style={{ color: 'var(--danger)' }}>{detailError}</div>}
+
+            {!loadingDetail && !detailError && connectionDetail && (
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', alignItems: 'start' }}>
+                  
+                  {/* Left Column */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    
+                    {/* PERSON Profile Panel */}
+                    <div className="card-panel">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div>
+                          <h1 className="page-title" style={{ marginBottom: '8px' }}>{connectionDetail.name}</h1>
+                          <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                            {connectionDetail.title || 'No Title'}
+                          </p>
+                          <p style={{ color: 'var(--text-muted)' }}>{connectionDetail.company || 'Unknown Company'}</p>
+                        </div>
+                        {connectionDetail.profileUrl && (
+                          <a
+                            href={connectionDetail.profileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-secondary"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            LinkedIn ↗
+                          </a>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => {
+                            setEditItem(connectionDetail);
+                            setModal('connection');
+                          }}
+                        >
+                          Edit Connection
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setEditItem(connectionDetail);
+                            setModal('outreach');
+                          }}
+                        >
+                          Log Outreach
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* PROFESSIONAL Information */}
+                    <div className="card-panel">
+                      <h2 className="card-title" style={{ marginBottom: '16px' }}>Professional Profile</h2>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Company</div>
+                          <div style={{ fontWeight: 600 }}>{connectionDetail.company || 'Not Specified'}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Position</div>
+                          <div style={{ fontWeight: 600 }}>{connectionDetail.title || 'Not Specified'}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Location</div>
+                          <div style={{ fontWeight: 600 }}>{connectionDetail.location || 'Not Specified'}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Email</div>
+                          <div style={{ fontWeight: 600 }}>{connectionDetail.email || 'Not Specified'}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Connected Since</div>
+                          <div style={{ fontWeight: 600 }}>
+                            {connectionDetail.connectedDate ? new Date(connectionDetail.connectedDate).toLocaleDateString() : 'Not Specified'}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Seniority Level (Derived)</div>
+                          <div style={{ fontWeight: 600, textTransform: 'capitalize', color: 'var(--info)' }}>
+                            {connectionDetail.seniorityLevel || 'Mid'}
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Role Category (Derived)</div>
+                          <div style={{ fontWeight: 600, textTransform: 'capitalize', color: 'var(--info)' }}>
+                            {connectionDetail.roleCategory || 'Engineering'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Right Column */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    
+                    {/* RELATIONSHIP Status & Strength */}
+                    <div className="card-panel">
+                      <h2 className="card-title" style={{ marginBottom: '16px' }}>Relationship CRM</h2>
+                      
+                      <div className="form-group">
+                        <label className="form-label">Relationship Status</label>
+                        <select
+                          className="form-input"
+                          value={connectionDetail.relationshipStatus || 'not_contacted'}
+                          onChange={async (e) => {
+                            try {
+                              await api.request(`/connections/${activeConnectionId}`, {
+                                method: 'PUT',
+                                body: {
+                                  name: connectionDetail.name,
+                                  relationshipStatus: e.target.value
+                                }
+                              });
+                              loadConnectionDetail(activeConnectionId);
+                            } catch (err) {
+                              alert(err.message);
+                            }
+                          }}
+                        >
+                          <option value="not_contacted">Not Contacted</option>
+                          <option value="researching">Researching</option>
+                          <option value="contacted">Contacted</option>
+                          <option value="replied">Replied</option>
+                          <option value="conversation">Conversation</option>
+                          <option value="referral_requested">Referral Requested</option>
+                          <option value="referral_received">Referral Received</option>
+                          <option value="closed">Closed</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Relationship Strength</label>
+                        <select
+                          className="form-input"
+                          value={connectionDetail.relationshipStrength || 'cold'}
+                          onChange={async (e) => {
+                            try {
+                              await api.request(`/connections/${activeConnectionId}`, {
+                                method: 'PUT',
+                                body: {
+                                  name: connectionDetail.name,
+                                  relationshipStrength: e.target.value
+                                }
+                              });
+                              loadConnectionDetail(activeConnectionId);
+                            } catch (err) {
+                              alert(err.message);
+                            }
+                          }}
+                        >
+                          <option value="cold">Cold</option>
+                          <option value="warm">Warm</option>
+                          <option value="strong">Strong</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">CRM Priority</label>
+                        <select
+                          className="form-input"
+                          value={connectionDetail.priority || 'medium'}
+                          onChange={async (e) => {
+                            try {
+                              await api.request(`/connections/${activeConnectionId}`, {
+                                method: 'PUT',
+                                body: {
+                                  name: connectionDetail.name,
+                                  priority: e.target.value
+                                }
+                              });
+                              loadConnectionDetail(activeConnectionId);
+                            } catch (err) {
+                              alert(err.message);
+                            }
+                          }}
+                        >
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Next Follow-up Date</label>
+                        <input
+                          type="date"
+                          className="form-input"
+                          value={connectionDetail.nextFollowUpDate || ''}
+                          onChange={async (e) => {
+                            try {
+                              await api.request(`/connections/${activeConnectionId}`, {
+                                method: 'PUT',
+                                body: {
+                                  name: connectionDetail.name,
+                                  nextFollowUpDate: e.target.value || null
+                                }
+                              });
+                              loadConnectionDetail(activeConnectionId);
+                            } catch (err) {
+                              alert(err.message);
+                            }
+                          }}
+                        />
+                        {connectionDetail.nextFollowUpDate && (
+                          <button
+                            className="btn btn-secondary"
+                            style={{ marginTop: '8px', width: '100%', padding: '6px' }}
+                            onClick={async () => {
+                              try {
+                                await api.request(`/connections/${activeConnectionId}`, {
+                                  method: 'PUT',
+                                  body: {
+                                    name: connectionDetail.name,
+                                    nextFollowUpDate: null
+                                  }
+                                });
+                                loadConnectionDetail(activeConnectionId);
+                              } catch (err) {
+                                alert(err.message);
+                              }
+                            }}
+                          >
+                            Clear Follow-up
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* INTELLIGENCE Scores */}
+                    <div className="card-panel">
+                      <h2 className="card-title" style={{ marginBottom: '16px' }}>Network Intelligence</h2>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Connection Score</span>
+                          <span className="badge badge-success" style={{ fontSize: '1.05rem', padding: '6px 12px' }}>
+                            {connectionDetail.connectionScore || 0} / 100
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Profile Completeness</span>
+                          <span className="badge badge-info" style={{ fontSize: '1.05rem', padding: '6px 12px' }}>
+                            {connectionDetail.profileCompleteness || 0}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* TAGS SECTION */}
+                <div className="card-panel" style={{ marginTop: '24px' }}>
+                  <h2 className="card-title" style={{ marginBottom: '12px' }}>Tags / Labels</h2>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                    {connectionDetail.tags && connectionDetail.tags.length > 0 ? (
+                      connectionDetail.tags.map((tag) => (
+                        <span key={tag} className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px' }}>
+                          {tag}
+                          <button
+                            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '0.85rem' }}
+                            onClick={() => handleRemoveTag(tag)}
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      ))
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)' }}>No tags added yet.</span>
+                    )}
+
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="New tag..."
+                        style={{ width: '120px', padding: '4px 8px', fontSize: '0.85rem', margin: 0 }}
+                        value={newTagText}
+                        onChange={(e) => setNewTagText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleAddTag(newTagText);
+                          }
+                        }}
+                      />
+                      <button
+                        className="btn btn-primary"
+                        style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                        onClick={() => handleAddTag(newTagText)}
+                      >
+                        + Add Tag
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* NOTES SECTION */}
+                <div className="card-panel" style={{ marginTop: '24px' }}>
+                  <h2 className="card-title" style={{ marginBottom: '16px' }}>Relationship & Interaction Notes</h2>
+                  
+                  <form onSubmit={handleAddNote} style={{ marginBottom: '24px' }}>
+                    <div className="form-group">
+                      <textarea
+                        className="form-input"
+                        rows="3"
+                        placeholder="Log a new meeting note, update, context details..."
+                        required
+                        value={newNoteContent}
+                        onChange={(e) => setNewNoteContent(e.target.value)}
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-primary">Add Note</button>
+                  </form>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {connectionDetail.notes && connectionDetail.notes.length > 0 ? (
+                      connectionDetail.notes.map((note) => (
+                        <div key={note.id} style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', borderLeft: '3px solid var(--primary)' }}>
+                          <p style={{ whiteSpace: 'pre-wrap', marginBottom: '8px' }}>{note.content}</p>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            {new Date(note.createdAt).toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="empty-state">No notes recorded yet. Add one above to keep track of interactions.</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* OUTREACH HISTORY */}
+                <div className="card-panel" style={{ marginTop: '24px' }}>
+                  <h2 className="card-title" style={{ marginBottom: '16px' }}>Outreach & History Logs</h2>
+                  
+                  {connectionDetail.outreach && connectionDetail.outreach.length > 0 ? (
+                    <div className="timeline" style={{ paddingLeft: '10px' }}>
+                      {connectionDetail.outreach.map((event) => (
+                        <div className="timeline-event" key={event.id} style={{ paddingBottom: '16px', borderLeft: '2px solid var(--border-color)', paddingLeft: '20px', position: 'relative' }}>
+                          <div style={{ position: 'absolute', left: '-6px', top: '4px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--warning)' }} />
+                          <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>
+                            {event.status.replace('_', ' ')}
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0' }}>
+                            {new Date(event.occurredAt).toLocaleDateString()}
+                          </div>
+                          {event.notes && <p style={{ color: 'var(--text-muted)' }}>{event.notes}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">No outreach campaign history recorded yet.</div>
+                  )}
+                </div>
+
+                {/* RELEVANT OPPORTUNITIES */}
+                <div className="card-panel" style={{ marginTop: '24px', marginBottom: '24px' }}>
+                  <h2 className="card-title" style={{ marginBottom: '16px' }}>Relevant Opportunities at {connectionDetail.company || 'target company'}</h2>
+                  
+                  {connectionDetail.referralOpportunities && connectionDetail.referralOpportunities.length > 0 ? (
+                    <div className="activity-list">
+                      {connectionDetail.referralOpportunities.map((opp) => (
+                        <div className="activity-item" key={opp.jobId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '1.05rem' }}>{opp.jobTitle}</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{connectionDetail.company}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <span className="badge badge-success" style={{ fontSize: '0.9rem' }}>
+                              Referral Match: {opp.referralScore}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">No active tracked jobs found matching company {connectionDetail.company || 'Not Specified'}.</div>
+                  )}
+                </div>
+
+              </div>
+            )}
+          </div>
+        )}
 
       </main>
 
@@ -1126,6 +1606,9 @@ function App() {
               try {
                 if (editItem) {
                   await api.updateConnection(editItem.id, data);
+                  if (activeTab === 'connection-detail' && activeConnectionId === editItem.id) {
+                    loadConnectionDetail(editItem.id);
+                  }
                 } else {
                   await api.createConnection(data);
                 }
