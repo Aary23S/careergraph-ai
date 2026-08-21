@@ -118,6 +118,11 @@ export function initializeModels(sequelize) {
       connectionScore: { type: DataTypes.INTEGER, field: 'connection_score' },
       profileCompleteness: { type: DataTypes.INTEGER, field: 'profile_completeness' },
       lastEnrichedAt: { type: DataTypes.DATE, field: 'last_enriched_at' },
+      headline: { type: DataTypes.STRING },
+      skills: { type: DataTypes.JSON },
+      externalLinks: { type: DataTypes.JSON, field: 'external_links' },
+      profileSummary: { type: DataTypes.TEXT, field: 'profile_summary' },
+      dataSources: { type: DataTypes.JSON, field: 'data_sources' },
     },
     {
       ...baseOptions,

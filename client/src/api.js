@@ -242,6 +242,36 @@ class ApiClient {
     return res.data;
   }
 
+  async listCompanies(params = {}) {
+    const query = new URLSearchParams();
+    Object.keys(params).forEach((key) => {
+      if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+        query.append(key, params[key]);
+      }
+    });
+    return this.request(`/connections/companies?${query.toString()}`);
+  }
+
+  async getCompanyDetail(companyKey) {
+    return this.request(`/connections/companies/${companyKey}`);
+  }
+
+  async importLinkedInPdf(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.request('/connections/enrichment/import', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async confirmEnrichment(payload) {
+    return this.request('/connections/enrichment/confirm', {
+      method: 'POST',
+      body: payload,
+    });
+  }
+
   // Jobs
   async listJobs(params = {}) {
     const query = new URLSearchParams();

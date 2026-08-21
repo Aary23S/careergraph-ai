@@ -12,6 +12,8 @@ import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { calculateReferralScore } from '../services/intelligence.service.js';
 import { getDashboardOverview } from '../services/connection-dashboard.service.js';
+import { parseLinkedInPDF } from '../services/linkedin-pdf-parser.js';
+import { getCompanyDirectory, getCompanyDetail } from '../services/company.service.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -578,6 +580,160 @@ router.post(
       filterVersion: view.filterVersion,
     });
     created(res, dup);
+  })
+);
+
+const companyQuerySchema = Joi.object({
+  search: Joi.string().allow('', null),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().valid(25, 50, 100).default(50),
+  sortBy: Joi.string().valid('connections', 'companyName', 'seniorPlus', 'engineering', 'recruiter', 'highPriority').default('connections'),
+  sortOrder: Joi.string().lowercase().valid('asc', 'desc').default('desc')
+});
+
+router.get(
+  '/companies',
+  validate(companyQuerySchema, 'query'),
+  asyncHandler(async (req, res) => {
+    const options = {
+      search: req.query.search,
+      page: parseInt(req.query.page, 10) || 1,
+      limit: parseInt(req.query.limit, 10) || 50,
+      sortBy: req.query.sortBy,
+      sortOrder: req.query.sortOrder
+    };
+    const result = await getCompanyDirectory(req.auth.userId, options);
+    ok(res, result.companies, makePageMeta(result), 200);
+  })
+);
+
+router.get(
+  '/companies/:companyKey',
+  asyncHandler(async (req, res) => {
+    const details = await getCompanyDetail(req.auth.userId, req.params.companyKey);
+    if (!details) {
+      throw new AppError(404, 'COMPANY_NOT_FOUND', 'Company details not found.');
+    }
+    ok(res, details);
+  })
+);
+
+router.post(
+  '/enrichment/import',
+  upload.single('file'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      throw new AppError(400, 'FILE_REQUIRED', 'PDF file is required.');
+    }
+    const parsed = await parseLinkedInPDF(req.file.buffer);
+    
+    // Perform matching priority
+    let matchedConnection = null;
+    
+    const cleanUrl = (url) => url ? url.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '') : '';
+
+    const allConnections = await models.Connection.findAll({
+      where: { user_id: req.auth.userId }
+    });
+
+    if (parsed.profileUrl) {
+      const targetClean = cleanUrl(parsed.profileUrl);
+      matchedConnection = allConnections.find(c => c.profileUrl && cleanUrl(c.profileUrl) === targetClean);
+    }
+
+    if (!matchedConnection && parsed.email) {
+      const targetEmail = parsed.email.toLowerCase();
+      matchedConnection = allConnections.find(c => c.email && c.email.toLowerCase() === targetEmail);
+    }
+
+    if (!matchedConnection && parsed.name && parsed.company) {
+      const targetName = parsed.name.toLowerCase();
+      const targetCompany = parsed.company.toLowerCase();
+      matchedConnection = allConnections.find(c => 
+        c.name && c.name.toLowerCase() === targetName && 
+        c.company && c.company.toLowerCase() === targetCompany
+      );
+    }
+
+    ok(res, {
+      matched: matchedConnection ? [await serializeConnection(matchedConnection)] : [],
+      new: matchedConnection ? [] : [parsed],
+      parsed
+    });
+  })
+);
+
+router.post(
+  '/enrichment/confirm',
+  asyncHandler(async (req, res) => {
+    const { action, parsed, connectionId } = req.body;
+    if (!action || !parsed) {
+      throw new AppError(400, 'PAYLOAD_REQUIRED', 'Action and parsed profile are required.');
+    }
+
+    if (action === 'enrich') {
+      if (!connectionId) {
+        throw new AppError(400, 'CONNECTION_ID_REQUIRED', 'Connection ID is required for enrichment.');
+      }
+      const connection = await ensureConnectionOwnership(req.auth.userId, connectionId);
+      
+      const updates = {};
+      for (const key of ['headline', 'profileSummary', 'location', 'email', 'profileUrl']) {
+        if (parsed[key] !== undefined && parsed[key] !== null && parsed[key] !== '') {
+          if (!connection[key]) {
+            updates[key] = parsed[key];
+          }
+        }
+      }
+
+      // Merge arrays
+      if (parsed.skills && parsed.skills.length > 0) {
+        const existingSkills = connection.skills || [];
+        updates.skills = Array.from(new Set([...existingSkills, ...parsed.skills]));
+      }
+      if (parsed.externalLinks && parsed.externalLinks.length > 0) {
+        const existingLinks = connection.externalLinks || [];
+        updates.externalLinks = Array.from(new Set([...existingLinks, ...parsed.externalLinks]));
+      }
+
+      // Track provenance
+      const currentSources = connection.dataSources || {};
+      const newSources = { ...currentSources };
+      for (const key in updates) {
+        newSources[key] = 'linkedin_pdf';
+      }
+      updates.dataSources = newSources;
+      updates.lastEnrichedAt = new Date();
+
+      await connection.update(updates);
+      ok(res, await serializeConnection(connection));
+    } else if (action === 'create') {
+      const newConnection = await models.Connection.create({
+        user_id: req.auth.userId,
+        name: parsed.name,
+        company: parsed.company || null,
+        title: parsed.title || parsed.headline || null,
+        location: parsed.location || null,
+        email: parsed.email || null,
+        profileUrl: parsed.profileUrl || null,
+        headline: parsed.headline || null,
+        skills: parsed.skills || null,
+        externalLinks: parsed.externalLinks || null,
+        profileSummary: parsed.profileSummary || null,
+        dataSources: {
+          name: 'linkedin_pdf',
+          company: parsed.company ? 'linkedin_pdf' : undefined,
+          title: parsed.title ? 'linkedin_pdf' : undefined,
+          headline: parsed.headline ? 'linkedin_pdf' : undefined,
+          skills: parsed.skills ? 'linkedin_pdf' : undefined,
+          profileSummary: parsed.profileSummary ? 'linkedin_pdf' : undefined
+        },
+        lastEnrichedAt: new Date()
+      });
+      created(res, await serializeConnection(newConnection));
+    } else {
+      throw new AppError(400, 'INVALID_ACTION', 'Action must be enrich or create.');
+    }
   })
 );
 

@@ -45,10 +45,26 @@ function App() {
   const [newTagText, setNewTagText] = useState('');
 
   // Overview dashboard states
-  const [connectionSubTab, setConnectionSubTab] = useState('overview'); // 'overview', 'all'
+  const [connectionSubTab, setConnectionSubTab] = useState('overview'); // 'overview', 'all', 'companies', 'saved_views', 'follow_ups'
   const [dashboardOverview, setDashboardOverview] = useState(null);
   const [loadingOverview, setLoadingOverview] = useState(false);
   const [overviewError, setOverviewError] = useState(null);
+
+  // Company directory states
+  const [companies, setCompanies] = useState([]);
+  const [companiesMeta, setCompaniesMeta] = useState({ total: 0, totalPages: 1 });
+  const [companiesPage, setCompaniesPage] = useState(1);
+  const [companySearch, setCompanySearch] = useState('');
+  const [companySortBy, setCompanySortBy] = useState('connections');
+  const [companySortOrder, setCompanySortOrder] = useState('desc');
+  const [activeCompanyKey, setActiveCompanyKey] = useState(null);
+  const [companyDetailData, setCompanyDetailData] = useState(null);
+  const [loadingCompanyDetail, setLoadingCompanyDetail] = useState(false);
+
+  // PDF Enrichment states
+  const [enrichmentPreview, setEnrichmentPreview] = useState(null);
+  const [enrichmentLoading, setEnrichmentLoading] = useState(false);
+  const [enrichmentError, setEnrichmentError] = useState(null);
 
   // Saved Views States
   const [savedViews, setSavedViews] = useState([]);
@@ -72,6 +88,7 @@ function App() {
     sortBy: 'referralScore',
     sortOrder: 'desc'
   });
+  // eslint-disable-next-line no-unused-vars
   const [jobNetworkMeta, setJobNetworkMeta] = useState({ total: 0, totalPages: 1 });
   const [jobNetworkLoading, setJobNetworkLoading] = useState(false);
 
@@ -106,7 +123,7 @@ function App() {
       if (activeTab === 'outreach') loadOutreach();
       loadNotifications();
     }
-  }, [isAuthenticated, activeTab, connFilters.page, jobFilters.page, jobFilters.archived]);
+  }, [isAuthenticated, activeTab, connFilters, jobFilters, jobFilters.archived]);
 
   useEffect(() => {
     if (isAuthenticated && activeTab === 'connection-detail' && activeConnectionId) {
@@ -139,6 +156,46 @@ function App() {
       setSavedViews(res.data || []);
     } catch (e) {
       console.error('Failed to load saved views', e);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'connections' && connectionSubTab === 'companies') {
+      loadCompanies();
+    }
+  }, [isAuthenticated, activeTab, connectionSubTab, companiesPage, companySearch, companySortBy, companySortOrder]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'connections' && activeCompanyKey) {
+      loadCompanyDetail(activeCompanyKey);
+    }
+  }, [isAuthenticated, activeTab, activeCompanyKey]);
+
+  const loadCompanies = async () => {
+    try {
+      const res = await api.listCompanies({
+        search: companySearch,
+        page: companiesPage,
+        limit: 25,
+        sortBy: companySortBy,
+        sortOrder: companySortOrder
+      });
+      setCompanies(res.data);
+      setCompaniesMeta(res.meta || { total: res.data.length, totalPages: 1 });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const loadCompanyDetail = async (key) => {
+    setLoadingCompanyDetail(true);
+    try {
+      const res = await api.getCompanyDetail(key);
+      setCompanyDetailData(res.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingCompanyDetail(false);
     }
   };
 
@@ -254,6 +311,7 @@ function App() {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleSaveAsNewView = async () => {
     const name = prompt('Enter a name for the new saved view:');
     if (!name || !name.trim()) return;
@@ -1064,6 +1122,13 @@ function App() {
                 <button className="btn btn-secondary" onClick={() => setModal('csv')}>
                   Import CSV
                 </button>
+                <button className="btn btn-secondary" onClick={() => {
+                  setEnrichmentPreview(null);
+                  setEnrichmentError(null);
+                  setModal('linkedin_pdf');
+                }}>
+                  Import LinkedIn PDF
+                </button>
                 <button className="btn btn-primary" onClick={() => { setEditItem(null); setModal('connection'); }}>
                   Add Connection
                 </button>
@@ -1075,16 +1140,37 @@ function App() {
               <button
                 className={`btn ${connectionSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                onClick={() => setConnectionSubTab('overview')}
+                onClick={() => { setConnectionSubTab('overview'); setActiveCompanyKey(null); }}
               >
                 Network Overview
               </button>
               <button
-                className={`btn ${connectionSubTab === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                className={`btn ${connectionSubTab === 'all' && !connFilters.followUpDue ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-                onClick={() => setConnectionSubTab('all')}
+                onClick={() => { setConnFilters({ ...connFilters, followUpDue: undefined, page: 1 }); setConnectionSubTab('all'); setActiveCompanyKey(null); }}
               >
-                All Connections Directory
+                All Connections
+              </button>
+              <button
+                className={`btn ${connectionSubTab === 'companies' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                onClick={() => { setConnectionSubTab('companies'); setActiveCompanyKey(null); }}
+              >
+                Companies
+              </button>
+              <button
+                className={`btn ${connectionSubTab === 'saved_views' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                onClick={() => { setConnectionSubTab('saved_views'); setActiveCompanyKey(null); }}
+              >
+                Saved Views
+              </button>
+              <button
+                className={`btn ${connectionSubTab === 'all' && connFilters.followUpDue ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                onClick={() => { setConnFilters({ ...connFilters, followUpDue: true, page: 1 }); setConnectionSubTab('all'); setActiveCompanyKey(null); }}
+              >
+                Follow-ups Due
               </button>
             </div>
 
@@ -1322,6 +1408,298 @@ function App() {
 
                   </div>
                 )}
+              </div>
+            )}
+            {connectionSubTab === 'companies' && activeCompanyKey && (
+              <div>
+                <button
+                  className="btn btn-secondary"
+                  style={{ marginBottom: '16px' }}
+                  onClick={() => { setActiveCompanyKey(null); setCompanyDetailData(null); }}
+                >
+                  &larr; Back to Company Directory
+                </button>
+
+                {loadingCompanyDetail && <div className="empty-state">Loading company stats...</div>}
+
+                {!loadingCompanyDetail && companyDetailData && (
+                  <div>
+                    <div className="page-header" style={{ marginBottom: '24px' }}>
+                      <div>
+                        <h1 className="page-title">{companyDetailData.companyName}</h1>
+                        <p style={{ color: 'var(--text-secondary)' }}>{companyDetailData.totalConnections} Contacts in your network</p>
+                      </div>
+                    </div>
+
+                    {/* Quick Stats Grid */}
+                    <div className="metrics-grid" style={{ marginBottom: '24px' }}>
+                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, page: 1 });
+                        setConnectionSubTab('all');
+                      }}>
+                        <div className="metric-label">Total Connections</div>
+                        <div className="metric-value">{companyDetailData.totalConnections}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View all &rarr;</div>
+                      </div>
+                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, roleCategory: 'recruiting', page: 1 });
+                        setConnectionSubTab('all');
+                      }}>
+                        <div className="metric-label">Recruiters</div>
+                        <div className="metric-value">{companyDetailData.recruiters}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
+                      </div>
+                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, roleCategory: 'engineering', page: 1 });
+                        setConnectionSubTab('all');
+                      }}>
+                        <div className="metric-label">Engineering Leaders</div>
+                        <div className="metric-value">{companyDetailData.engineeringLeaders}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
+                      </div>
+                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, priority: 'high', page: 1 });
+                        setConnectionSubTab('all');
+                      }}>
+                        <div className="metric-label">High Priority</div>
+                        <div className="metric-value" style={{ color: 'var(--warning)' }}>{companyDetailData.highPriority}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
+                      </div>
+                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                        setConnFilters({ ...connFilters, companies: companyDetailData.companyName, relationshipStatus: 'not_contacted', page: 1 });
+                        setConnectionSubTab('all');
+                      }}>
+                        <div className="metric-label">Not Contacted</div>
+                        <div className="metric-value">{companyDetailData.notContacted}</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                      {/* Role distribution */}
+                      <div className="card-panel">
+                        <h2 className="card-title">Role Distribution</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                          {companyDetailData.rolesDistribution && companyDetailData.rolesDistribution.length > 0 ? (
+                            companyDetailData.rolesDistribution.map(r => (
+                              <div
+                                key={r.category}
+                                className="activity-item"
+                                style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', cursor: 'pointer' }}
+                                onClick={() => {
+                                  setConnFilters({ ...connFilters, companies: companyDetailData.companyName, roleCategory: r.category, page: 1 });
+                                  setConnectionSubTab('all');
+                                }}
+                              >
+                                <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{r.category.replace('_', ' ')}</span>
+                                <span className="badge badge-info">{r.count}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="empty-state">No roles logged.</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Seniority distribution */}
+                      <div className="card-panel">
+                        <h2 className="card-title">Seniority Level</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                          {companyDetailData.seniorityDistribution && companyDetailData.seniorityDistribution.length > 0 ? (
+                            companyDetailData.seniorityDistribution.map(s => (
+                              <div
+                                key={s.level}
+                                className="activity-item"
+                                style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', cursor: 'pointer' }}
+                                onClick={() => {
+                                  setConnFilters({ ...connFilters, companies: companyDetailData.companyName, seniority: s.level, page: 1 });
+                                  setConnectionSubTab('all');
+                                }}
+                              >
+                                <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{s.level}</span>
+                                <span className="badge badge-success">{s.count}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="empty-state">No seniority logged.</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {connectionSubTab === 'companies' && !activeCompanyKey && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '24px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Search companies..."
+                    value={companySearch}
+                    onChange={(e) => { setCompanySearch(e.target.value); setCompaniesPage(1); }}
+                    style={{ maxWidth: '300px' }}
+                  />
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <span>Sort by:</span>
+                    <select
+                      className="form-input"
+                      value={companySortBy}
+                      onChange={(e) => { setCompanySortBy(e.target.value); setCompaniesPage(1); }}
+                    >
+                      <option value="connections">Connections Count</option>
+                      <option value="companyName">Company Name</option>
+                      <option value="seniorPlus">Senior+ Staff</option>
+                      <option value="engineering">Engineering</option>
+                      <option value="recruiter">Recruiting</option>
+                      <option value="highPriority">High Priority</option>
+                    </select>
+                    <select
+                      className="form-input"
+                      value={companySortOrder}
+                      onChange={(e) => { setCompanySortOrder(e.target.value); setCompaniesPage(1); }}
+                    >
+                      <option value="desc">Descending</option>
+                      <option value="asc">Ascending</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="card-panel">
+                  {companies.length === 0 ? (
+                    <div className="empty-state">No companies found in network.</div>
+                  ) : (
+                    <div className="data-table-container">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Company</th>
+                            <th>Connections</th>
+                            <th>Senior+</th>
+                            <th>Engineering</th>
+                            <th>Recruiters</th>
+                            <th>Contacted</th>
+                            <th>Not Contacted</th>
+                            <th>High Priority</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {companies.map(c => (
+                            <tr key={c.companyKey}>
+                              <td>
+                                <button
+                                  className="btn-link"
+                                  style={{ fontWeight: 700, fontSize: '1rem', textAlign: 'left' }}
+                                  onClick={() => setActiveCompanyKey(c.companyKey)}
+                                >
+                                  {c.companyName}
+                                </button>
+                              </td>
+                              <td style={{ fontWeight: 600 }}>{c.connectionCount}</td>
+                              <td>{c.seniorPlusCount}</td>
+                              <td>{c.engineeringCount}</td>
+                              <td>{c.recruiterCount}</td>
+                              <td style={{ color: 'var(--success)' }}>{c.contactedCount}</td>
+                              <td>{c.notContactedCount}</td>
+                              <td style={{ color: 'var(--warning)', fontWeight: 600 }}>{c.highPriorityCount}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {companiesMeta.totalPages > 1 && (
+                  <div className="pagination" style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
+                    <button
+                      className="btn btn-secondary"
+                      disabled={companiesPage === 1}
+                      onClick={() => setCompaniesPage(companiesPage - 1)}
+                    >
+                      Prev
+                    </button>
+                    <span style={{ padding: '8px 16px', color: 'var(--text-secondary)' }}>
+                      Page {companiesPage} of {companiesMeta.totalPages}
+                    </span>
+                    <button
+                      className="btn btn-secondary"
+                      disabled={companiesPage === companiesMeta.totalPages}
+                      onClick={() => setCompaniesPage(companiesPage + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {connectionSubTab === 'saved_views' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', alignItems: 'center' }}>
+                  <h2 style={{ fontSize: '1.2rem', fontWeight: 600 }}>Your Saved Reusable Segments</h2>
+                  <button className="btn btn-primary" onClick={() => {
+                    setConnectionSubTab('all');
+                    setConnFilters({
+                      page: 1,
+                      limit: 50,
+                      search: '',
+                      companies: '',
+                      positions: '',
+                      seniority: '',
+                      roleCategory: '',
+                      relationshipStatus: '',
+                      relationshipStrength: '',
+                      priority: '',
+                      hasEmail: undefined,
+                      followUpDue: undefined
+                    });
+                  }}>
+                    Create Custom View
+                  </button>
+                </div>
+
+                <div className="card-panel">
+                  {savedViews.length === 0 ? (
+                    <div className="empty-state">No saved connection views found. Set filters in All Connections and click &quot;Save view&quot;.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {savedViews.map(view => (
+                        <div
+                          key={view.id}
+                          className="activity-item"
+                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}
+                        >
+                          <div>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{view.name}</span>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{view.description || 'No description provided'}</p>
+                          </div>
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                            <button
+                              className="btn btn-secondary"
+                              onClick={() => handleLoadSavedView(view)}
+                            >
+                              Open view
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              onClick={async () => {
+                                if (confirm('Delete this saved view?')) {
+                                  await api.request(`/connections/views/${view.id}`, { method: 'DELETE' });
+                                  loadSavedViews();
+                                }
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -3173,6 +3551,154 @@ function App() {
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setModal(null)}>Close Intel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {modal === 'linkedin_pdf' && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '650px', width: '90%' }}>
+            <h2 className="modal-title">LinkedIn PDF Profile Enrichment</h2>
+            
+            {enrichmentLoading && (
+              <div className="empty-state">
+                <p>Uploading and parsing LinkedIn PDF...</p>
+              </div>
+            )}
+
+            {enrichmentError && (
+              <div className="empty-state" style={{ color: 'var(--danger)' }}>
+                <p>Error: {enrichmentError}</p>
+                <button className="btn btn-secondary" style={{ marginTop: '12px' }} onClick={() => setEnrichmentError(null)}>
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {!enrichmentLoading && !enrichmentError && !enrichmentPreview && (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const file = e.target.elements.pdfFile.files[0];
+                if (!file) return alert('Please select a file.');
+                setEnrichmentLoading(true);
+                setEnrichmentError(null);
+                try {
+                  const res = await api.importLinkedInPdf(file);
+                  setEnrichmentPreview(res.data);
+                } catch (err) {
+                  setEnrichmentError(err.message || 'Failed to parse PDF profile.');
+                } finally {
+                  setEnrichmentLoading(false);
+                }
+              }}>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  Upload a LinkedIn profile PDF to match against existing network contacts and enrich their profile summary, headline, or skill arrays.
+                </p>
+                <div className="form-group">
+                  <label className="form-label">Select LinkedIn PDF Export</label>
+                  <input type="file" name="pdfFile" className="form-input" accept=".pdf" required />
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Parse PDF</button>
+                </div>
+              </form>
+            )}
+
+            {!enrichmentLoading && !enrichmentError && enrichmentPreview && (
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
+                  Profile Extracted: <span style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.name}</span>
+                </h3>
+
+                <div style={{ background: 'var(--bg-tertiary)', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
+                  {enrichmentPreview.parsed.headline && <div><strong>Headline:</strong> {enrichmentPreview.parsed.headline}</div>}
+                  {enrichmentPreview.parsed.email && <div style={{ marginTop: '6px' }}><strong>Email:</strong> {enrichmentPreview.parsed.email}</div>}
+                  {enrichmentPreview.parsed.profileUrl && <div style={{ marginTop: '6px' }}><strong>LinkedIn URL:</strong> <a href={enrichmentPreview.parsed.profileUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.profileUrl}</a></div>}
+                  {enrichmentPreview.parsed.skills && <div style={{ marginTop: '6px' }}><strong>Skills Extracted:</strong> {enrichmentPreview.parsed.skills.join(', ')}</div>}
+                </div>
+
+                {enrichmentPreview.matched.length > 0 ? (
+                  <div style={{ border: '1px solid var(--warning)', background: 'var(--warning-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
+                    <h4 style={{ color: 'var(--warning)', fontWeight: 700, marginBottom: '8px' }}>Existing Contact Matched</h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                      We found a matched profile in your CRM network: <strong>{enrichmentPreview.matched[0].name}</strong> at <strong>{enrichmentPreview.matched[0].company || 'No Company'}</strong> ({enrichmentPreview.matched[0].title || 'No Title'}).
+                    </p>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button className="btn btn-primary" onClick={async () => {
+                        setEnrichmentLoading(true);
+                        try {
+                          await api.confirmEnrichment({
+                            action: 'enrich',
+                            parsed: enrichmentPreview.parsed,
+                            connectionId: enrichmentPreview.matched[0].id
+                          });
+                          alert('Connection enriched successfully!');
+                          setModal(null);
+                          loadConnections();
+                        } catch (err) {
+                          alert(err.message);
+                        } finally {
+                          setEnrichmentLoading(false);
+                        }
+                      }}>
+                        Enrich Matched Contact
+                      </button>
+                      <button className="btn btn-secondary" onClick={async () => {
+                        if (confirm('Create a new duplicate connection anyway?')) {
+                          setEnrichmentLoading(true);
+                          try {
+                            await api.confirmEnrichment({
+                              action: 'create',
+                              parsed: enrichmentPreview.parsed
+                            });
+                            alert('New duplicate connection created!');
+                            setModal(null);
+                            loadConnections();
+                          } catch (err) {
+                            alert(err.message);
+                          } finally {
+                            setEnrichmentLoading(false);
+                          }
+                        }
+                      }}>
+                        Import as New Instead
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ border: '1px solid var(--success)', background: 'var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
+                    <h4 style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '8px' }}>No matches found</h4>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                      This profile does not match any existing contacts in your CRM. Do you want to import them as a new connection?
+                    </p>
+                    <button className="btn btn-primary" onClick={async () => {
+                      setEnrichmentLoading(true);
+                      try {
+                        await api.confirmEnrichment({
+                          action: 'create',
+                          parsed: enrichmentPreview.parsed
+                        });
+                        alert('New contact imported successfully!');
+                        setModal(null);
+                        loadConnections();
+                      } catch (err) {
+                        alert(err.message);
+                      } finally {
+                        setEnrichmentLoading(false);
+                      }
+                    }}>
+                      Create New Connection
+                    </button>
+                  </div>
+                )}
+
+                <div className="modal-actions">
+                  <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       )}
