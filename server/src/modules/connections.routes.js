@@ -34,6 +34,10 @@ const createSchema = Joi.object({
   lastContactedDate: Joi.string().allow('', null),
   nextFollowUpDate: Joi.string().allow('', null),
   tags: Joi.array().items(Joi.string()).default([]),
+  headline: Joi.string().allow('', null),
+  profileSummary: Joi.string().allow('', null),
+  skills: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
+  externalLinks: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
 });
 
 const querySchema = Joi.object({
@@ -186,9 +190,16 @@ router.post(
   '/',
   validate(createSchema),
   asyncHandler(async (req, res) => {
+    const body = { ...req.body };
+    if (typeof body.skills === 'string') {
+      body.skills = body.skills.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof body.externalLinks === 'string') {
+      body.externalLinks = body.externalLinks.split(',').map(l => l.trim()).filter(Boolean);
+    }
     const connection = await models.Connection.create({
       user_id: req.auth.userId,
-      ...req.body,
+      ...body,
     });
     await upsertTags(connection, req.auth.userId, req.body.tags);
 
@@ -804,7 +815,14 @@ router.put(
   validate(createSchema),
   asyncHandler(async (req, res) => {
     const connection = await ensureConnectionOwnership(req.auth.userId, req.params.connectionId);
-    await connection.update(req.body);
+    const body = { ...req.body };
+    if (typeof body.skills === 'string') {
+      body.skills = body.skills.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof body.externalLinks === 'string') {
+      body.externalLinks = body.externalLinks.split(',').map(l => l.trim()).filter(Boolean);
+    }
+    await connection.update(body);
     await upsertTags(connection, req.auth.userId, req.body.tags);
     ok(res, await serializeConnection(connection));
   }),
