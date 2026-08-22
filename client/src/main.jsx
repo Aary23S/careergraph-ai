@@ -3445,38 +3445,259 @@ function App() {
             {/* TAB 2: APPLICATION LIFE CYCLE TRACKER */}
             {jobNetworkSubTab === 'application' && (
               <div>
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.target);
-                  const data = Object.fromEntries(formData.entries());
-                  try {
-                    await api.updateApplicationStatus(editItem.id, data.status, data.notes);
-                    // reload matching parent status
-                    const updated = await api.request(`/jobs/${editItem.id}`);
-                    setEditItem(updated.data);
-                    alert('Job application status updated!');
-                  } catch (err) {
-                    alert(err.message);
-                  }
-                }}>
-                  <div className="form-group">
-                    <label className="form-label">Pipeline Stage</label>
-                    <select name="status" className="form-input" defaultValue={editItem?.status || 'saved'}>
-                      <option value="saved">Saved / Watchlist</option>
-                      <option value="applied">Applied</option>
-                      <option value="screening">Screening</option>
-                      <option value="interview">Interview</option>
-                      <option value="offer">Offer</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="withdrawn">Withdrawn</option>
-                    </select>
+                {!editItem?.application ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Start Tracking Application</h3>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.target);
+                      const data = Object.fromEntries(formData.entries());
+                      try {
+                        await api.createApplication(editItem.id, data.status, {
+                          resumeId: data.resumeId || null,
+                          coverLetter: data.coverLetter || '',
+                          referralConnectionId: data.referralConnectionId || null,
+                          notes: data.notes || '',
+                          nextFollowUpDate: data.nextFollowUpDate || null
+                        });
+                        const updated = await api.request(`/jobs/${editItem.id}`);
+                        setEditItem(updated.data);
+                        loadJobs();
+                        alert('Application tracker initialized!');
+                      } catch (err) {
+                        alert(err.message);
+                      }
+                    }}>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label">Status</label>
+                          <select name="status" className="form-input" defaultValue="saved">
+                            <option value="saved">Saved</option>
+                            <option value="applying">Applying</option>
+                            <option value="applied">Applied</option>
+                            <option value="recruiter_contact">Recruiter Contact</option>
+                            <option value="screening">Screening</option>
+                            <option value="interview">Interview</option>
+                            <option value="offer">Offer</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="withdrawn">Withdrawn</option>
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Resume Used</label>
+                          <select name="resumeId" className="form-input">
+                            <option value="">No Resume Linked</option>
+                            {resumes.map(r => <option key={r.id} value={r.id}>{r.fileName}</option>)}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label">Referral Connection</label>
+                          <select name="referralConnectionId" className="form-input">
+                            <option value="">No Referral</option>
+                            {connections.filter(c => c.company?.toLowerCase().includes(editItem.companyName?.toLowerCase())).map(c => (
+                              <option key={c.id} value={c.id}>{c.name} ({c.title})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Next Follow Up Date</label>
+                          <input type="date" name="nextFollowUpDate" className="form-input" />
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Cover Letter</label>
+                        <textarea name="coverLetter" className="form-input" rows="3" placeholder="Paste cover letter used..."></textarea>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Initial Notes</label>
+                        <textarea name="notes" className="form-input" rows="3" placeholder="Initial thoughts, referral requests, etc..."></textarea>
+                      </div>
+
+                      <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Initialize Application</button>
+                    </form>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Interaction Log / Message Notes</label>
-                    <textarea name="notes" className="form-input" rows="4" placeholder="Log referral response, interviews, next steps..."></textarea>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+                    {/* Left Column: Update Form */}
+                    <div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Application Details</h3>
+                      <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.target);
+                        const data = Object.fromEntries(formData.entries());
+                        try {
+                          await api.updateApplication(editItem.application.id, {
+                            status: data.status,
+                            resumeId: data.resumeId || null,
+                            coverLetter: data.coverLetter || '',
+                            referralConnectionId: data.referralConnectionId || null,
+                            notes: data.notes || '',
+                            nextFollowUpDate: data.nextFollowUpDate || null
+                          });
+                          const updated = await api.request(`/jobs/${editItem.id}`);
+                          setEditItem(updated.data);
+                          loadJobs();
+                          alert('Application details updated!');
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                      }}>
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">Status</label>
+                            <select name="status" className="form-input" defaultValue={editItem.application.status}>
+                              <option value="saved">Saved</option>
+                              <option value="applying">Applying</option>
+                              <option value="applied">Applied</option>
+                              <option value="recruiter_contact">Recruiter Contact</option>
+                              <option value="screening">Screening</option>
+                              <option value="interview">Interview</option>
+                              <option value="offer">Offer</option>
+                              <option value="accepted">Accepted</option>
+                              <option value="rejected">Rejected</option>
+                              <option value="withdrawn">Withdrawn</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Resume Used</label>
+                            <select name="resumeId" className="form-input" defaultValue={editItem.application.resumeId || ''}>
+                              <option value="">No Resume Linked</option>
+                              {resumes.map(r => <option key={r.id} value={r.id}>{r.fileName}</option>)}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">Referral Connection</label>
+                            <select name="referralConnectionId" className="form-input" defaultValue={editItem.application.referralConnectionId || ''}>
+                              <option value="">No Referral</option>
+                              {connections.filter(c => c.company?.toLowerCase().includes(editItem.companyName?.toLowerCase())).map(c => (
+                                <option key={c.id} value={c.id}>{c.name} ({c.title})</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Next Follow Up Date</label>
+                            <input type="date" name="nextFollowUpDate" className="form-input" defaultValue={editItem.application.nextFollowUpDate || ''} />
+                          </div>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Cover Letter</label>
+                          <textarea name="coverLetter" className="form-input" rows="3" defaultValue={editItem.application.coverLetter || ''}></textarea>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Notes</label>
+                          <textarea name="notes" className="form-input" rows="3" defaultValue={editItem.application.notes || ''}></textarea>
+                        </div>
+
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Save Updates</button>
+                      </form>
+                    </div>
+
+                    {/* Right Column: Timeline & Add Event */}
+                    <div style={{ borderLeft: '1px solid var(--bg-secondary)', paddingLeft: '24px' }}>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Application Timeline</h3>
+                      
+                      {/* Visual Timeline */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '180px', overflowY: 'auto', marginBottom: '24px', paddingRight: '8px' }}>
+                        {(!editItem.application.events || editItem.application.events.length === 0) ? (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No timeline events recorded.</div>
+                        ) : (
+                          editItem.application.events.map((ev, index) => (
+                            <div key={ev.id || index} style={{ display: 'flex', gap: '12px', position: 'relative' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)', marginTop: '4px' }}></div>
+                                {index < editItem.application.events.length - 1 && (
+                                  <div style={{ width: '2px', flexGrow: 1, background: 'var(--bg-secondary)', margin: '4px 0' }}></div>
+                                )}
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                  {new Date(ev.occurredAt).toLocaleDateString()}
+                                </div>
+                                <div style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'capitalize' }}>
+                                  {ev.eventType.replace('_', ' ')}: <span className="badge badge-info">{ev.status}</span>
+                                </div>
+                                {ev.notes && (
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
+                                    "{ev.notes}"
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Add Custom Event Form */}
+                      <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.target);
+                        const data = Object.fromEntries(formData.entries());
+                        try {
+                          await api.createApplicationEvent(editItem.application.id, {
+                            eventType: data.eventType,
+                            status: data.status,
+                            notes: data.notes
+                          });
+                          const updated = await api.request(`/jobs/${editItem.id}`);
+                          setEditItem(updated.data);
+                          e.target.reset();
+                          alert('Timeline event added!');
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                      }} style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px' }}>
+                        <h4 style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>Add Timeline Event</h4>
+                        <div className="form-group" style={{ marginBottom: '8px' }}>
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Event Type</label>
+                          <select name="eventType" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} defaultValue="interview_scheduled">
+                            <option value="application_submitted">Application Submitted</option>
+                            <option value="recruiter_contacted">Recruiter Contacted</option>
+                            <option value="referral_requested">Referral Requested</option>
+                            <option value="referral_received">Referral Received</option>
+                            <option value="interview_scheduled">Interview Scheduled</option>
+                            <option value="interview_completed">Interview Completed</option>
+                            <option value="offer_received">Offer Received</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="withdrawn">Withdrawn</option>
+                            <option value="follow_up">Follow Up</option>
+                            <option value="note">Note / Event</option>
+                          </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '8px' }}>
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Associated Stage</label>
+                          <select name="status" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} defaultValue={editItem.application.status}>
+                            <option value="saved">Saved</option>
+                            <option value="applying">Applying</option>
+                            <option value="applied">Applied</option>
+                            <option value="recruiter_contact">Recruiter Contact</option>
+                            <option value="screening">Screening</option>
+                            <option value="interview">Interview</option>
+                            <option value="offer">Offer</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="withdrawn">Withdrawn</option>
+                          </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '8px' }}>
+                          <label className="form-label" style={{ fontSize: '0.75rem' }}>Event Notes</label>
+                          <input type="text" name="notes" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} placeholder="e.g. Round 1 Technical round" />
+                        </div>
+                        <button type="submit" className="btn btn-secondary" style={{ width: '100%', padding: '6px', fontSize: '0.8rem' }}>Log Event</button>
+                      </form>
+                    </div>
                   </div>
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Update Status</button>
-                </form>
+                )}
               </div>
             )}
 
