@@ -15,12 +15,33 @@ const createSchema = Joi.object({
     .valid(...APPLICATION_STATUSES)
     .default('saved'),
   occurredAt: Joi.date().optional(),
+  resumeId: Joi.string().uuid().allow(null),
+  coverLetter: Joi.string().allow('', null),
+  referralConnectionId: Joi.string().uuid().allow(null),
+  notes: Joi.string().allow('', null),
+  nextFollowUpDate: Joi.string().allow('', null),
+});
+
+const updateSchema = Joi.object({
+  status: Joi.string().valid(...APPLICATION_STATUSES),
+  resumeId: Joi.string().uuid().allow(null),
+  coverLetter: Joi.string().allow('', null),
+  referralConnectionId: Joi.string().uuid().allow(null),
+  notes: Joi.string().allow('', null),
+  nextFollowUpDate: Joi.string().allow('', null),
 });
 
 const statusSchema = Joi.object({
   status: Joi.string()
     .valid(...APPLICATION_STATUSES)
     .required(),
+  notes: Joi.string().allow('', null),
+  occurredAt: Joi.date().optional(),
+});
+
+const eventSchema = Joi.object({
+  eventType: Joi.string().required(),
+  status: Joi.string().required(),
   notes: Joi.string().allow('', null),
   occurredAt: Joi.date().optional(),
 });
@@ -108,6 +129,11 @@ router.post(
       status: req.body.status,
       appliedAt: req.body.status === 'applied' ? occurredAt : null,
       lastStatusAt: occurredAt,
+      resumeId: req.body.resumeId || null,
+      coverLetter: req.body.coverLetter || null,
+      referralConnectionId: req.body.referralConnectionId || null,
+      notes: req.body.notes || null,
+      nextFollowUpDate: req.body.nextFollowUpDate || null,
     });
 
     await createApplicationEvent(
@@ -115,7 +141,7 @@ router.post(
       req.auth.userId,
       req.body.status,
       'created',
-      null,
+      req.body.notes || null,
       occurredAt,
     );
 
@@ -139,18 +165,25 @@ router.get(
       where: { user_id: req.auth.userId },
       include: [
         { model: models.Job, as: 'job', include: [{ model: models.Company, as: 'company' }] },
+        { model: models.ApplicationEvent, as: 'events' },
       ],
-      order: [['updated_at', 'DESC']],
+      order: [
+        ['updated_at', 'DESC'],
+        [{ model: models.ApplicationEvent, as: 'events' }, 'occurred_at', 'DESC']
+      ],
     });
     ok(
       res,
-      applications.map((application) => ({
-        ...application.toJSON(),
-        job: {
-          ...application.job.toJSON(),
-          companyName: application.job.company?.name ?? null,
-        },
-      })),
+      applications.map((application) => {
+        const appJson = application.toJSON();
+        return {
+          ...appJson,
+          job: {
+            ...appJson.job,
+            companyName: application.job.company?.name ?? null,
+          },
+        };
+      }),
     );
   }),
 );
@@ -162,11 +195,60 @@ router.get(
   }),
 );
 
+router.put(
+  '/:applicationId',
+  validate(updateSchema),
+  asyncHandler(async (req, res) => {
+    const application = await ensureApplicationOwnership(req.auth.userId, req.params.applicationId);
+    
+    const prevStatus = application.status;
+    const updates = {};
+    const allowed = ['status', 'resumeId', 'coverLetter', 'referralConnectionId', 'notes', 'nextFollowUpDate'];
+    allowed.forEach(k => {
+      if (req.body[k] !== undefined) {
+        updates[k] = req.body[k];
+      }
+    });
+
+    if (req.body.status && req.body.status !== prevStatus) {
+      updates.lastStatusAt = new Date();
+      if (req.body.status === 'applied' && !application.appliedAt) {
+        updates.appliedAt = new Date();
+      }
+    }
+
+    await application.update(updates);
+
+    if (req.body.status && req.body.status !== prevStatus) {
+      await createApplicationEvent(
+        application,
+        req.auth.userId,
+        req.body.status,
+        'status_changed',
+        req.body.notes || 'Status updated via edit',
+        new Date(),
+      );
+
+      await createNotification(models, {
+        user_id: req.auth.userId,
+        type: 'application_update',
+        title: 'Application status updated',
+        message: `Application for ${application.job.title} is now ${req.body.status}.`,
+        relatedEntityType: 'application',
+        relatedEntityId: application.id,
+      });
+    }
+
+    ok(res, await serializeApplication(await ensureApplicationOwnership(req.auth.userId, application.id)));
+  })
+);
+
 router.patch(
   '/:applicationId/status',
   validate(statusSchema),
   asyncHandler(async (req, res) => {
     const application = await ensureApplicationOwnership(req.auth.userId, req.params.applicationId);
+    const prevStatus = application.status;
     application.status = req.body.status;
     application.lastStatusAt = req.body.occurredAt || new Date();
     if (req.body.status === 'applied' && !application.appliedAt) {
@@ -194,6 +276,23 @@ router.patch(
 
     ok(res, await serializeApplication(await ensureApplicationOwnership(req.auth.userId, application.id)));
   }),
+);
+
+router.post(
+  '/:applicationId/events',
+  validate(eventSchema),
+  asyncHandler(async (req, res) => {
+    const application = await ensureApplicationOwnership(req.auth.userId, req.params.applicationId);
+    const event = await createApplicationEvent(
+      application,
+      req.auth.userId,
+      req.body.status,
+      req.body.eventType,
+      req.body.notes,
+      req.body.occurredAt
+    );
+    ok(res, event);
+  })
 );
 
 export default router;

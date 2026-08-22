@@ -6,6 +6,7 @@ import { AppError, asyncHandler, created, ok } from '../lib/http.js';
 import { getPagination, makePageMeta } from '../lib/pagination.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { ingestJob, ingestJobsBatch } from '../services/job-ingestion.service.js';
 import {
   calculateMatchScore,
   calculateReferralScore,
@@ -41,6 +42,14 @@ const querySchema = Joi.object({
   location: Joi.string().allow('', null),
   status: Joi.string().allow('', null),
   archived: Joi.boolean(),
+  remoteType: Joi.string().allow('', null),
+  experienceLevel: Joi.string().allow('', null),
+  source: Joi.string().allow('', null),
+  minMatchScore: Joi.number().integer().min(0).max(100).allow(null),
+  postedDate: Joi.string().allow('', null),
+  roleCategory: Joi.string().allow('', null),
+  sortBy: Joi.string().valid('postedDate', 'matchScore', 'createdAt', 'title', 'company').default('createdAt'),
+  sortOrder: Joi.string().valid('asc', 'desc', 'ASC', 'DESC').default('desc'),
 });
 
 function normalizeCompanyName(name) {
@@ -225,19 +234,46 @@ router.get(
         { description: { [Op.like]: `%${req.query.q}%` } },
       ];
     }
-    if (req.query.location) where.location = req.query.location;
+    if (req.query.location) {
+      where.location = { [Op.like]: `%${req.query.location}%` };
+    }
     if (req.query.status) where.status = req.query.status;
     if (typeof req.query.archived === 'boolean') where.isArchived = req.query.archived;
+    if (req.query.remoteType) where.remoteType = req.query.remoteType;
+    if (req.query.experienceLevel) where.experienceLevel = req.query.experienceLevel;
+    if (req.query.source) where.source = req.query.source;
+    if (req.query.postedDate) where.postedDate = req.query.postedDate;
+    if (req.query.minMatchScore !== undefined && req.query.minMatchScore !== null) {
+      where.matchScore = { [Op.gte]: req.query.minMatchScore };
+    }
+    if (req.query.roleCategory) {
+      where.normalizedTitle = { [Op.like]: `%${req.query.roleCategory.toLowerCase().trim()}%` };
+    }
 
     const include = [{ model: models.Company, as: 'company' }];
     if (req.query.company) {
-      include[0].where = { name: req.query.company };
+      include[0].where = { name: { [Op.like]: `%${req.query.company}%` } };
+    }
+
+    let order = [['created_at', 'DESC']];
+    const sortBy = req.query.sortBy || 'createdAt';
+    const sortOrder = (req.query.sortOrder || 'desc').toUpperCase();
+    if (sortBy === 'postedDate') {
+      order = [['posted_date', sortOrder]];
+    } else if (sortBy === 'matchScore') {
+      order = [['match_score', sortOrder]];
+    } else if (sortBy === 'title') {
+      order = [['title', sortOrder]];
+    } else if (sortBy === 'company') {
+      order = [[{ model: models.Company, as: 'company' }, 'name', sortOrder]];
+    } else {
+      order = [['created_at', sortOrder]];
     }
 
     const { rows, count } = await models.Job.findAndCountAll({
       where,
       include,
-      order: [['created_at', 'DESC']],
+      order,
       limit: pagination.limit,
       offset: pagination.offset,
       distinct: true,
@@ -247,6 +283,27 @@ router.get(
     const items = await Promise.all(rows.map(row => serializeJob(row, profile, req.auth.userId)));
     ok(res, items, makePageMeta({ ...pagination, total: count }));
   }),
+);
+
+router.post(
+  '/ingest',
+  asyncHandler(async (req, res) => {
+    const result = await ingestJob(req.auth.userId, req.body);
+    const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
+    const serialized = await serializeJob(result.job, profile, req.auth.userId);
+    created(res, { status: result.status, job: serialized });
+  })
+);
+
+router.post(
+  '/ingest/batch',
+  asyncHandler(async (req, res) => {
+    if (!Array.isArray(req.body)) {
+      throw new AppError(400, 'ARRAY_REQUIRED', 'Batch input must be an array.');
+    }
+    const summary = await ingestJobsBatch(req.auth.userId, req.body);
+    ok(res, summary);
+  })
 );
 
 router.get(

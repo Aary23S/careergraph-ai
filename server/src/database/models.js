@@ -3,10 +3,14 @@ import { enrichConnectionData } from '../services/connection-intelligence.servic
 
 export const APPLICATION_STATUSES = [
   'saved',
+  'not_applied',
+  'applying',
   'applied',
+  'recruiter_contact',
   'screening',
   'interview',
   'offer',
+  'accepted',
   'rejected',
   'withdrawn',
 ];
@@ -183,10 +187,39 @@ export function initializeModels(sequelize) {
       firstSeenDate: { type: DataTypes.DATEONLY, field: 'first_seen_date' },
       status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'new' },
       isArchived: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_archived' },
+      sourceUrl: { type: DataTypes.STRING, field: 'source_url' },
+      externalJobId: { type: DataTypes.STRING, field: 'external_job_id' },
+      sourceMetadata: { type: DataTypes.JSON, field: 'source_metadata' },
+      fetchedAt: { type: DataTypes.DATE, field: 'fetched_at' },
+      provider: { type: DataTypes.STRING },
+      normalizedCompany: { type: DataTypes.STRING, field: 'normalized_company' },
+      normalizedTitle: { type: DataTypes.STRING, field: 'normalized_title' },
+      normalizedLocation: { type: DataTypes.STRING, field: 'normalized_location' },
+      normalizedSkills: { type: DataTypes.JSON, field: 'normalized_skills' },
+      remoteType: { type: DataTypes.STRING, field: 'remote_type' },
+      experienceLevel: { type: DataTypes.STRING, field: 'experience_level' },
+      matchScore: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'match_score' },
     },
-    { ...baseOptions, tableName: 'jobs' },
+    {
+      ...baseOptions,
+      tableName: 'jobs',
+      hooks: {
+        beforeSave: async (job) => {
+          try {
+            const Profile = job.sequelize.models.Profile;
+            const profile = await Profile.findOne({ where: { user_id: job.user_id } });
+            if (profile) {
+              const { calculateMatchScore } = await import('../services/intelligence.service.js');
+              job.matchScore = calculateMatchScore(profile, job);
+            }
+          } catch (e) {
+            console.error('Error in Job beforeSave hook:', e);
+          }
+        }
+      }
+    },
   );
-
+ 
   const Application = sequelize.define(
     'Application',
     {
@@ -199,6 +232,11 @@ export function initializeModels(sequelize) {
       },
       appliedAt: { type: DataTypes.DATE, field: 'applied_at' },
       lastStatusAt: { type: DataTypes.DATE, field: 'last_status_at' },
+      resumeId: { type: DataTypes.UUID, field: 'resume_id' },
+      coverLetter: { type: DataTypes.TEXT, field: 'cover_letter' },
+      referralConnectionId: { type: DataTypes.UUID, field: 'referral_connection_id' },
+      notes: { type: DataTypes.TEXT },
+      nextFollowUpDate: { type: DataTypes.DATEONLY, field: 'next_follow_up_date' },
     },
     { ...baseOptions, tableName: 'applications' },
   );
@@ -335,6 +373,8 @@ export function initializeModels(sequelize) {
   Application.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
   Job.hasOne(Application, { foreignKey: 'job_id', as: 'application' });
   Application.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
+  Application.belongsTo(Resume, { foreignKey: 'resume_id', as: 'resume' });
+  Application.belongsTo(Connection, { foreignKey: 'referral_connection_id', as: 'referralConnection' });
 
   Application.hasMany(ApplicationEvent, { foreignKey: 'application_id', as: 'events' });
   ApplicationEvent.belongsTo(Application, { foreignKey: 'application_id', as: 'application' });
