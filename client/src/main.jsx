@@ -1320,7 +1320,7 @@ function App() {
                                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
                                 className="activity-item"
                                 onClick={() => {
-                                  setConnFilters({ ...connFilters, title: r.category, page: 1 });
+                                  setConnFilters({ ...connFilters, roleCategory: [r.category], page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
@@ -1350,7 +1350,7 @@ function App() {
                                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
                                 className="activity-item"
                                 onClick={() => {
-                                  setConnFilters({ ...connFilters, title: s.level, page: 1 });
+                                  setConnFilters({ ...connFilters, seniority: [s.level], page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
