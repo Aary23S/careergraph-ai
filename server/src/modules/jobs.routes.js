@@ -122,6 +122,12 @@ async function serializeJob(job, profile, userId) {
   const jobSkills = extractSkillsFromText(jobText);
   const profileSkills = (profile?.skills || []).map(s => s.toLowerCase());
 
+  // Fetch associated Application with timeline events
+  const app = await models.Application.findOne({
+    where: { job_id: job.id, user_id: userId },
+    include: [{ model: models.ApplicationEvent, as: 'events' }]
+  });
+
   return {
     ...jobJson,
     companyName,
@@ -130,7 +136,11 @@ async function serializeJob(job, profile, userId) {
     missingSkills: jobSkills.filter(s => !profileSkills.includes(s)),
     opportunityScore,
     recommendedContacts: scoredContacts,
-    recommendedAction
+    recommendedAction,
+    application: app ? {
+      ...app.toJSON(),
+      events: app.events || []
+    } : null
   };
 }
 

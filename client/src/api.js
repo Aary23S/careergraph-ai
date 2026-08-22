@@ -307,6 +307,22 @@ class ApiClient {
     return this.request(`/jobs/${jobId}`, { method: 'DELETE' });
   }
 
+  async ingestJob(jobData) {
+    const res = await this.request('/jobs/ingest', {
+      method: 'POST',
+      body: jobData,
+    });
+    return res.data;
+  }
+
+  async ingestJobsBatch(jobsArray) {
+    const res = await this.request('/jobs/ingest/batch', {
+      method: 'POST',
+      body: jobsArray,
+    });
+    return res.data;
+  }
+
   async archiveJob(jobId, isArchived) {
     const res = await this.request(`/jobs/${jobId}/archive`, {
       method: 'PATCH',
@@ -326,10 +342,26 @@ class ApiClient {
     return res.data;
   }
 
-  async createApplication(jobId, status) {
+  async createApplication(jobId, status, extra = {}) {
     const res = await this.request('/applications', {
       method: 'POST',
-      body: { jobId, status },
+      body: { jobId, status, ...extra },
+    });
+    return res.data;
+  }
+
+  async updateApplication(applicationId, data) {
+    const res = await this.request(`/applications/${applicationId}`, {
+      method: 'PUT',
+      body: data,
+    });
+    return res.data;
+  }
+
+  async createApplicationEvent(applicationId, eventData) {
+    const res = await this.request(`/applications/${applicationId}/events`, {
+      method: 'POST',
+      body: eventData,
     });
     return res.data;
   }
