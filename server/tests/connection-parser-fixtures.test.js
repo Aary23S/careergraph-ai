@@ -152,4 +152,52 @@ Computer Science
     expect(result.education[0].startYear).toBe('2021');
     expect(result.education[0].endYear).toBe('2025');
   });
+
+  it('correctly parses Profile5 (Vidith Agarwal layout with languages and certifications preceding header)', async () => {
+    const mockPDFText = `
+Contact
+2525 Home Crest Dr, San Jose, CA
+95131
+8573887114 (Mobile)
+vidithagarwal315@gmail.com
+www.linkedin.com/in/vidithagarwal
+
+Top Skills
+TypeScript
+Jira
+Data Analysis
+
+Languages
+Hindi (Native or Bilingual)
+English (Full Professional)
+
+Certifications
+AWS Certified Cloud Practitioner
+Microsoft Imagine Cup India Finalist
+
+Vidith Agarwal
+San Francisco Bay Area
+
+Summary
+I recently completed my Master's in Computer Science from Northeastern University and joined Adobe as a Software Development Engineer 2...
+
+Experience
+Adobe
+1 year 5 months
+Software Development engineer 3
+February 2026 - Present (2 months)
+San Jose, CA
+`;
+
+    const result = await parseLinkedInPDF(Buffer.from('mock'), mockPDFText);
+    expect(result.name).toBe('Vidith Agarwal');
+    expect(result.linkedinId).toBe('vidithagarwal');
+    expect(result.email).toBe('vidithagarwal315@gmail.com');
+    expect(result.skills).toEqual(['TypeScript', 'Jira', 'Data Analysis']);
+    expect(result.languages).toEqual(['Hindi (Native or Bilingual)', 'English (Full Professional)']);
+    expect(result.certifications).toEqual(['AWS Certified Cloud Practitioner', 'Microsoft Imagine Cup India Finalist']);
+    expect(result.experience.length).toBe(1);
+    expect(result.experience[0].company).toBe('Adobe');
+    expect(result.experience[0].title).toBe('Software Development engineer 3');
+  });
 });
