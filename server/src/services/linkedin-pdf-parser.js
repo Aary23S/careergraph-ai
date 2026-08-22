@@ -42,6 +42,9 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
       await parser.destroy();
     }
   }
+
+  // Normalize Unicode control/space characters
+  text = text.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ');
   
   // 1. Page-aware line normalization
   const pages = text.split(/\f/);
@@ -85,37 +88,6 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     lines.push(curr);
   }
 
-  // Pre-extract email & profile URL for name matching
-  let email = '';
-  let profileUrl = '';
-  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-  const linkedinRegex = /(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_\-%\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+/g;
-  
-  const reconstructedText = lines.map(l => l.normalizedText).join('\n');
-  
-  const allEmails = reconstructedText.match(emailRegex) || [];
-  if (allEmails.length > 0) {
-    email = allEmails[0].trim();
-  }
-
-  const allUrls = reconstructedText.match(linkedinRegex) || [];
-  if (allUrls.length > 0) {
-    profileUrl = allUrls[0].trim();
-    if (!profileUrl.startsWith('http')) {
-      profileUrl = `https://${profileUrl}`;
-    }
-  }
-
-  let slugWords = [];
-  if (profileUrl) {
-    const slug = profileUrl.split('/in/')[1]?.split('/')[0]?.split('?')[0] || '';
-    slugWords = slug.toLowerCase().split(/[^a-z0-9]/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
-  }
-  if (slugWords.length === 0 && email) {
-    const emailUser = email.split('@')[0] || '';
-    slugWords = emailUser.toLowerCase().split(/[^a-z0-9]/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
-  }
-
   // Section detector headings
   const SECTION_HEADINGS = {
     'contact': 'CONTACT',
@@ -130,10 +102,92 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     'education': 'EDUCATION'
   };
 
-  // Find Name line using slugWords
+  // 2. Section state machine routing (first pass)
+  let activeSection = 'NONE';
+  const sectionContent = {
+    CONTACT: [],
+    SKILLS: [],
+    CERTIFICATIONS: [],
+    PROJECTS: [],
+    LANGUAGES: [],
+    SUMMARY: [],
+    EXPERIENCE: [],
+    EDUCATION: []
+  };
+
+  let skillsHeaderIdx = -1;
+  let summaryHeaderIdx = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const lineObj = lines[i];
+    const textLower = lineObj.normalizedText.toLowerCase();
+
+    if (SECTION_HEADINGS[textLower]) {
+      activeSection = SECTION_HEADINGS[textLower];
+      if (activeSection === 'SKILLS') skillsHeaderIdx = i;
+      if (activeSection === 'SUMMARY') summaryHeaderIdx = i;
+      continue;
+    }
+
+    if (activeSection !== 'NONE') {
+      sectionContent[activeSection].push({ ...lineObj, originalIndex: i });
+    }
+  }
+
+  // Extract email, profileUrl strictly from CONTACT section
+  let email = '';
+  let profileUrl = '';
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  const linkedinRegex = /(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_\-%\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+/g;
+
+  sectionContent.CONTACT.forEach(l => {
+    const txt = l.normalizedText;
+    const matchEmail = txt.match(emailRegex);
+    if (matchEmail && !email) {
+      email = matchEmail[0].trim();
+    }
+    const matchUrl = txt.match(linkedinRegex);
+    if (matchUrl && !profileUrl) {
+      profileUrl = matchUrl[0].trim();
+      if (!profileUrl.startsWith('http')) {
+        profileUrl = `https://${profileUrl}`;
+      }
+    }
+  });
+
+  // Extract linkedinId from URL
+  let linkedinId = '';
+  if (profileUrl) {
+    linkedinId = profileUrl
+      .replace(/https?:\/\/(www\.)?linkedin\.com\/in\//i, '')
+      .replace(/\/$/, '')
+      .split('/')[0]
+      .split('?')[0];
+  }
+
+  // Extract identity header strictly between Skills and Summary bounds
+  let searchStart = 0;
+  if (sectionContent.SKILLS.length > 0) {
+    searchStart = sectionContent.SKILLS[sectionContent.SKILLS.length - 1].originalIndex + 1;
+  } else if (skillsHeaderIdx !== -1) {
+    searchStart = skillsHeaderIdx + 1;
+  }
+
+  const searchEnd = summaryHeaderIdx !== -1 ? summaryHeaderIdx : lines.length;
+
   let name = '';
   let nameIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
+
+  let slugWords = [];
+  if (linkedinId) {
+    slugWords = linkedinId.toLowerCase().split(/[^a-z0-9]/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
+  }
+  if (slugWords.length === 0 && email) {
+    const emailUser = email.split('@')[0] || '';
+    slugWords = emailUser.toLowerCase().split(/[^a-z0-9]/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
+  }
+
+  for (let i = searchStart; i < searchEnd; i++) {
     const line = lines[i].normalizedText;
     const lower = line.toLowerCase();
     if (
@@ -151,9 +205,8 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     }
   }
 
-  // Fallback name search
   if (!name) {
-    for (let i = 0; i < lines.length; i++) {
+    for (let i = searchStart; i < searchEnd; i++) {
       const line = lines[i].normalizedText;
       const lower = line.toLowerCase();
       if (
@@ -170,55 +223,29 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     }
   }
 
-  // Extract headline & location
   let headline = '';
   let location = '';
   if (nameIdx !== -1) {
-    if (nameIdx + 1 < lines.length && !SECTION_HEADINGS[lines[nameIdx + 1].normalizedText.toLowerCase()]) {
+    if (nameIdx + 1 < searchEnd && !SECTION_HEADINGS[lines[nameIdx + 1].normalizedText.toLowerCase()]) {
       headline = lines[nameIdx + 1].rawText;
-      if (nameIdx + 2 < lines.length && !SECTION_HEADINGS[lines[nameIdx + 2].normalizedText.toLowerCase()]) {
+      if (nameIdx + 2 < searchEnd && !SECTION_HEADINGS[lines[nameIdx + 2].normalizedText.toLowerCase()]) {
         location = lines[nameIdx + 2].rawText;
       }
     }
+
+    // Clean sectionContent to remove header fields if they leaked
+    const skipIndices = [nameIdx, nameIdx + 1, nameIdx + 2];
+    Object.keys(sectionContent).forEach(section => {
+      sectionContent[section] = sectionContent[section].filter(l => !skipIndices.includes(l.originalIndex));
+    });
   }
 
-  // 2. Section state machine routing
-  let activeSection = 'NONE';
-  const sectionContent = {
-    CONTACT: [],
-    SKILLS: [],
-    CERTIFICATIONS: [],
-    PROJECTS: [],
-    LANGUAGES: [],
-    SUMMARY: [],
-    EXPERIENCE: [],
-    EDUCATION: []
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    const lineObj = lines[i];
-    const textLower = lineObj.normalizedText.toLowerCase();
-
-    if (SECTION_HEADINGS[textLower]) {
-      activeSection = SECTION_HEADINGS[textLower];
-      continue;
-    }
-
-    // Skip identity header
-    if (nameIdx !== -1 && i >= nameIdx && i <= nameIdx + 2) {
-      continue;
-    }
-
-    if (activeSection !== 'NONE') {
-      sectionContent[activeSection].push(lineObj);
-    }
-  }
-
-  // Parse Contact
+  // Extract Contact links (excluding main LinkedIn profile)
   const contact = {
     email: email || '',
     phone: '',
     linkedinUrl: profileUrl || '',
+    linkedinId: linkedinId || '',
     otherLinks: []
   };
   const phoneRegex = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
@@ -386,7 +413,6 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     }
   }
 
-  // Derive title & company for legacy mapping
   let company = null;
   let title = null;
   if (experiences.length > 0) {
@@ -402,7 +428,6 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     }
   }
 
-  // Confidence & validation levels
   const confidence = {
     name: name && name !== 'Unknown Contact' ? (slugWords.length > 0 && slugWords.some(w => name.toLowerCase().includes(w)) ? 0.99 : 0.75) : 0.0,
     email: email ? 0.99 : 0.0,
@@ -426,6 +451,7 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     name: name || 'Unknown',
     email: email || null,
     profileUrl: profileUrl || null,
+    linkedinId: linkedinId || null,
     headline: headline || null,
     location: location || null,
     company,
