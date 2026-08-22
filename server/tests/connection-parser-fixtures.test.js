@@ -44,6 +44,7 @@ Bachelor of Science
     expect(result.location).toBe('Rajasthan, India');
     expect(result.email).toBe('asarkar1993@gmail.com');
     expect(result.profileUrl).toContain('linkedin.com/in/anusree-sarkar');
+    expect(result.linkedinId).toBe('anusree-sarkar');
     expect(result.skills).toEqual(['Java', 'Eclipse', 'IntelliJ IDEA']);
     expect(result.certifications).toEqual(['Convolutional Neural Networks', 'Neural Networks and Deep Learning']);
     expect(result.experience.length).toBe(2);
@@ -94,6 +95,7 @@ Bachelor of Technology
     expect(result.name).toBe('Ashish Agarwal');
     // Verify email reconstruction works
     expect(result.email).toBe('agarwal.ashish4296@gmail.com');
+    expect(result.linkedinId).toBe('ashish-agarwal');
     expect(result.languages).toEqual(['Hindi', 'English']);
     expect(result.experience[0].company).toBe('Adobe');
     expect(result.experience[0].title).toBe('Senior Computer Scientist 1');
@@ -140,6 +142,7 @@ Computer Science
 
     const result = await parseLinkedInPDF(Buffer.from('mock'), mockPDFText);
     expect(result.name).toBe('Gurnoor Chhabra');
+    expect(result.linkedinId).toBe('gurnoor-chhabra');
     expect(result.skills).toEqual(['Go', 'Java', 'Software Development']);
     expect(result.certifications).toEqual(['ICPC']);
     expect(result.experience.length).toBe(2);

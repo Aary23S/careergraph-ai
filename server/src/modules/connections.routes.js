@@ -45,6 +45,7 @@ const createSchema = Joi.object({
   projects: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
   experience: Joi.alternatives().try(Joi.array(), Joi.string()).allow(null),
   education: Joi.alternatives().try(Joi.array(), Joi.string()).allow(null),
+  linkedinId: Joi.string().allow('', null),
 });
 
 const querySchema = Joi.object({
@@ -726,7 +727,7 @@ router.post(
       const connection = await ensureConnectionOwnership(req.auth.userId, connectionId);
       
       const updates = {};
-      for (const key of ['headline', 'profileSummary', 'location', 'email', 'profileUrl']) {
+      for (const key of ['headline', 'profileSummary', 'location', 'email', 'profileUrl', 'linkedinId']) {
         if (parsed[key] !== undefined && parsed[key] !== null && parsed[key] !== '') {
           if (!connection[key]) {
             updates[key] = parsed[key];
@@ -810,6 +811,7 @@ router.post(
         location: parsed.location || null,
         email: parsed.email || null,
         profileUrl: parsed.profileUrl || null,
+        linkedinId: parsed.linkedinId || null,
         headline: parsed.headline || null,
         skills: parsed.skills || null,
         languages: parsed.languages || null,

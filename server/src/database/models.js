@@ -124,6 +124,7 @@ export function initializeModels(sequelize) {
       profileSummary: { type: DataTypes.TEXT, field: 'profile_summary' },
       dataSources: { type: DataTypes.JSON, field: 'data_sources' },
       profilePdfKey: { type: DataTypes.STRING, field: 'profile_pdf_key' },
+      linkedinId: { type: DataTypes.STRING, field: 'linkedin_id' },
       languages: { type: DataTypes.JSON },
       certifications: { type: DataTypes.JSON },
       projects: { type: DataTypes.JSON },
