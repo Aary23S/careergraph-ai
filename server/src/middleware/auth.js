@@ -4,12 +4,18 @@ import { AppError } from '../lib/http.js';
 
 export async function requireAuth(req, res, next) {
   try {
+    let token = '';
     const header = req.headers.authorization;
-    if (!header?.startsWith('Bearer ')) {
+    if (header?.startsWith('Bearer ')) {
+      token = header.slice('Bearer '.length);
+    } else if (req.query.token) {
+      token = req.query.token;
+    }
+
+    if (!token) {
       throw new AppError(401, 'AUTH_REQUIRED', 'Authentication is required.');
     }
 
-    const token = header.slice('Bearer '.length);
     const payload = verifyAccessToken(token);
     const user = await models.User.findByPk(payload.sub);
 
