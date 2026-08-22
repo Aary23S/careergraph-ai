@@ -40,6 +40,11 @@ const createSchema = Joi.object({
   skills: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
   externalLinks: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
   profilePdfKey: Joi.string().allow('', null),
+  languages: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
+  certifications: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
+  projects: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
+  experience: Joi.alternatives().try(Joi.array(), Joi.string()).allow(null),
+  education: Joi.alternatives().try(Joi.array(), Joi.string()).allow(null),
 });
 
 const querySchema = Joi.object({
@@ -198,6 +203,21 @@ router.post(
     }
     if (typeof body.externalLinks === 'string') {
       body.externalLinks = body.externalLinks.split(',').map(l => l.trim()).filter(Boolean);
+    }
+    if (typeof body.languages === 'string') {
+      body.languages = body.languages.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof body.certifications === 'string') {
+      body.certifications = body.certifications.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof body.projects === 'string') {
+      body.projects = body.projects.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof body.experience === 'string') {
+      try { body.experience = JSON.parse(body.experience); } catch(e) {}
+    }
+    if (typeof body.education === 'string') {
+      try { body.education = JSON.parse(body.education); } catch(e) {}
     }
     const dateFields = ['nextFollowUpDate', 'lastContactedDate', 'connectedDate'];
     dateFields.forEach(field => {
@@ -723,6 +743,46 @@ router.post(
         const existingLinks = connection.externalLinks || [];
         updates.externalLinks = Array.from(new Set([...existingLinks, ...parsed.externalLinks]));
       }
+      if (parsed.languages && parsed.languages.length > 0) {
+        const existing = connection.languages || [];
+        updates.languages = Array.from(new Set([...existing, ...parsed.languages]));
+      }
+      if (parsed.certifications && parsed.certifications.length > 0) {
+        const existing = connection.certifications || [];
+        updates.certifications = Array.from(new Set([...existing, ...parsed.certifications]));
+      }
+      if (parsed.projects && parsed.projects.length > 0) {
+        const existing = connection.projects || [];
+        updates.projects = Array.from(new Set([...existing, ...parsed.projects]));
+      }
+      if (parsed.experience && parsed.experience.length > 0) {
+        const existing = connection.experience || [];
+        const combined = [...existing];
+        parsed.experience.forEach(newItem => {
+          const isDuplicate = existing.some(oldItem => 
+            oldItem.company?.toLowerCase() === newItem.company?.toLowerCase() &&
+            oldItem.title?.toLowerCase() === newItem.title?.toLowerCase()
+          );
+          if (!isDuplicate) {
+            combined.push(newItem);
+          }
+        });
+        updates.experience = combined;
+      }
+      if (parsed.education && parsed.education.length > 0) {
+        const existing = connection.education || [];
+        const combined = [...existing];
+        parsed.education.forEach(newItem => {
+          const isDuplicate = existing.some(oldItem => 
+            oldItem.institution?.toLowerCase() === newItem.institution?.toLowerCase() &&
+            oldItem.degree?.toLowerCase() === newItem.degree?.toLowerCase()
+          );
+          if (!isDuplicate) {
+            combined.push(newItem);
+          }
+        });
+        updates.education = combined;
+      }
 
       if (parsed.profilePdfKey) {
         updates.profilePdfKey = parsed.profilePdfKey;
@@ -752,6 +812,11 @@ router.post(
         profileUrl: parsed.profileUrl || null,
         headline: parsed.headline || null,
         skills: parsed.skills || null,
+        languages: parsed.languages || null,
+        certifications: parsed.certifications || null,
+        projects: parsed.projects || null,
+        experience: parsed.experience || null,
+        education: parsed.education || null,
         externalLinks: parsed.externalLinks || null,
         profileSummary: parsed.profileSummary || null,
         profilePdfKey: parsed.profilePdfKey || null,
@@ -761,7 +826,11 @@ router.post(
           title: parsed.title ? 'linkedin_pdf' : undefined,
           headline: parsed.headline ? 'linkedin_pdf' : undefined,
           skills: parsed.skills ? 'linkedin_pdf' : undefined,
-          profileSummary: parsed.profileSummary ? 'linkedin_pdf' : undefined
+          profileSummary: parsed.profileSummary ? 'linkedin_pdf' : undefined,
+          languages: parsed.languages ? 'linkedin_pdf' : undefined,
+          certifications: parsed.certifications ? 'linkedin_pdf' : undefined,
+          experience: parsed.experience ? 'linkedin_pdf' : undefined,
+          education: parsed.education ? 'linkedin_pdf' : undefined
         },
         lastEnrichedAt: new Date()
       });
@@ -852,6 +921,21 @@ router.put(
     }
     if (typeof body.externalLinks === 'string') {
       body.externalLinks = body.externalLinks.split(',').map(l => l.trim()).filter(Boolean);
+    }
+    if (typeof body.languages === 'string') {
+      body.languages = body.languages.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof body.certifications === 'string') {
+      body.certifications = body.certifications.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof body.projects === 'string') {
+      body.projects = body.projects.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof body.experience === 'string') {
+      try { body.experience = JSON.parse(body.experience); } catch(e) {}
+    }
+    if (typeof body.education === 'string') {
+      try { body.education = JSON.parse(body.education); } catch(e) {}
     }
     const dateFields = ['nextFollowUpDate', 'lastContactedDate', 'connectedDate'];
     dateFields.forEach(field => {
