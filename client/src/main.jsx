@@ -2604,6 +2604,80 @@ function App() {
                           </div>
                         )}
 
+                        {connectionDetail.languages && connectionDetail.languages.length > 0 && (
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Languages</div>
+                            <div className="tags-list">
+                              {connectionDetail.languages.map(l => (
+                                <span key={l} className="badge badge-info" style={{ marginRight: '6px', marginBottom: '6px', display: 'inline-block' }}>{l}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {connectionDetail.certifications && connectionDetail.certifications.length > 0 && (
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Certifications</div>
+                            <div className="tags-list">
+                              {connectionDetail.certifications.map(c => (
+                                <span key={c} className="badge badge-secondary" style={{ marginRight: '6px', marginBottom: '6px', display: 'inline-block' }}>{c}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {connectionDetail.projects && connectionDetail.projects.length > 0 && (
+                          <div style={{ marginBottom: '16px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Projects</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {connectionDetail.projects.map(p => (
+                                <div key={p} style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>• {p}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {connectionDetail.experience && connectionDetail.experience.length > 0 && (
+                          <div style={{ marginBottom: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>Experience Timeline</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                              {connectionDetail.experience.map((exp, idx) => (
+                                <div key={idx} style={{ position: 'relative', paddingLeft: '16px', borderLeft: '2px solid var(--primary-glow)' }}>
+                                  <div style={{ fontWeight: 600, color: '#fff' }}>{exp.title}</div>
+                                  <div style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>{exp.company}</div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{exp.dateRange} {exp.location && `| ${exp.location}`}</div>
+                                  {exp.description && (
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px', whiteSpace: 'pre-wrap' }}>
+                                      {exp.description}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {connectionDetail.education && connectionDetail.education.length > 0 && (
+                          <div style={{ marginBottom: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>Education Milestones</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              {connectionDetail.education.map((edu, idx) => (
+                                <div key={idx} style={{ position: 'relative', paddingLeft: '16px', borderLeft: '2px solid var(--info-glow)' }}>
+                                  <div style={{ fontWeight: 600, color: '#fff' }}>{edu.institution}</div>
+                                  <div style={{ fontSize: '0.85rem', color: 'var(--info)' }}>
+                                    {edu.degree} {edu.field && ` - ${edu.field}`}
+                                  </div>
+                                  {(edu.startYear || edu.endYear) && (
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                      {edu.startYear} - {edu.endYear || 'Present'}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {connectionDetail.profilePdfKey && (
                           <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
                             <button
