@@ -158,11 +158,7 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
   // Extract linkedinId from URL
   let linkedinId = '';
   if (profileUrl) {
-    linkedinId = profileUrl
-      .replace(/https?:\/\/(www\.)?linkedin\.com\/in\//i, '')
-      .replace(/\/$/, '')
-      .split('/')[0]
-      .split('?')[0];
+    linkedinId = profileUrl.split('/in/')[1]?.split('/')[0]?.split('?')[0]?.trim() || '';
   }
 
   // Extract identity header strictly between Skills and Summary bounds
@@ -179,12 +175,17 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
   let nameIdx = -1;
 
   let slugWords = [];
+  const stopWords = ['www', 'linkedin', 'com', 'in', 'http', 'https', 'pdf', 'profile'];
   if (linkedinId) {
-    slugWords = linkedinId.toLowerCase().split(/[^a-z0-9]/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
+    slugWords = linkedinId.toLowerCase()
+      .split(/[^a-z0-9]/)
+      .filter(w => w.length >= 3 && !/^\d+$/.test(w) && !stopWords.includes(w));
   }
   if (slugWords.length === 0 && email) {
     const emailUser = email.split('@')[0] || '';
-    slugWords = emailUser.toLowerCase().split(/[^a-z0-9]/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
+    slugWords = emailUser.toLowerCase()
+      .split(/[^a-z0-9]/)
+      .filter(w => w.length >= 3 && !/^\d+$/.test(w) && !stopWords.includes(w));
   }
 
   for (let i = searchStart; i < searchEnd; i++) {
@@ -198,7 +199,12 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     ) {
       continue;
     }
-    if (slugWords.length > 0 && slugWords.some(w => lower.includes(w))) {
+
+    const nameParts = lower.split(/[^a-z]/).filter(p => p.length >= 3);
+    const targetSlug = (linkedinId || '').toLowerCase();
+    const targetEmailUser = (email || '').split('@')[0].toLowerCase();
+
+    if (nameParts.length > 0 && nameParts.every(part => targetSlug.includes(part) || targetEmailUser.includes(part))) {
       name = lines[i].rawText;
       nameIdx = i;
       break;
