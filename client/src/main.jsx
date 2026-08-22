@@ -66,6 +66,7 @@ function App() {
   const [enrichmentLoading, setEnrichmentLoading] = useState(false);
   const [enrichmentError, setEnrichmentError] = useState(null);
   const [pdfObjectURL, setPdfObjectURL] = useState(null);
+  const [showOriginalPdf, setShowOriginalPdf] = useState(false);
 
   const closeEnrichmentModal = () => {
     if (pdfObjectURL) {
@@ -450,6 +451,7 @@ function App() {
   };
 
   const loadConnectionDetail = async (id) => {
+    setShowOriginalPdf(false);
     setLoadingDetail(true);
     setDetailError(null);
     try {
@@ -2590,7 +2592,7 @@ function App() {
                         )}
 
                         {connectionDetail.externalLinks && connectionDetail.externalLinks.length > 0 && (
-                          <div>
+                          <div style={{ marginBottom: '16px' }}>
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Profile Links</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               {connectionDetail.externalLinks.map(link => (
@@ -2599,6 +2601,29 @@ function App() {
                                 </a>
                               ))}
                             </div>
+                          </div>
+                        )}
+
+                        {connectionDetail.profilePdfKey && (
+                          <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}
+                              onClick={() => setShowOriginalPdf(!showOriginalPdf)}
+                            >
+                              <span>📄 {showOriginalPdf ? 'Hide LinkedIn PDF' : 'View Original LinkedIn PDF'}</span>
+                            </button>
+                            {showOriginalPdf && (
+                              <div style={{ marginTop: '8px', background: 'var(--bg-tertiary)', padding: '8px', borderRadius: '8px' }}>
+                                <iframe
+                                  src={api.getConnectionPdfUrl(connectionDetail.id)}
+                                  width="100%"
+                                  height="500px"
+                                  style={{ border: 'none', borderRadius: '6px', background: '#fff' }}
+                                ></iframe>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

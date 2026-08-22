@@ -228,6 +228,10 @@ class ApiClient {
     return res.data;
   }
 
+  getConnectionPdfUrl(connectionId) {
+    return `${API_BASE}/connections/${connectionId}/pdf?token=${this.accessToken}`;
+  }
+
   async deleteConnection(connectionId) {
     return this.request(`/connections/${connectionId}`, { method: 'DELETE' });
   }

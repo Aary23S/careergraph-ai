@@ -123,6 +123,7 @@ export function initializeModels(sequelize) {
       externalLinks: { type: DataTypes.JSON, field: 'external_links' },
       profileSummary: { type: DataTypes.TEXT, field: 'profile_summary' },
       dataSources: { type: DataTypes.JSON, field: 'data_sources' },
+      profilePdfKey: { type: DataTypes.STRING, field: 'profile_pdf_key' },
     },
     {
       ...baseOptions,

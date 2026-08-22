@@ -5,6 +5,7 @@ import { parse } from 'csv-parse/sync';
 import { Op } from 'sequelize';
 import crypto from 'crypto';
 import { models } from '../config/database.js';
+import { fileStorage } from '../lib/storage.js';
 import { AppError, asyncHandler, created, ok } from '../lib/http.js';
 import { getPagination, makePageMeta } from '../lib/pagination.js';
 import { createNotification } from '../lib/notifications.js';
@@ -38,6 +39,7 @@ const createSchema = Joi.object({
   profileSummary: Joi.string().allow('', null),
   skills: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
   externalLinks: Joi.alternatives().try(Joi.array().items(Joi.string()), Joi.string()).allow(null),
+  profilePdfKey: Joi.string().allow('', null),
 });
 
 const querySchema = Joi.object({
@@ -642,7 +644,9 @@ router.post(
     if (!req.file) {
       throw new AppError(400, 'FILE_REQUIRED', 'PDF file is required.');
     }
+    const saved = await fileStorage.save(req.file);
     const parsed = await parseLinkedInPDF(req.file.buffer);
+    parsed.profilePdfKey = saved.key;
     
     // Perform matching priority
     let matchedConnection = null;
@@ -720,11 +724,17 @@ router.post(
         updates.externalLinks = Array.from(new Set([...existingLinks, ...parsed.externalLinks]));
       }
 
+      if (parsed.profilePdfKey) {
+        updates.profilePdfKey = parsed.profilePdfKey;
+      }
+
       // Track provenance
       const currentSources = connection.dataSources || {};
       const newSources = { ...currentSources };
       for (const key in updates) {
-        newSources[key] = 'linkedin_pdf';
+        if (key !== 'profilePdfKey') {
+          newSources[key] = 'linkedin_pdf';
+        }
       }
       updates.dataSources = newSources;
       updates.lastEnrichedAt = new Date();
@@ -744,6 +754,7 @@ router.post(
         skills: parsed.skills || null,
         externalLinks: parsed.externalLinks || null,
         profileSummary: parsed.profileSummary || null,
+        profilePdfKey: parsed.profilePdfKey || null,
         dataSources: {
           name: 'linkedin_pdf',
           company: parsed.company ? 'linkedin_pdf' : undefined,
@@ -758,6 +769,20 @@ router.post(
     } else {
       throw new AppError(400, 'INVALID_ACTION', 'Action must be enrich or create.');
     }
+  })
+);
+
+router.get(
+  '/:connectionId/pdf',
+  asyncHandler(async (req, res) => {
+    const connection = await ensureConnectionOwnership(req.auth.userId, req.params.connectionId);
+    if (!connection.profilePdfKey) {
+      throw new AppError(404, 'NOT_FOUND', 'Profile PDF not found for this connection.');
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="profile.pdf"');
+    fileStorage.createReadStream(connection.profilePdfKey).pipe(res);
   })
 );
 
