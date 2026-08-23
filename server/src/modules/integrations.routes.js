@@ -19,7 +19,7 @@ router.get(
   asyncHandler(async (req, res) => {
     // Pass userId as state to retrieve it during callback redirection
     const userId = req.query.userId || req.auth?.userId;
-    if (!userId) {
+    if (!userId || userId === 'undefined' || userId === 'null') {
       throw new AppError(400, 'BAD_REQUEST', 'User ID is required in query params');
     }
     const authUrl = getAuthorizationUrl(userId);
