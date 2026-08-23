@@ -15,14 +15,15 @@ export function createOAuthClient() {
 /**
  * Generates the redirect URL to prompt user consent for gmail.readonly
  */
-export function getAuthorizationUrl() {
+export function getAuthorizationUrl(userId) {
   const oauth2Client = createOAuthClient();
   const scopes = env.gmailOauthScopes ? env.gmailOauthScopes.split(',') : ['https://www.googleapis.com/auth/gmail.readonly'];
 
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
-    scope: scopes
+    scope: scopes,
+    state: userId
   });
 }
 
