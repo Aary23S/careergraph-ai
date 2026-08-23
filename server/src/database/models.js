@@ -361,6 +361,32 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'job_search_profiles' }
   );
 
+  const GmailIntegration = sequelize.define(
+    'GmailIntegration',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      emailAddress: { type: DataTypes.STRING, allowNull: false, field: 'email_address' },
+      encryptedRefreshToken: { type: DataTypes.TEXT, allowNull: false, field: 'encrypted_refresh_token' },
+      scope: { type: DataTypes.STRING, allowNull: true },
+      historyId: { type: DataTypes.STRING, allowNull: true, field: 'history_id' },
+      lastSyncAt: { type: DataTypes.DATE, allowNull: true, field: 'last_sync_at' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'active' }
+    },
+    { ...baseOptions, tableName: 'gmail_integrations' }
+  );
+
+  const JobIngestionEvent = sequelize.define(
+    'JobIngestionEvent',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      sourceType: { type: DataTypes.STRING, allowNull: false, field: 'source_type' },
+      sourceMessageId: { type: DataTypes.STRING, allowNull: false, field: 'source_message_id' },
+      status: { type: DataTypes.STRING, allowNull: false },
+      processedAt: { type: DataTypes.DATE, allowNull: false, field: 'processed_at' }
+    },
+    { ...baseOptions, tableName: 'job_ingestion_events' }
+  );
+
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -423,6 +449,12 @@ export function initializeModels(sequelize) {
   User.hasMany(JobSearchProfile, { foreignKey: 'user_id', as: 'searchProfiles' });
   JobSearchProfile.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+  User.hasOne(GmailIntegration, { foreignKey: 'user_id', as: 'gmailIntegration' });
+  GmailIntegration.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  User.hasMany(JobIngestionEvent, { foreignKey: 'user_id', as: 'ingestionEvents' });
+  JobIngestionEvent.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
   return {
     User,
     RefreshToken,
@@ -441,5 +473,7 @@ export function initializeModels(sequelize) {
     UserPreference,
     SavedConnectionView,
     JobSearchProfile,
+    GmailIntegration,
+    JobIngestionEvent,
   };
 }

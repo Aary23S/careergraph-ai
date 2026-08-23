@@ -37,6 +37,8 @@ function App() {
   const [jobMeta, setJobMeta] = useState({ total: 0, totalPages: 1 });
   const [jobSubTab, setJobSubTab] = useState('list'); // 'list', 'sources'
   const [searchProfiles, setSearchProfiles] = useState([]);
+  const [gmailStatus, setGmailStatus] = useState(null);
+  const [gmailSyncing, setGmailSyncing] = useState(false);
 
   // Connection detail states
   const [activeConnectionId, setActiveConnectionId] = useState(null);
@@ -135,6 +137,7 @@ function App() {
       if (activeTab === 'jobs') {
         loadJobs();
         loadSearchProfiles();
+        loadGmailStatus();
       }
       if (activeTab === 'applications') loadApplications();
       if (activeTab === 'outreach') loadOutreach();
@@ -258,6 +261,17 @@ function App() {
   };
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gmail_connected') === 'true') {
+      alert(`Gmail successfully connected: ${params.get('email') || ''}`);
+      // Clean query params
+      window.history.replaceState({}, document.title, window.location.pathname);
+      loadGmailStatus();
+    } else if (params.get('gmail_error')) {
+      alert(`Failed to connect Gmail: ${params.get('gmail_error')}`);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     if (window.location.search) {
       const parsedFilters = loadFiltersFromURL();
       setConnFilters(prev => ({ ...prev, ...parsedFilters }));
@@ -592,6 +606,15 @@ function App() {
       setSearchProfiles(data);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const loadGmailStatus = async () => {
+    try {
+      const res = await api.request('/integrations/gmail/status');
+      setGmailStatus(res.data);
+    } catch (err) {
+      console.error('Failed to load Gmail status:', err);
     }
   };
 
@@ -2383,6 +2406,77 @@ function App() {
                     >
                       Sync Adzuna Jobs Now
                     </button>
+                  </div>
+                </div>
+
+                <div className="card-panel" style={{ marginBottom: '24px' }}>
+                  <h2 className="card-title">LinkedIn Job Alerts</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                    Connect Gmail to fetch and parse job listings from LinkedIn alert emails under the <strong>CareerGraph/LinkedInJobs</strong> label.
+                  </p>
+
+                  <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+                    {gmailStatus?.connected ? (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, color: 'var(--success)' }}>
+                              🟢 Connected: {gmailStatus.email}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                              Label: CareerGraph/LinkedInJobs &bull; Last Sync: {gmailStatus.lastSyncAt ? new Date(gmailStatus.lastSyncAt).toLocaleString() : 'Never'}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="btn btn-primary"
+                              disabled={gmailSyncing}
+                              onClick={async () => {
+                                setGmailSyncing(true);
+                                try {
+                                  const res = await api.request('/integrations/gmail/jobs/sync', 'POST');
+                                  alert(`Gmail Sync Complete!\nEmails Processed: ${res.data.emailsProcessed}\nJobs Found: ${res.data.jobsFound}\nCreated: ${res.data.created}\nUpdated: ${res.data.updated}\nDuplicates: ${res.data.duplicates}\nFailed: ${res.data.failed}`);
+                                  loadGmailStatus();
+                                  loadJobs();
+                                } catch (err) {
+                                  alert(err.message);
+                                } finally {
+                                  setGmailSyncing(false);
+                                }
+                              }}
+                            >
+                              {gmailSyncing ? 'Syncing...' : 'Sync Now'}
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              onClick={async () => {
+                                if (confirm('Disconnect Gmail integration?')) {
+                                  try {
+                                    await api.request('/integrations/gmail/disconnect', 'POST');
+                                    loadGmailStatus();
+                                  } catch (err) {
+                                    alert(err.message);
+                                  }
+                                }
+                              }}
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Not Connected</span>
+                        <a
+                          className="btn btn-primary"
+                          href={`http://localhost:5000/api/integrations/gmail/connect?userId=${user?.id}`}
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Connect Gmail
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
 

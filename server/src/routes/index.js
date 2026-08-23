@@ -11,6 +11,7 @@ import outreachRoutes from '../modules/outreach.routes.js';
 import notificationRoutes from '../modules/notifications.routes.js';
 import dashboardRoutes from '../modules/dashboard.routes.js';
 import noteRoutes from '../modules/notes.routes.js';
+import integrationsRoutes from '../modules/integrations.routes.js';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/outreach', outreachRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/notes', noteRoutes);
+router.use('/integrations', integrationsRoutes);
 
 export default router;
