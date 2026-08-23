@@ -35,6 +35,8 @@ function App() {
   const [connMeta, setConnMeta] = useState({ total: 0, totalPages: 1 });
   const [jobFilters, setJobFilters] = useState({ page: 1, pageSize: 10, q: '', company: '', location: '', status: '', archived: false });
   const [jobMeta, setJobMeta] = useState({ total: 0, totalPages: 1 });
+  const [jobSubTab, setJobSubTab] = useState('list'); // 'list', 'sources'
+  const [searchProfiles, setSearchProfiles] = useState([]);
 
   // Connection detail states
   const [activeConnectionId, setActiveConnectionId] = useState(null);
@@ -130,7 +132,10 @@ function App() {
       if (activeTab === 'profile') loadProfile();
       if (activeTab === 'resumes') loadResumes();
       if (activeTab === 'connections') loadConnections();
-      if (activeTab === 'jobs') loadJobs();
+      if (activeTab === 'jobs') {
+        loadJobs();
+        loadSearchProfiles();
+      }
       if (activeTab === 'applications') loadApplications();
       if (activeTab === 'outreach') loadOutreach();
       loadNotifications();
@@ -576,6 +581,15 @@ function App() {
       const res = await api.listJobs(jobFilters);
       setJobs(res.data);
       setJobMeta(res.meta || { total: res.data.length, totalPages: 1 });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const loadSearchProfiles = async () => {
+    try {
+      const data = await api.listJobSearchProfiles();
+      setSearchProfiles(data);
     } catch (e) {
       console.error(e);
     }
@@ -2179,62 +2193,86 @@ function App() {
               </button>
             </div>
 
-            <div className="filter-bar">
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Job Title / keyword</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={jobFilters.q}
-                  onChange={(e) => setJobFilters({ ...jobFilters, q: e.target.value, page: 1 })}
-                />
-              </div>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Location</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={jobFilters.location}
-                  onChange={(e) => setJobFilters({ ...jobFilters, location: e.target.value, page: 1 })}
-                />
-              </div>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Status</label>
-                <select
-                  className="form-input"
-                  value={jobFilters.status}
-                  onChange={(e) => setJobFilters({ ...jobFilters, status: e.target.value, page: 1 })}
-                >
-                  <option value="">All statuses</option>
-                  <option value="new">New</option>
-                  <option value="saved">Saved</option>
-                  <option value="applied">Applied</option>
-                </select>
-              </div>
-              <button className="btn btn-secondary" onClick={loadJobs}>Search</button>
+            <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--bg-secondary)', marginBottom: '16px', paddingBottom: '8px' }}>
+              <button
+                className={`btn ${jobSubTab === 'list' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                onClick={() => setJobSubTab('list')}
+              >
+                All Jobs
+              </button>
+              <button
+                className={`btn ${jobSubTab === 'sources' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                onClick={() => setJobSubTab('sources')}
+              >
+                Settings ➔ Job Sources
+              </button>
             </div>
 
-            <div className="card-panel">
-              {jobs.length === 0 ? (
-                <div className="empty-state">No jobs found matching conditions.</div>
-              ) : (
-                <div className="data-table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Job Title</th>
-                        <th>Company Name</th>
-                        <th>Location</th>
-                        <th>Post Status</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {jobs.map((job) => (
-                        <tr key={job.id}>
-                          <td style={{ fontWeight: 600 }}>{job.title}</td>
-                          <td>{job.companyName}</td>
-                          <td>{job.location || 'Remote'}</td>
+            {jobSubTab === 'list' && (
+              <div>
+                <div className="filter-bar">
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label">Job Title / keyword</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={jobFilters.q}
+                      onChange={(e) => setJobFilters({ ...jobFilters, q: e.target.value, page: 1 })}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label">Location</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={jobFilters.location}
+                      onChange={(e) => setJobFilters({ ...jobFilters, location: e.target.value, page: 1 })}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label">Status</label>
+                    <select
+                      className="form-input"
+                      value={jobFilters.status}
+                      onChange={(e) => setJobFilters({ ...jobFilters, status: e.target.value, page: 1 })}
+                    >
+                      <option value="">All statuses</option>
+                      <option value="new">New</option>
+                      <option value="saved">Saved</option>
+                      <option value="applied">Applied</option>
+                    </select>
+                  </div>
+                  <button className="btn btn-secondary" onClick={loadJobs}>Search</button>
+                </div>
+
+                <div className="card-panel">
+                  {jobs.length === 0 ? (
+                    <div className="empty-state">No jobs found matching conditions.</div>
+                  ) : (
+                    <div className="data-table-container">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Job Title</th>
+                            <th>Company Name</th>
+                            <th>Location</th>
+                            <th>Post Status</th>
+                            <th style={{ textAlign: 'right' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {jobs.map((job) => (
+                            <tr key={job.id}>
+                              <td style={{ fontWeight: 600 }}>{job.title}</td>
+                              <td>
+                                {job.companyName}
+                                <span className="badge badge-secondary" style={{ marginLeft: '8px', textTransform: 'capitalize', fontSize: '0.75rem' }}>
+                                  {job.source || 'manual'}
+                                </span>
+                              </td>
+                              <td>{job.location || 'Remote'}</td>
                           <td>
                             <span className="badge badge-info">{job.status}</span>
                           </td>
@@ -2313,6 +2351,181 @@ function App() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+            {jobSubTab === 'sources' && (
+              <div>
+                <div className="card-panel" style={{ marginBottom: '24px' }}>
+                  <h2 className="card-title">🔌 Job Sources: Adzuna API Integration</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                    Adzuna is connected in your backend configurations. Run manual sync below or let the scheduled background runner fetch jobs automatically every 4 hours.
+                  </p>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Adzuna Status</div>
+                      <div style={{ fontWeight: 700, color: 'var(--success)' }}>
+                        🟢 Active / Configured
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={async () => {
+                        try {
+                          const summary = await api.syncAdzunaJobs();
+                          alert(`Adzuna Sync Complete!\nProcessed: ${summary.processed}\nCreated: ${summary.created}\nUpdated: ${summary.updated}\nDuplicates: ${summary.duplicate}\nFailed: ${summary.failed}`);
+                          loadJobs();
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                      }}
+                    >
+                      Sync Adzuna Jobs Now
+                    </button>
+                  </div>
+                </div>
+
+                <div className="card-panel">
+                  <h2 className="card-title">📝 Job Search Profiles</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                    Configure search queries. The Adzuna sync service will run queries for each active profile to discover relevant roles.
+                  </p>
+
+                  {/* Add New Profile Form */}
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const data = Object.fromEntries(formData.entries());
+                    try {
+                      await api.createJobSearchProfile({
+                        name: data.name,
+                        keywords: data.keywords || '',
+                        location: data.location || '',
+                        remotePreference: data.remotePreference || '',
+                        experienceLevel: data.experienceLevel || '',
+                        employmentType: data.employmentType || '',
+                        excludedKeywords: data.excludedKeywords || '',
+                        isActive: true
+                      });
+                      loadSearchProfiles();
+                      e.target.reset();
+                      alert('Search profile created!');
+                    } catch (err) {
+                      alert(err.message);
+                    }
+                  }} style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '8px', marginBottom: '24px' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '12px' }}>Add Search Profile</h3>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label">Profile Name *</label>
+                        <input type="text" name="name" className="form-input" placeholder="e.g. React Roles" required />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Keywords / Query *</label>
+                        <input type="text" name="keywords" className="form-input" placeholder="e.g. React, Frontend" required />
+                      </div>
+                    </div>
+                    
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label">Location</label>
+                        <input type="text" name="location" className="form-input" placeholder="e.g. San Francisco" />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Remote Preference</label>
+                        <select name="remotePreference" className="form-input">
+                          <option value="">No Preference</option>
+                          <option value="remote">Remote Only</option>
+                          <option value="hybrid">Hybrid</option>
+                          <option value="onsite">Onsite Only</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label">Excluded Keywords</label>
+                        <input type="text" name="excludedKeywords" className="form-input" placeholder="e.g. Senior, Ruby" />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Employment Type</label>
+                        <select name="employmentType" className="form-input">
+                          <option value="">Any Type</option>
+                          <option value="full-time">Full-time</option>
+                          <option value="part-time">Part-time</option>
+                          <option value="contract">Contract</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <button type="submit" className="btn btn-primary">Create Profile</button>
+                  </form>
+
+                  {/* List of profiles */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {searchProfiles.length === 0 ? (
+                      <div style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No search profiles configured yet. Default parameters matching your Profile targets will be used during sync.</div>
+                    ) : (
+                      searchProfiles.map(p => (
+                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {p.name}
+                              <span className={`badge ${p.isActive ? 'badge-success' : 'badge-secondary'}`}>
+                                {p.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                              <strong>Keywords:</strong> {p.keywords} &bull; 
+                              <strong> Location:</strong> {p.location || 'Anywhere'} &bull; 
+                              <strong> Remote:</strong> {p.remotePreference || 'Any'}
+                            </div>
+                            {p.excludedKeywords && (
+                              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                <strong>Excluded:</strong> {p.excludedKeywords}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="btn btn-secondary"
+                              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                              onClick={async () => {
+                                try {
+                                  await api.updateJobSearchProfile(p.id, { ...p, isActive: !p.isActive });
+                                  loadSearchProfiles();
+                                } catch (err) {
+                                  alert(err.message);
+                                }
+                              }}
+                            >
+                              Toggle Status
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                              onClick={async () => {
+                                if (confirm('Delete this search profile?')) {
+                                  try {
+                                    await api.deleteJobSearchProfile(p.id);
+                                    loadSearchProfiles();
+                                  } catch (err) {
+                                    alert(err.message);
+                                  }
+                                }
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -344,6 +344,23 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'saved_connection_views' },
   );
 
+  const JobSearchProfile = sequelize.define(
+    'JobSearchProfile',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      name: { type: DataTypes.STRING, allowNull: false },
+      keywords: { type: DataTypes.STRING, allowNull: true },
+      location: { type: DataTypes.STRING, allowNull: true },
+      remotePreference: { type: DataTypes.STRING, allowNull: true, field: 'remote_preference' },
+      experienceLevel: { type: DataTypes.STRING, allowNull: true, field: 'experience_level' },
+      employmentType: { type: DataTypes.STRING, allowNull: true, field: 'employment_type' },
+      excludedKeywords: { type: DataTypes.STRING, allowNull: true, field: 'excluded_keywords' },
+      targetCompanies: { type: DataTypes.JSON, allowNull: true, field: 'target_companies' },
+      isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true, field: 'is_active' }
+    },
+    { ...baseOptions, tableName: 'job_search_profiles' }
+  );
+
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -403,6 +420,9 @@ export function initializeModels(sequelize) {
   User.hasMany(SavedConnectionView, { foreignKey: 'user_id', as: 'savedViews' });
   SavedConnectionView.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+  User.hasMany(JobSearchProfile, { foreignKey: 'user_id', as: 'searchProfiles' });
+  JobSearchProfile.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
   return {
     User,
     RefreshToken,
@@ -420,5 +440,6 @@ export function initializeModels(sequelize) {
     Notification,
     UserPreference,
     SavedConnectionView,
+    JobSearchProfile,
   };
 }

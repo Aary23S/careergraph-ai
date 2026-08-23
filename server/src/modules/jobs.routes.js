@@ -376,6 +376,78 @@ router.patch(
   }),
 );
 
+const searchProfileSchema = Joi.object({
+  name: Joi.string().required(),
+  keywords: Joi.string().allow('', null),
+  location: Joi.string().allow('', null),
+  remotePreference: Joi.string().valid('remote', 'hybrid', 'onsite', '').allow(null),
+  experienceLevel: Joi.string().valid('senior', 'mid', 'junior', 'lead', 'intern', 'executive', '').allow(null),
+  employmentType: Joi.string().valid('full-time', 'part-time', 'contract', 'intern', '').allow(null),
+  excludedKeywords: Joi.string().allow('', null),
+  targetCompanies: Joi.array().items(Joi.string()).allow(null),
+  isActive: Joi.boolean()
+});
+
+router.post(
+  '/sources/adzuna/sync',
+  asyncHandler(async (req, res) => {
+    const { syncAdzunaJobs } = await import('../services/adzuna-sync.service.js');
+    const summary = await syncAdzunaJobs(req.auth.userId);
+    ok(res, summary);
+  })
+);
+
+router.get(
+  '/search-profiles',
+  asyncHandler(async (req, res) => {
+    const profiles = await models.JobSearchProfile.findAll({
+      where: { user_id: req.auth.userId }
+    });
+    ok(res, profiles);
+  })
+);
+
+router.post(
+  '/search-profiles',
+  validate(searchProfileSchema),
+  asyncHandler(async (req, res) => {
+    const profile = await models.JobSearchProfile.create({
+      user_id: req.auth.userId,
+      ...req.body
+    });
+    created(res, profile);
+  })
+);
+
+router.put(
+  '/search-profiles/:id',
+  validate(searchProfileSchema),
+  asyncHandler(async (req, res) => {
+    const profile = await models.JobSearchProfile.findOne({
+      where: { id: req.params.id, user_id: req.auth.userId }
+    });
+    if (!profile) {
+      throw new AppError(404, 'PROFILE_NOT_FOUND', 'Search profile not found.');
+    }
+    await profile.update(req.body);
+    ok(res, profile);
+  })
+);
+
+router.delete(
+  '/search-profiles/:id',
+  asyncHandler(async (req, res) => {
+    const profile = await models.JobSearchProfile.findOne({
+      where: { id: req.params.id, user_id: req.auth.userId }
+    });
+    if (!profile) {
+      throw new AppError(404, 'PROFILE_NOT_FOUND', 'Search profile not found.');
+    }
+    await profile.destroy();
+    ok(res, { deleted: true });
+  })
+);
+
 router.delete(
   '/:jobId',
   asyncHandler(async (req, res) => {
