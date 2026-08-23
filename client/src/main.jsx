@@ -3571,8 +3571,21 @@ function App() {
               <span>🔍 Job Workspace: {editItem?.title}</span>
               <span className="badge badge-info">{editItem?.status}</span>
             </h2>
-            <div style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              {editItem?.companyName} &bull; {editItem?.location}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                {editItem?.companyName} &bull; {editItem?.location}
+              </div>
+              {(editItem?.url || editItem?.sourceUrl) && (
+                <a
+                  href={editItem.url || editItem.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                >
+                  🚀 Apply / Visit Job Posting
+                </a>
+              )}
             </div>
 
             {/* Navigation tabs inside the Job details modal */}

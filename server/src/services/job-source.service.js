@@ -89,7 +89,7 @@ export class AdzunaJobSource extends JobSource {
     url.searchParams.append('app_id', appId);
     url.searchParams.append('app_key', appKey);
     url.searchParams.append('content-type', 'application/json');
-    url.searchParams.append('results_per_page', '10');
+    url.searchParams.append('results_per_page', '50');
 
     let what = searchProfile.keywords || '';
     if (searchProfile.remotePreference === 'remote' && !what.toLowerCase().includes('remote')) {
