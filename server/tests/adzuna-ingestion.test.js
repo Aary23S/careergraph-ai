@@ -136,4 +136,38 @@ describe('Adzuna Ingestion & Sync Test Suite', () => {
     const source = new AdzunaJobSource();
     await expect(source.fetch({ keywords: 'Node' })).rejects.toThrow('Adzuna API rate limit exceeded');
   });
+
+  test('Automatic job purger deletes low-relevance jobs but preserves active applications', async () => {
+    const lowMatchJob = await models.Job.create({
+      user_id: testUser.id,
+      title: 'Sales Associate',
+      companyName: 'Retail Corp',
+      matchScore: 10,
+      status: 'new'
+    });
+
+    const activeLowMatchJob = await models.Job.create({
+      user_id: testUser.id,
+      title: 'Cashier',
+      companyName: 'Retail Corp 2',
+      matchScore: 5,
+      status: 'saved'
+    });
+    await models.Application.create({
+      user_id: testUser.id,
+      job_id: activeLowMatchJob.id,
+      status: 'saved'
+    });
+
+    const { cleanupExpiredAndLowMatchJobs } = await import('../src/services/job-cleanup.service.js');
+    const purgedCount = await cleanupExpiredAndLowMatchJobs(testUser.id);
+    
+    expect(purgedCount).toBe(1);
+
+    const foundLowMatch = await models.Job.findByPk(lowMatchJob.id);
+    expect(foundLowMatch).toBeNull();
+
+    const foundActiveLowMatch = await models.Job.findByPk(activeLowMatchJob.id);
+    expect(foundActiveLowMatch).not.toBeNull();
+  });
 });

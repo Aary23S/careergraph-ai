@@ -64,5 +64,14 @@ export async function syncAdzunaJobs(userId) {
     }
   }
 
+  // Auto-purge low-relevance or expired jobs to prevent DB bloat
+  try {
+    const { cleanupExpiredAndLowMatchJobs } = await import('./job-cleanup.service.js');
+    const purgedCount = await cleanupExpiredAndLowMatchJobs(userId);
+    summary.purgedCount = purgedCount;
+  } catch (err) {
+    console.error('Error during automatic job cleanup:', err);
+  }
+
   return summary;
 }
