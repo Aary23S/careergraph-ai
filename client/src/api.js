@@ -323,6 +323,40 @@ class ApiClient {
     return res.data;
   }
 
+  async syncAdzunaJobs() {
+    const res = await this.request('/jobs/sources/adzuna/sync', {
+      method: 'POST'
+    });
+    return res.data;
+  }
+
+  async listJobSearchProfiles() {
+    const res = await this.request('/jobs/search-profiles');
+    return res.data;
+  }
+
+  async createJobSearchProfile(profileData) {
+    const res = await this.request('/jobs/search-profiles', {
+      method: 'POST',
+      body: profileData
+    });
+    return res.data;
+  }
+
+  async updateJobSearchProfile(profileId, profileData) {
+    const res = await this.request(`/jobs/search-profiles/${profileId}`, {
+      method: 'PUT',
+      body: profileData
+    });
+    return res.data;
+  }
+
+  async deleteJobSearchProfile(profileId) {
+    return this.request(`/jobs/search-profiles/${profileId}`, {
+      method: 'DELETE'
+    });
+  }
+
   async archiveJob(jobId, isArchived) {
     const res = await this.request(`/jobs/${jobId}/archive`, {
       method: 'PATCH',

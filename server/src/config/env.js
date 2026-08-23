@@ -32,6 +32,10 @@ const schema = Joi.object({
   RESUME_STORAGE_PATH: Joi.string().default('./storage/resumes'),
   AUTH_RATE_LIMIT_WINDOW_MINUTES: Joi.number().integer().min(1).default(15),
   AUTH_RATE_LIMIT_MAX_REQUESTS: Joi.number().integer().min(1).default(50),
+  ADZUNA_APP_ID: Joi.string().allow('', null).default(''),
+  ADZUNA_APP_KEY: Joi.string().allow('', null).default(''),
+  ADZUNA_COUNTRY: Joi.string().default('in'),
+  ADZUNA_ENABLED: Joi.boolean().default(false),
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -54,4 +58,8 @@ export const env = {
   resumeStoragePath: value.RESUME_STORAGE_PATH,
   authRateLimitWindowMinutes: value.AUTH_RATE_LIMIT_WINDOW_MINUTES,
   authRateLimitMaxRequests: value.AUTH_RATE_LIMIT_MAX_REQUESTS,
+  adzunaAppId: value.ADZUNA_APP_ID,
+  adzunaAppKey: value.ADZUNA_APP_KEY,
+  adzunaCountry: value.ADZUNA_COUNTRY,
+  adzunaEnabled: value.ADZUNA_ENABLED,
 };

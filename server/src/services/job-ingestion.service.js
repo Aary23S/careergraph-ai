@@ -1,4 +1,4 @@
-import { ManualSource, APIJobSource, EmailAlertSource, CompanyCareerSource } from './job-source.service.js';
+import { ManualSource, APIJobSource, EmailAlertSource, CompanyCareerSource, AdzunaJobSource } from './job-source.service.js';
 import { models } from '../config/database.js';
 import { Op } from 'sequelize';
 
@@ -6,7 +6,8 @@ const SOURCES = {
   manual: new ManualSource(),
   api: new APIJobSource(),
   email: new EmailAlertSource(),
-  career_page: new CompanyCareerSource()
+  career_page: new CompanyCareerSource(),
+  adzuna: new AdzunaJobSource()
 };
 
 function getSourceHandler(sourceName) {
