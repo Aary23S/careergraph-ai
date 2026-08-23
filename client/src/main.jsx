@@ -618,6 +618,16 @@ function App() {
     }
   };
 
+  const handleConnectGmail = () => {
+    const token = localStorage.getItem('cg_access_token');
+    if (!user || !user.id) {
+      alert('Your user session has not loaded yet. Please wait a moment and try again.');
+      return;
+    }
+    // Redirect to backend connect endpoint
+    window.location.href = `http://localhost:5000/api/integrations/gmail/connect?userId=${user.id}`;
+  };
+
   const loadApplications = async () => {
     try {
       const data = await api.listApplications();
@@ -2468,13 +2478,12 @@ function App() {
                     ) : (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ color: 'var(--text-muted)' }}>Not Connected</span>
-                        <a
+                        <button
                           className="btn btn-primary"
-                          href={`http://localhost:5000/api/integrations/gmail/connect?userId=${user?.id}`}
-                          style={{ textDecoration: 'none' }}
+                          onClick={handleConnectGmail}
                         >
                           Connect Gmail
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>
