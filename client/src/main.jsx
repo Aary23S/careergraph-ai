@@ -2444,7 +2444,7 @@ function App() {
                               onClick={async () => {
                                 setGmailSyncing(true);
                                 try {
-                                  const res = await api.request('/integrations/gmail/jobs/sync', 'POST');
+                                  const res = await api.request('/integrations/gmail/jobs/sync', { method: 'POST' });
                                   alert(`Gmail Sync Complete!\nEmails Processed: ${res.data.emailsProcessed}\nJobs Found: ${res.data.jobsFound}\nCreated: ${res.data.created}\nUpdated: ${res.data.updated}\nDuplicates: ${res.data.duplicates}\nFailed: ${res.data.failed}`);
                                   loadGmailStatus();
                                   loadJobs();
@@ -2462,7 +2462,7 @@ function App() {
                               onClick={async () => {
                                 if (confirm('Disconnect Gmail integration?')) {
                                   try {
-                                    await api.request('/integrations/gmail/disconnect', 'POST');
+                                    await api.request('/integrations/gmail/disconnect', { method: 'POST' });
                                     loadGmailStatus();
                                   } catch (err) {
                                     alert(err.message);
