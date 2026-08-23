@@ -31,8 +31,9 @@ router.get(
 router.get(
   '/gmail/callback',
   asyncHandler(async (req, res) => {
+    console.log('GMAIL CALLBACK QUERY RECEIVED:', req.query);
     const { code, state: userId } = req.query;
-    if (!code || !userId) {
+    if (!code || !userId || userId === 'undefined' || userId === 'null') {
       return res.redirect(`http://localhost:5173/?gmail_error=missing_callback_params`);
     }
 
