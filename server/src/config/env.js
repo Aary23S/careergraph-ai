@@ -36,6 +36,14 @@ const schema = Joi.object({
   ADZUNA_APP_KEY: Joi.string().allow('', null).default(''),
   ADZUNA_COUNTRY: Joi.string().default('in'),
   ADZUNA_ENABLED: Joi.boolean().default(false),
+  GMAIL_ENABLED: Joi.boolean().default(false),
+  GOOGLE_CLIENT_ID: Joi.string().allow('', null).optional(),
+  GOOGLE_CLIENT_SECRET: Joi.string().allow('', null).optional(),
+  GOOGLE_REDIRECT_URI: Joi.string().uri().allow('', null).optional(),
+  GMAIL_OAUTH_SCOPES: Joi.string().default(
+    'https://www.googleapis.com/auth/gmail.readonly'
+  ),
+  GMAIL_JOB_LABEL: Joi.string().default('CareerGraph/LinkedInJobs'),
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -62,4 +70,10 @@ export const env = {
   adzunaAppKey: value.ADZUNA_APP_KEY,
   adzunaCountry: value.ADZUNA_COUNTRY,
   adzunaEnabled: value.ADZUNA_ENABLED,
+  gmailEnabled: value.GMAIL_ENABLED,
+  googleClientId: value.GOOGLE_CLIENT_ID,
+  googleClientSecret: value.GOOGLE_CLIENT_SECRET,
+  googleRedirectUri: value.GOOGLE_REDIRECT_URI,
+  gmailOauthScopes: value.GMAIL_OAUTH_SCOPES,
+  gmailJobLabel: value.GMAIL_JOB_LABEL,
 };
