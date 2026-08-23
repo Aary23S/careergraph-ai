@@ -1,4 +1,5 @@
 import { ManualSource, APIJobSource, EmailAlertSource, CompanyCareerSource, AdzunaJobSource } from './job-source.service.js';
+import { LinkedInEmailJobSource } from './linkedin-email-job-source.js';
 import { models } from '../config/database.js';
 import { Op } from 'sequelize';
 
@@ -7,7 +8,8 @@ const SOURCES = {
   api: new APIJobSource(),
   email: new EmailAlertSource(),
   career_page: new CompanyCareerSource(),
-  adzuna: new AdzunaJobSource()
+  adzuna: new AdzunaJobSource(),
+  linkedin_email: new LinkedInEmailJobSource()
 };
 
 function getSourceHandler(sourceName) {
