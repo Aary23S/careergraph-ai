@@ -7,7 +7,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [user, setUser] = useState(null);
-  
+
   // Modal controllers
   const [modal, setModal] = useState(null); // 'connection', 'job', 'application', 'outreach', 'csv'
   const [editItem, setEditItem] = useState(null);
@@ -238,14 +238,14 @@ function App() {
   const loadFiltersFromURL = () => {
     const params = new URLSearchParams(window.location.search);
     const filters = { page: 1, pageSize: 10 };
-    
+
     if (params.get('q')) filters.q = params.get('q');
     if (params.get('company')) filters.company = params.get('company');
     if (params.get('title')) filters.title = params.get('title');
     if (params.get('hasEmail')) filters.hasEmail = params.get('hasEmail') === 'true';
     if (params.get('relationshipStatus')) filters.relationshipStatus = params.get('relationshipStatus');
     if (params.get('followUpDue')) filters.followUpDue = params.get('followUpDue') === 'true';
-    
+
     if (params.get('companies')) filters.companies = params.get('companies').split(',');
     if (params.get('seniority')) filters.seniority = params.get('seniority').split(',');
     if (params.get('roleCategory')) filters.roleCategory = params.get('roleCategory').split(',');
@@ -253,7 +253,7 @@ function App() {
 
     if (params.get('sortBy')) filters.sortBy = params.get('sortBy');
     if (params.get('sortOrder')) filters.sortOrder = params.get('sortOrder');
-    
+
     return filters;
   };
 
@@ -413,7 +413,7 @@ function App() {
   const handleLoadSavedView = (view) => {
     setActiveViewId(view.id);
     setActiveViewName(view.name);
-    
+
     const filters = {
       page: 1,
       pageSize: 10,
@@ -430,10 +430,10 @@ function App() {
       sortBy: view.sortJson.sortBy || 'connectedDate',
       sortOrder: view.sortJson.sortOrder || 'desc',
     };
-    
+
     setConnFilters(filters);
     setConnectionSubTab('all');
-    api.request(`/connections/views/${view.id}`).catch(() => {});
+    api.request(`/connections/views/${view.id}`).catch(() => { });
   };
 
   const handleApplyBuiltinView = (type) => {
@@ -811,7 +811,7 @@ function App() {
 
       {/* Main Content Pane */}
       <main className="main-content">
-        
+
         {/* DASHBOARD TAB */}
         {activeTab === 'dashboard' && (
           <div>
@@ -828,7 +828,7 @@ function App() {
                 Trigger Daily Digest
               </button>
             </div>
-            
+
             <div className="metrics-grid">
               <div className="metric-card">
                 <div className="metric-label">Total Jobs</div>
@@ -1297,7 +1297,7 @@ function App() {
 
                     {/* Third Row: Top Companies & Role Distribution */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                      
+
                       {/* Top Companies */}
                       <div className="card-panel">
                         <h2 className="card-title">Top Companies</h2>
@@ -1352,7 +1352,7 @@ function App() {
 
                     {/* Fourth Row: Seniority & Relationship Health */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                      
+
                       {/* Seniority Distribution */}
                       <div className="card-panel">
                         <h2 className="card-title">Seniority Distribution</h2>
@@ -1788,8 +1788,8 @@ function App() {
                                 priority: f.priority || []
                               });
                               const diff = JSON.stringify(cleanFilters(connFilters)) !== JSON.stringify(cleanFilters(active.filtersJson)) ||
-                                           (connFilters.sortBy || 'connectedDate') !== (active.sortJson.sortBy || 'connectedDate') ||
-                                           (connFilters.sortOrder || 'desc') !== (active.sortJson.sortOrder || 'desc');
+                                (connFilters.sortBy || 'connectedDate') !== (active.sortJson.sortBy || 'connectedDate') ||
+                                (connFilters.sortOrder || 'desc') !== (active.sortJson.sortOrder || 'desc');
                               return diff ? ' * (unsaved changes)' : '';
                             }
                             return '';
@@ -2273,95 +2273,95 @@ function App() {
                                 </span>
                               </td>
                               <td>{job.location || 'Remote'}</td>
-                          <td>
-                            <span className="badge badge-info">{job.status}</span>
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button
-                              className="btn btn-primary"
-                              style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={async () => {
-                                try {
-                                  const data = await api.request(`/jobs/${job.id}`);
-                                  setEditItem(data.data);
-                                  setModal('job_detail');
-                                } catch (err) {
-                                  alert(err.message);
-                                }
-                              }}
-                            >
-                              View
-                            </button>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={async () => {
-                                await api.createApplication(job.id, 'saved');
-                                alert('Job saved to applications!');
-                              }}
-                            >
-                              Save / Apply
-                            </button>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={() => {
-                                setEditItem(job);
-                                setModal('job');
-                              }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-danger"
-                              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={async () => {
-                                if (confirm('Delete this job?')) {
-                                  await api.deleteJob(job.id);
-                                  loadJobs();
-                                }
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  
-                  {/* Pagination */}
-                  <div className="pagination">
-                    <button
-                      className="btn btn-secondary"
-                      disabled={jobFilters.page <= 1}
-                      onClick={() => setJobFilters({ ...jobFilters, page: jobFilters.page - 1 })}
-                    >
-                      Previous
-                    </button>
-                    <span>Page {jobFilters.page} of {jobMeta.totalPages || 1}</span>
-                    <button
-                      className="btn btn-secondary"
-                      disabled={jobFilters.page >= jobMeta.totalPages}
-                      onClick={() => setJobFilters({ ...jobFilters, page: jobFilters.page + 1 })}
-                    >
-                      Next
-                    </button>
-                  </div>
+                              <td>
+                                <span className="badge badge-info">{job.status}</span>
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                <button
+                                  className="btn btn-primary"
+                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
+                                  onClick={async () => {
+                                    try {
+                                      const data = await api.request(`/jobs/${job.id}`);
+                                      setEditItem(data.data);
+                                      setModal('job_detail');
+                                    } catch (err) {
+                                      alert(err.message);
+                                    }
+                                  }}
+                                >
+                                  View
+                                </button>
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
+                                  onClick={async () => {
+                                    await api.createApplication(job.id, 'saved');
+                                    alert('Job saved to applications!');
+                                  }}
+                                >
+                                  Save / Apply
+                                </button>
+                                <button
+                                  className="btn btn-secondary"
+                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
+                                  onClick={() => {
+                                    setEditItem(job);
+                                    setModal('job');
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-danger"
+                                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                                  onClick={async () => {
+                                    if (confirm('Delete this job?')) {
+                                      await api.deleteJob(job.id);
+                                      loadJobs();
+                                    }
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Pagination */}
+                      <div className="pagination">
+                        <button
+                          className="btn btn-secondary"
+                          disabled={jobFilters.page <= 1}
+                          onClick={() => setJobFilters({ ...jobFilters, page: jobFilters.page - 1 })}
+                        >
+                          Previous
+                        </button>
+                        <span>Page {jobFilters.page} of {jobMeta.totalPages || 1}</span>
+                        <button
+                          className="btn btn-secondary"
+                          disabled={jobFilters.page >= jobMeta.totalPages}
+                          onClick={() => setJobFilters({ ...jobFilters, page: jobFilters.page + 1 })}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+              </div>
+            )}
 
             {jobSubTab === 'sources' && (
               <div>
                 <div className="card-panel" style={{ marginBottom: '24px' }}>
-                  <h2 className="card-title">🔌 Job Sources: Adzuna API Integration</h2>
+                  <h2 className="card-title">Job Sources: Adzuna API Integration</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
                     Adzuna is connected in your backend configurations. Run manual sync below or let the scheduled background runner fetch jobs automatically every 4 hours.
                   </p>
-                  
+
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
                     <div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Adzuna Status</div>
@@ -2426,7 +2426,7 @@ function App() {
                         <input type="text" name="keywords" className="form-input" placeholder="e.g. React, Frontend" required />
                       </div>
                     </div>
-                    
+
                     <div className="form-row">
                       <div className="form-group">
                         <label className="form-label">Location</label>
@@ -2477,8 +2477,8 @@ function App() {
                               </span>
                             </div>
                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
-                              <strong>Keywords:</strong> {p.keywords} &bull; 
-                              <strong> Location:</strong> {p.location || 'Anywhere'} &bull; 
+                              <strong>Keywords:</strong> {p.keywords} &bull;
+                              <strong> Location:</strong> {p.location || 'Anywhere'} &bull;
                               <strong> Remote:</strong> {p.remotePreference || 'Any'}
                             </div>
                             {p.excludedKeywords && (
@@ -2649,10 +2649,10 @@ function App() {
             {!loadingDetail && !detailError && connectionDetail && (
               <div>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', alignItems: 'start' }}>
-                  
+
                   {/* Left Column */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    
+
                     {/* PERSON Profile Panel */}
                     <div className="card-panel">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
@@ -2920,11 +2920,11 @@ function App() {
 
                   {/* Right Column */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    
+
                     {/* RELATIONSHIP Status & Strength */}
                     <div className="card-panel">
                       <h2 className="card-title" style={{ marginBottom: '16px' }}>Relationship CRM</h2>
-                      
+
                       <div className="form-group">
                         <label className="form-label">Relationship Status</label>
                         <select
@@ -3125,7 +3125,7 @@ function App() {
                 {/* NOTES SECTION */}
                 <div className="card-panel" style={{ marginTop: '24px' }}>
                   <h2 className="card-title" style={{ marginBottom: '16px' }}>Relationship & Interaction Notes</h2>
-                  
+
                   <form onSubmit={handleAddNote} style={{ marginBottom: '24px' }}>
                     <div className="form-group">
                       <textarea
@@ -3159,7 +3159,7 @@ function App() {
                 {/* OUTREACH HISTORY */}
                 <div className="card-panel" style={{ marginTop: '24px' }}>
                   <h2 className="card-title" style={{ marginBottom: '16px' }}>Outreach & History Logs</h2>
-                  
+
                   {connectionDetail.outreach && connectionDetail.outreach.length > 0 ? (
                     <div className="timeline" style={{ paddingLeft: '10px' }}>
                       {connectionDetail.outreach.map((event) => (
@@ -3183,7 +3183,7 @@ function App() {
                 {/* RELEVANT OPPORTUNITIES */}
                 <div className="card-panel" style={{ marginTop: '24px', marginBottom: '24px' }}>
                   <h2 className="card-title" style={{ marginBottom: '16px' }}>Relevant Opportunities at {connectionDetail.company || 'target company'}</h2>
-                  
+
                   {connectionDetail.referralOpportunities && connectionDetail.referralOpportunities.length > 0 ? (
                     <div className="activity-list">
                       {connectionDetail.referralOpportunities.map((opp) => (
@@ -3568,7 +3568,7 @@ function App() {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '750px', width: '90%' }}>
             <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span>🔍 Job Workspace: {editItem?.title}</span>
+              <span>Job Workspace: {editItem?.title}</span>
               <span className="badge badge-info">{editItem?.status}</span>
             </h2>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -3583,7 +3583,7 @@ function App() {
                   className="btn btn-primary"
                   style={{ padding: '6px 12px', fontSize: '0.85rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                 >
-                  🚀 Apply / Visit Job Posting
+                  Apply / Visit Job Posting
                 </a>
               )}
             </div>
@@ -3630,7 +3630,7 @@ function App() {
                 <div className="form-group">
                   <label className="form-label">Action Recommendation</label>
                   <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '16px', borderRadius: '8px', color: '#fff', fontWeight: 600 }}>
-                    💡 {editItem?.recommendedAction}
+                    {editItem?.recommendedAction}
                   </div>
                 </div>
 
@@ -3832,7 +3832,7 @@ function App() {
                     {/* Right Column: Timeline & Add Event */}
                     <div style={{ borderLeft: '1px solid var(--bg-secondary)', paddingLeft: '24px' }}>
                       <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Application Timeline</h3>
-                      
+
                       {/* Visual Timeline */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '180px', overflowY: 'auto', marginBottom: '24px', paddingRight: '8px' }}>
                         {(!editItem.application.events || editItem.application.events.length === 0) ? (
@@ -4240,11 +4240,11 @@ function App() {
         </div>
       )}
 
-       {modal === 'linkedin_pdf' && (
+      {modal === 'linkedin_pdf' && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: pdfObjectURL ? '1100px' : '650px', width: '95%', transition: 'max-width 0.3s ease' }}>
             <h2 className="modal-title">LinkedIn PDF Profile Enrichment</h2>
-            
+
             {enrichmentLoading && (
               <div className="empty-state">
                 <p>Uploading and parsing LinkedIn PDF...</p>
@@ -4300,7 +4300,7 @@ function App() {
                     <iframe src={pdfObjectURL} width="100%" height="450px" style={{ border: 'none', borderRadius: '6px', background: '#fff' }}></iframe>
                   </div>
                 )}
-                
+
                 <div style={{ flex: 1, minWidth: '300px' }}>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
                     Profile Extracted: <span style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.name}</span>
