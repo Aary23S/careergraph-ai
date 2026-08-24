@@ -119,12 +119,12 @@ export function parseTelegramJob(text) {
 
   // 7. Parse Title, Company, Location line-by-line or with fallback key-values
   for (const line of lines) {
-    const titleMatch = line.match(/(?:role|title|position)\s*[:\-]\s*(.+)/i);
+    const titleMatch = line.match(/(?:role(?:\s*name)?|title|position|job\s*role|job\s*title)\s*[:\-]\s*(.+)/i);
     if (titleMatch && !title) {
       title = titleMatch[1].trim();
     }
 
-    const companyMatch = line.match(/(?:company|organization|employer)\s*[:\-]\s*(.+)/i);
+    const companyMatch = line.match(/(?:company(?:\s*name)?|organization|employer)\s*[:\-]\s*(.+)/i);
     if (companyMatch && !companyName) {
       companyName = companyMatch[1].trim();
     }

@@ -90,6 +90,21 @@ describe('Telegram Integration & Bot Ingestion Test Suite', () => {
       expect(parsedJob.jobUrl).toBe('https://xyz.com/jobs/backend');
       expect(confidence).toBeGreaterThanOrEqual(0.8);
     });
+
+    test('parseTelegramJob parses Company Name: prefix correctly', () => {
+      const userText = `
+        Company name: micro1
+        Role: Competitive Programmer
+        Batch Eligible: All college students+ Working Professionals (Open to all)
+        Salary: $40 - $80 per hour
+        Location: Remote (Work From Home)
+        Apply Link (200 openings): https://bit.ly/4gz0o6v
+      `;
+      const { parsedJob } = parseTelegramJob(userText);
+      expect(parsedJob.title).toBe('Competitive Programmer');
+      expect(parsedJob.companyName).toBe('micro1');
+      expect(parsedJob.location).toContain('Remote');
+    });
   });
 
   describe('Account Linking Workflow', () => {
