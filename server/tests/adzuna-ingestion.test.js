@@ -138,12 +138,16 @@ describe('Adzuna Ingestion & Sync Test Suite', () => {
   });
 
   test('Automatic job purger deletes low-relevance jobs but preserves active applications', async () => {
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
     const lowMatchJob = await models.Job.create({
       user_id: testUser.id,
       title: 'Sales Associate',
       companyName: 'Retail Corp',
       matchScore: 10,
-      status: 'new'
+      status: 'new',
+      fetchedAt: tenDaysAgo
     });
 
     const activeLowMatchJob = await models.Job.create({
