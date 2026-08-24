@@ -12,6 +12,8 @@ import notificationRoutes from '../modules/notifications.routes.js';
 import dashboardRoutes from '../modules/dashboard.routes.js';
 import noteRoutes from '../modules/notes.routes.js';
 import integrationsRoutes from '../modules/integrations.routes.js';
+import telegramRoutes from '../modules/telegram.routes.js';
+import incomingJobRoutes from '../modules/incoming-jobs.routes.js';
 
 const router = Router();
 
@@ -28,5 +30,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/notes', noteRoutes);
 router.use('/integrations', integrationsRoutes);
+router.use('/integrations/telegram', telegramRoutes);
+router.use('/incoming-jobs', incomingJobRoutes);
 
 export default router;
