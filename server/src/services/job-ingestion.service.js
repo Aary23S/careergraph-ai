@@ -3,6 +3,8 @@ import { LinkedInEmailJobSource } from './linkedin-email-job-source.js';
 import { models } from '../config/database.js';
 import { Op } from 'sequelize';
 
+import { emailService } from './email.service.js';
+
 const SOURCES = {
   manual: new ManualSource(),
   api: new APIJobSource(),
@@ -97,6 +99,7 @@ export async function ingestJob(userId, rawInput) {
 
   // 5. Deduplicate
   let existingJob = null;
+  let matchReason = '';
 
   // Rule A: By source + externalJobId
   if (normalized.source && normalized.externalJobId) {
@@ -107,6 +110,7 @@ export async function ingestJob(userId, rawInput) {
         externalJobId: normalized.externalJobId
       }
     });
+    if (existingJob) matchReason = 'External ID Match';
   }
 
   // Rule B: By canonical sourceUrl
@@ -117,6 +121,7 @@ export async function ingestJob(userId, rawInput) {
         sourceUrl: normalized.sourceUrl
       }
     });
+    if (existingJob) matchReason = 'Job URL Match';
   }
 
   // Rule C: By normalized company + title + location
@@ -129,6 +134,22 @@ export async function ingestJob(userId, rawInput) {
         normalizedLocation: normalized.normalizedLocation
       }
     });
+    if (existingJob) matchReason = 'Title/Company/Location Match';
+  }
+
+  // Determine target company priority
+  const searchProfiles = await models.JobSearchProfile.findAll({
+    where: { user_id: userId, isActive: true }
+  });
+  let isTargetCompany = false;
+  const compNameLower = normalized.companyName.toLowerCase().trim();
+  for (const p of searchProfiles) {
+    if (Array.isArray(p.targetCompanies)) {
+      if (p.targetCompanies.some(c => c.toLowerCase().trim() === compNameLower)) {
+        isTargetCompany = true;
+        break;
+      }
+    }
   }
 
   const jobPayload = {
@@ -155,17 +176,27 @@ export async function ingestJob(userId, rawInput) {
     normalizedLocation: normalized.normalizedLocation,
     normalizedSkills: normalized.normalizedSkills,
     remoteType: normalized.remoteType,
-    experienceLevel: normalized.experienceLevel
+    experienceLevel: normalized.experienceLevel,
+    priority: isTargetCompany ? 'target_company' : 'standard'
   };
 
   if (existingJob) {
+    // Save to deduplication logs
+    await models.JobDeduplicationLog.create({
+      user_id: userId,
+      source: sourceName,
+      duplicateText: `${normalized.title} at ${normalized.companyName}`,
+      matchedJobId: existingJob.id,
+      reason: matchReason || 'Duplicate Ingestion Check',
+      loggedAt: new Date()
+    });
+
     // Non-destructive merge
     const updates = {};
     for (const key of Object.keys(jobPayload)) {
       const val = jobPayload[key];
       const existVal = existingJob[key];
       if (val !== undefined && val !== null && val !== '') {
-        // Only update if existing is empty or if it's metadata we want to merge
         if (existVal === undefined || existVal === null || existVal === '') {
           updates[key] = val;
         } else if (key === 'sourceMetadata') {
@@ -180,6 +211,67 @@ export async function ingestJob(userId, rawInput) {
     return { status: 'duplicate', job: existingJob };
   } else {
     const created = await models.Job.create(jobPayload);
+    // Reload to obtain matchScore calculated in hooks
+    await created.reload();
+
+    // Check notification rules
+    const referralCount = normalized.companyName ? await models.Connection.count({
+      where: {
+        user_id: userId,
+        normalizedCompany: normalized.normalizedCompany
+      }
+    }) : 0;
+    const hasStrongReferral = referralCount >= 1;
+
+    let preferences = await models.UserPreference.findOne({ where: { user_id: userId } });
+    if (!preferences) {
+      preferences = await models.UserPreference.create({ user_id: userId });
+    }
+
+    const score = created.matchScore;
+    let shouldNotify = false;
+
+    if (preferences.notificationsEnabled) {
+      if (preferences.notifyHighlyRelevant && score >= (preferences.minimumMatchScore || 80)) {
+        shouldNotify = true;
+      }
+      if (preferences.notifyTargetCompany && isTargetCompany) {
+        shouldNotify = true;
+      }
+      if (preferences.notifyStrongReferral && hasStrongReferral) {
+        shouldNotify = true;
+      }
+      if (preferences.notifyLowRelevance && score < 40) {
+        shouldNotify = true;
+      }
+    }
+
+    if (shouldNotify) {
+      const whyItMatters = [
+        isTargetCompany ? '• Matches your target company list' : '',
+        referralCount > 0 ? `• ${referralCount} relevant connections at ${normalized.companyName}` : '',
+        score >= (preferences.minimumMatchScore || 80) ? `• Matches your target role (score: ${score})` : ''
+      ].filter(Boolean).join('\n');
+
+      // 1. Create In-App Notification
+      await models.Notification.create({
+        user_id: userId,
+        title: `🔥 New CareerGraph Opportunity: ${created.title} at ${normalized.companyName}`,
+        message: `Match: ${score}/100\n\nWhy it matters:\n${whyItMatters || '• High matching score'}`,
+        isRead: false,
+        type: 'job_alert'
+      });
+
+      // 2. Send Simulated Email
+      try {
+        const user = await models.User.findByPk(userId);
+        const emailBody = `🔥 New CareerGraph Opportunity\n\n${created.title} — ${normalized.companyName}\nMatch: ${score}/100\n\nWhy it matters:\n${whyItMatters || '• High matching score'}\n\n[View Job]`;
+        await emailService.provider.sendEmail(user.email, `🔥 New CareerGraph Opportunity: ${created.title} at ${normalized.companyName}`, emailBody);
+      } catch (err) {
+        console.error('[IngestJob] Error sending alert email:', err);
+      }
+    }
+
     return { status: 'created', job: created };
   }
 }

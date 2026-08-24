@@ -12,6 +12,12 @@ const schema = Joi.object({
   preferredJobRoles: Joi.array().items(Joi.string()).default([]),
   remotePreference: Joi.string().valid('remote', 'hybrid', 'onsite', '').allow(null),
   notificationsEnabled: Joi.boolean().required(),
+  notifyHighlyRelevant: Joi.boolean().optional(),
+  notifyStrongReferral: Joi.boolean().optional(),
+  notifyTargetCompany: Joi.boolean().optional(),
+  dailyDigestEnabled: Joi.boolean().optional(),
+  notifyLowRelevance: Joi.boolean().optional(),
+  minimumMatchScore: Joi.number().integer().min(0).max(100).optional(),
 });
 
 router.use(requireAuth);
