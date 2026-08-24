@@ -387,6 +387,34 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'job_ingestion_events' }
   );
 
+  const TelegramIntegration = sequelize.define(
+    'TelegramIntegration',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      telegramUserId: { type: DataTypes.STRING, allowNull: false, unique: true, field: 'telegram_user_id' },
+      telegramUsername: { type: DataTypes.STRING, allowNull: true, field: 'telegram_username' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'connected' },
+      linkedAt: { type: DataTypes.DATE, allowNull: false, field: 'linked_at' }
+    },
+    { ...baseOptions, tableName: 'telegram_integrations' }
+  );
+
+  const IncomingJob = sequelize.define(
+    'IncomingJob',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      source: { type: DataTypes.STRING, allowNull: false, defaultValue: 'telegram' },
+      rawText: { type: DataTypes.TEXT, allowNull: false, field: 'raw_text' },
+      telegramMessageId: { type: DataTypes.STRING, allowNull: true, field: 'telegram_message_id' },
+      telegramUserId: { type: DataTypes.STRING, allowNull: true, field: 'telegram_user_id' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending_review' },
+      parsedData: { type: DataTypes.JSON, allowNull: true, field: 'parsed_data' },
+      matchScore: { type: DataTypes.INTEGER, allowNull: true, field: 'match_score' },
+      receivedAt: { type: DataTypes.DATE, allowNull: false, field: 'received_at' }
+    },
+    { ...baseOptions, tableName: 'incoming_jobs' }
+  );
+
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -455,6 +483,12 @@ export function initializeModels(sequelize) {
   User.hasMany(JobIngestionEvent, { foreignKey: 'user_id', as: 'ingestionEvents' });
   JobIngestionEvent.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+  User.hasOne(TelegramIntegration, { foreignKey: 'user_id', as: 'telegramIntegration' });
+  TelegramIntegration.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  User.hasMany(IncomingJob, { foreignKey: 'user_id', as: 'incomingJobs' });
+  IncomingJob.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
   return {
     User,
     RefreshToken,
@@ -475,5 +509,7 @@ export function initializeModels(sequelize) {
     JobSearchProfile,
     GmailIntegration,
     JobIngestionEvent,
+    TelegramIntegration,
+    IncomingJob,
   };
 }

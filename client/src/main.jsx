@@ -39,6 +39,11 @@ function App() {
   const [searchProfiles, setSearchProfiles] = useState([]);
   const [gmailStatus, setGmailStatus] = useState(null);
   const [gmailSyncing, setGmailSyncing] = useState(false);
+  const [telegramStatus, setTelegramStatus] = useState(null);
+  const [telegramLinkingCode, setTelegramLinkingCode] = useState(null);
+  const [incomingJobs, setIncomingJobs] = useState([]);
+  const [loadingIncoming, setLoadingIncoming] = useState(false);
+  const [reviewJob, setReviewJob] = useState(null);
 
   // Connection detail states
   const [activeConnectionId, setActiveConnectionId] = useState(null);
@@ -138,6 +143,8 @@ function App() {
         loadJobs();
         loadSearchProfiles();
         loadGmailStatus();
+        loadTelegramStatus();
+        loadIncomingJobs();
       }
       if (activeTab === 'applications') loadApplications();
       if (activeTab === 'outreach') loadOutreach();
@@ -615,6 +622,36 @@ function App() {
       setGmailStatus(res.data);
     } catch (err) {
       console.error('Failed to load Gmail status:', err);
+    }
+  };
+
+  const loadTelegramStatus = async () => {
+    try {
+      const res = await api.request('/integrations/telegram/status');
+      setTelegramStatus(res.data);
+    } catch (err) {
+      console.error('Failed to load Telegram status:', err);
+    }
+  };
+
+  const generateTelegramCode = async () => {
+    try {
+      const res = await api.request('/integrations/telegram/link');
+      setTelegramLinkingCode(res.data.code);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const loadIncomingJobs = async () => {
+    setLoadingIncoming(true);
+    try {
+      const res = await api.request('/incoming-jobs');
+      setIncomingJobs(res.data);
+    } catch (err) {
+      console.error('Failed to load incoming jobs:', err);
+    } finally {
+      setLoadingIncoming(false);
     }
   };
 
@@ -2241,6 +2278,13 @@ function App() {
               >
                 Settings ➔ Job Sources
               </button>
+              <button
+                className={`btn ${jobSubTab === 'review' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                onClick={() => { setJobSubTab('review'); loadIncomingJobs(); }}
+              >
+                Incoming Queue ({incomingJobs.filter(j => j.status === 'pending_review').length})
+              </button>
             </div>
 
             {jobSubTab === 'list' && (
@@ -2605,7 +2649,7 @@ function App() {
                             >
                               Toggle Status
                             </button>
-                            <button
+                             <button
                               className="btn btn-danger"
                               style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                               onClick={async () => {
@@ -2627,6 +2671,144 @@ function App() {
                     )}
                   </div>
                 </div>
+
+                <div className="card-panel" style={{ marginTop: '24px' }}>
+                  <h2 className="card-title">Telegram Job Tracker</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                    Connect your Telegram account to CareerGraph to manually forward or copy-paste job postings directly into your private bot chat.
+                  </p>
+
+                  <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
+                    {telegramStatus?.connected ? (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, color: 'var(--success)' }}>
+                              🟢 Connected: @{telegramStatus.telegramUsername || telegramStatus.telegramUserId}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                              Bot: @{telegramStatus.botUsername} &bull; Linked: {new Date(telegramStatus.linkedAt).toLocaleDateString()}
+                            </div>
+                            <div style={{ display: 'flex', gap: '20px', marginTop: '12px' }}>
+                              <div><strong>{telegramStatus.stats.received}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Received</span></div>
+                              <div><strong>{telegramStatus.stats.jobsCreated}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Created</span></div>
+                              <div><strong>{telegramStatus.stats.duplicates}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Duplicates</span></div>
+                              <div><strong>{telegramStatus.stats.pendingReview}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Pending Review</span></div>
+                            </div>
+                          </div>
+                          <div>
+                            <button
+                              className="btn btn-danger"
+                              onClick={async () => {
+                                if (confirm('Disconnect Telegram integration?')) {
+                                  try {
+                                    await api.request('/integrations/telegram/disconnect', { method: 'POST' });
+                                    loadTelegramStatus();
+                                  } catch (err) {
+                                    alert(err.message);
+                                  }
+                                }
+                              }}
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Not Connected</span>
+                          <button
+                            className="btn btn-primary"
+                            onClick={generateTelegramCode}
+                          >
+                            Generate Linking Code
+                          </button>
+                        </div>
+                        {telegramLinkingCode && (
+                          <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-primary)', borderRadius: '6px', border: '1px dashed var(--border-color)' }}>
+                            <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>
+                              1. Open Telegram and search for <strong>@{telegramStatus?.botUsername || 'CareerGraphJobBot'}</strong>
+                            </p>
+                            <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem' }}>
+                              2. Send the command:
+                            </p>
+                            <div style={{ background: 'var(--bg-secondary)', padding: '8px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', color: 'var(--accent)' }}>
+                              /start {telegramLinkingCode}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {jobSubTab === 'review' && (
+              <div className="card-panel">
+                <h2 className="card-title">Incoming Jobs Review Queue</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                  These jobs were sent from Telegram but could not be parsed with high confidence. Review and edit details below to track them.
+                </p>
+
+                {loadingIncoming ? (
+                  <div>Loading review queue...</div>
+                ) : incomingJobs.filter(j => j.status === 'pending_review').length === 0 ? (
+                  <div className="empty-state">No jobs pending review. All caught up!</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {incomingJobs.filter(j => j.status === 'pending_review').map(item => (
+                      <div key={item.id} className="card-panel" style={{ background: 'var(--bg-secondary)', padding: '16px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                          <div style={{ flex: 1, minWidth: '280px' }}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{item.parsedData?.title || 'Unknown Role'}</h3>
+                              <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>Pending Review</span>
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                              Company: <strong>{item.parsedData?.companyName || 'Unknown'}</strong> &bull; Location: {item.parsedData?.location || 'Unknown'}
+                            </div>
+
+                            <div style={{ marginTop: '12px', background: 'var(--bg-primary)', padding: '10px', borderRadius: '4px', borderLeft: '3px solid var(--accent)' }}>
+                              <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600 }}>Raw Message Text:</div>
+                              <pre style={{ margin: '6px 0 0 0', whiteSpace: 'pre-wrap', fontSize: '0.85rem', fontFamily: 'inherit', color: 'var(--text-primary)' }}>
+                                {item.rawText}
+                              </pre>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="btn btn-primary"
+                              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                              onClick={() => setReviewJob(item)}
+                            >
+                              Review &amp; Ingest
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                              onClick={async () => {
+                                if (confirm('Ignore this job posting?')) {
+                                  try {
+                                    await api.request(`/incoming-jobs/${item.id}/ignore`, { method: 'POST' });
+                                    loadIncomingJobs();
+                                  } catch (err) {
+                                    alert(err.message);
+                                  }
+                                }
+                              }}
+                            >
+                              Ignore
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -3511,6 +3693,103 @@ function App() {
               <div className="modal-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
                 <button type="submit" className="btn btn-primary">Track Job</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Review & Ingest Telegram Job Modal */}
+      {reviewJob && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '650px' }}>
+            <h2 className="card-title">Review &amp; Ingest Job</h2>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const data = Object.fromEntries(formData.entries());
+              
+              // Map skills string to array
+              const skillsArray = data.skills
+                ? data.skills.split(',').map(s => s.trim()).filter(Boolean)
+                : [];
+
+              try {
+                await api.request(`/incoming-jobs/${reviewJob.id}/approve`, {
+                  method: 'POST',
+                  body: {
+                    ...data,
+                    skills: skillsArray
+                  }
+                });
+                setReviewJob(null);
+                loadIncomingJobs();
+                loadJobs();
+              } catch (err) {
+                alert(err.message);
+              }
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Job Title</label>
+                  <input type="text" name="title" className="form-input" required defaultValue={reviewJob.parsedData?.title || ''} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Company Name</label>
+                  <input type="text" name="companyName" className="form-input" required defaultValue={reviewJob.parsedData?.companyName || ''} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Location</label>
+                  <input type="text" name="location" className="form-input" defaultValue={reviewJob.parsedData?.location || ''} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Job URL / Application Link</label>
+                  <input type="text" name="jobUrl" className="form-input" defaultValue={reviewJob.parsedData?.jobUrl || ''} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Employment Type</label>
+                  <select name="employmentType" className="form-input" defaultValue={reviewJob.parsedData?.employmentType || ''}>
+                    <option value="">Select Option</option>
+                    <option value="full-time">Full-time</option>
+                    <option value="part-time">Part-time</option>
+                    <option value="contract">Contract</option>
+                    <option value="internship">Internship</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Remote Type</label>
+                  <select name="remoteType" className="form-input" defaultValue={reviewJob.parsedData?.remoteType || ''}>
+                    <option value="">Select Option</option>
+                    <option value="remote">Remote</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="onsite">On-site</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Experience Required</label>
+                  <input type="text" name="experienceLevel" className="form-input" defaultValue={reviewJob.parsedData?.experience || ''} />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Skills (comma-separated)</label>
+                <input type="text" name="skills" className="form-input" defaultValue={reviewJob.parsedData?.skills?.join(', ') || ''} />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Job Description / Raw Text</label>
+                <textarea name="description" className="form-input" rows="5" defaultValue={reviewJob.rawText}></textarea>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setReviewJob(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Approve &amp; Import</button>
               </div>
             </form>
           </div>

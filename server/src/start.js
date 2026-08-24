@@ -41,6 +41,14 @@ export async function startServer({
 
   startSyncScheduler();
 
+  // Initialize Telegram Bot Long-Polling
+  try {
+    const { startTelegramPolling } = await import('./services/telegram.service.js');
+    startTelegramPolling();
+  } catch (err) {
+    console.error('[Start] Failed to initialize Telegram Polling:', err);
+  }
+
   return new Promise((resolve, reject) => {
     const server = app.listen(port, host, () => {
       console.log(`CareerGraph API listening on port ${port}`);

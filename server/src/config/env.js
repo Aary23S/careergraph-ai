@@ -44,6 +44,10 @@ const schema = Joi.object({
     'https://www.googleapis.com/auth/gmail.readonly'
   ),
   GMAIL_JOB_LABEL: Joi.string().default('CareerGraph/LinkedInJobs'),
+  TELEGRAM_ENABLED: Joi.boolean().default(false),
+  TELEGRAM_BOT_TOKEN: Joi.string().allow('', null).default(''),
+  TELEGRAM_MODE: Joi.string().valid('polling', 'webhook').default('polling'),
+  TELEGRAM_BOT_USERNAME: Joi.string().default('CareerGraphJobBot'),
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -76,4 +80,8 @@ export const env = {
   googleRedirectUri: value.GOOGLE_REDIRECT_URI,
   gmailOauthScopes: value.GMAIL_OAUTH_SCOPES,
   gmailJobLabel: value.GMAIL_JOB_LABEL,
+  telegramEnabled: value.TELEGRAM_ENABLED,
+  telegramBotToken: value.TELEGRAM_BOT_TOKEN,
+  telegramMode: value.TELEGRAM_MODE,
+  telegramBotUsername: value.TELEGRAM_BOT_USERNAME,
 };
