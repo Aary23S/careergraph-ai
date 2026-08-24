@@ -2501,7 +2501,7 @@ function App() {
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
                     Track status, synchronization timestamps, health, and throughput metrics across all automated connectors.
                   </p>
-                  
+
                   {ingestionMonitor ? (
                     <div>
                       {/* Health Matrix Table */}
@@ -2760,7 +2760,7 @@ function App() {
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
                     Configure automatic notifications, filtering rules, and quality thresholds for new job matches.
                   </p>
-                  
+
                   <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '8px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
@@ -2955,7 +2955,7 @@ function App() {
                             >
                               Toggle Status
                             </button>
-                             <button
+                            <button
                               className="btn btn-danger"
                               style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                               onClick={async () => {
@@ -2978,7 +2978,7 @@ function App() {
                   </div>
                 </div>
 
-                <div className="card-panel" style={{ marginTop: '24px' }}>
+                {/* <div className="card-panel" style={{ marginTop: '24px' }}>
                   <h2 className="card-title">Telegram Job Tracker</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
                     Connect your Telegram account to CareerGraph to manually forward or copy-paste job postings directly into your private bot chat.
@@ -3048,7 +3048,7 @@ function App() {
                       </div>
                     )}
                   </div>
-                </div>
+                </div> */}
 
                 {/* 2.7-H: DEDUPLICATION AUDIT LOGS */}
                 <div className="card-panel" style={{ marginTop: '24px' }}>
@@ -4051,7 +4051,7 @@ function App() {
               e.preventDefault();
               const formData = new FormData(e.target);
               const data = Object.fromEntries(formData.entries());
-              
+
               // Map skills string to array
               const skillsArray = data.skills
                 ? data.skills.split(',').map(s => s.trim()).filter(Boolean)
