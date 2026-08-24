@@ -48,6 +48,12 @@ const schema = Joi.object({
   TELEGRAM_BOT_TOKEN: Joi.string().allow('', null).default(''),
   TELEGRAM_MODE: Joi.string().valid('polling', 'webhook').default('polling'),
   TELEGRAM_BOT_USERNAME: Joi.string().default('CareerGraphJobBot'),
+  AI_ENABLED: Joi.boolean().default(false),
+  AI_PROVIDER: Joi.string().valid('mock', 'ollama').default('mock'),
+  OLLAMA_BASE_URL: Joi.string().uri().default('http://localhost:11434'),
+  OLLAMA_MODEL: Joi.string().default('gemma2:2b'),
+  AI_TIMEOUT_MS: Joi.number().integer().default(15000),
+  AI_MAX_RETRIES: Joi.number().integer().default(1),
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -84,4 +90,10 @@ export const env = {
   telegramBotToken: value.TELEGRAM_BOT_TOKEN,
   telegramMode: value.TELEGRAM_MODE,
   telegramBotUsername: value.TELEGRAM_BOT_USERNAME,
+  aiEnabled: value.AI_ENABLED,
+  aiProvider: value.AI_PROVIDER,
+  ollamaBaseUrl: value.OLLAMA_BASE_URL,
+  ollamaModel: value.OLLAMA_MODEL,
+  aiTimeoutMs: value.AI_TIMEOUT_MS,
+  aiMaxRetries: value.AI_MAX_RETRIES,
 };
