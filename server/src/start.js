@@ -9,18 +9,24 @@ function startSyncScheduler() {
   const intervalMs = 4 * 60 * 60 * 1000;
 
   setInterval(async () => {
-    console.log('[Scheduler] Starting background Adzuna job sync...');
+    console.log('[Scheduler] Starting background job sync (Adzuna + Gmail)...');
     try {
       const { models } = await import('./config/database.js');
       const { syncAdzunaJobs } = await import('./services/adzuna-sync.service.js');
+      const { syncGmailJobs } = await import('./services/gmail-sync.service.js');
 
       const users = await models.User.findAll();
       for (const user of users) {
+        // Run Adzuna discovery sync
         await syncAdzunaJobs(user.id);
+        // Run Gmail LinkedIn alerts discovery sync
+        if (env.gmailEnabled) {
+          await syncGmailJobs(user.id);
+        }
       }
-      console.log('[Scheduler] Background Adzuna job sync complete.');
+      console.log('[Scheduler] Background job sync complete.');
     } catch (err) {
-      console.error('[Scheduler] Error in background Adzuna sync:', err);
+      console.error('[Scheduler] Error in background job sync:', err);
     }
   }, intervalMs);
 }
