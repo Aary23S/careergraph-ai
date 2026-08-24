@@ -2497,7 +2497,7 @@ function App() {
               <div>
                 {/* 2.7-A & 2.7-G: INGESTION MONITORING PANEL */}
                 <div className="card-panel" style={{ marginBottom: '24px' }}>
-                  <h2 className="card-title">📊 Job Ingestion Monitor & Health</h2>
+                  <h2 className="card-title">Job Ingestion Monitor & Health</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
                     Track status, synchronization timestamps, health, and throughput metrics across all automated connectors.
                   </p>
@@ -2756,7 +2756,7 @@ function App() {
 
                 {/* 2.7-I: USER AUTOMATION PREFERENCES PANEL */}
                 <div className="card-panel" style={{ marginBottom: '24px' }}>
-                  <h2 className="card-title">⚙️ Job Discovery Automation Preferences</h2>
+                  <h2 className="card-title">Job Discovery Automation Preferences</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
                     Configure automatic notifications, filtering rules, and quality thresholds for new job matches.
                   </p>
@@ -2841,7 +2841,7 @@ function App() {
                 </div>
 
                 <div className="card-panel">
-                  <h2 className="card-title">📝 Job Search Profiles</h2>
+                  <h2 className="card-title">Job Search Profiles</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
                     Configure search queries. The Adzuna sync service will run queries for each active profile to discover relevant roles.
                   </p>
@@ -3052,7 +3052,7 @@ function App() {
 
                 {/* 2.7-H: DEDUPLICATION AUDIT LOGS */}
                 <div className="card-panel" style={{ marginTop: '24px' }}>
-                  <h2 className="card-title">🔍 Deduplication & Quality Logs</h2>
+                  <h2 className="card-title">Deduplication & Quality Logs</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
                     Audit history of automatically rejected duplicate job postings and their match reasons.
                   </p>
