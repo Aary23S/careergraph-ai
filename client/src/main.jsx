@@ -44,6 +44,20 @@ function App() {
   const [incomingJobs, setIncomingJobs] = useState([]);
   const [loadingIncoming, setLoadingIncoming] = useState(false);
   const [reviewJob, setReviewJob] = useState(null);
+  const [ingestionMonitor, setIngestionMonitor] = useState(null);
+  const [deduplicationLogs, setDeduplicationLogs] = useState([]);
+  const [preferences, setPreferences] = useState({
+    notificationsEnabled: true,
+    notifyHighlyRelevant: true,
+    notifyStrongReferral: true,
+    notifyTargetCompany: true,
+    dailyDigestEnabled: true,
+    notifyLowRelevance: false,
+    minimumMatchScore: 80,
+    preferredJobLocations: [],
+    preferredJobRoles: [],
+    remotePreference: ''
+  });
 
   // Connection detail states
   const [activeConnectionId, setActiveConnectionId] = useState(null);
@@ -145,6 +159,9 @@ function App() {
         loadGmailStatus();
         loadTelegramStatus();
         loadIncomingJobs();
+        loadIngestionMonitor();
+        loadDeduplicationLogs();
+        loadPreferences();
       }
       if (activeTab === 'applications') loadApplications();
       if (activeTab === 'outreach') loadOutreach();
@@ -640,6 +657,51 @@ function App() {
       setTelegramLinkingCode(res.data.code);
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const loadIngestionMonitor = async () => {
+    try {
+      const res = await api.request('/dashboard/ingestion-monitor');
+      setIngestionMonitor(res.data);
+    } catch (err) {
+      console.error('Failed to load ingestion monitor stats:', err);
+    }
+  };
+
+  const loadDeduplicationLogs = async () => {
+    try {
+      const res = await api.request('/dashboard/deduplication-logs');
+      setDeduplicationLogs(res.data);
+    } catch (err) {
+      console.error('Failed to load deduplication logs:', err);
+    }
+  };
+
+  const loadPreferences = async () => {
+    try {
+      const res = await api.request('/preferences');
+      if (res.data) {
+        setPreferences(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to load user preferences:', err);
+    }
+  };
+
+  const savePreferences = async (updated) => {
+    try {
+      const res = await api.request('/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      if (res.data) {
+        setPreferences(res.data);
+        alert('Automation preferences saved successfully!');
+      }
+    } catch (err) {
+      alert('Failed to save automation preferences: ' + err.message);
     }
   };
 
@@ -2433,6 +2495,89 @@ function App() {
 
             {jobSubTab === 'sources' && (
               <div>
+                {/* 2.7-A & 2.7-G: INGESTION MONITORING PANEL */}
+                <div className="card-panel" style={{ marginBottom: '24px' }}>
+                  <h2 className="card-title">📊 Job Ingestion Monitor & Health</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                    Track status, synchronization timestamps, health, and throughput metrics across all automated connectors.
+                  </p>
+                  
+                  {ingestionMonitor ? (
+                    <div>
+                      {/* Health Matrix Table */}
+                      <table className="table" style={{ width: '100%', marginBottom: '24px', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>
+                            <th style={{ padding: '8px 12px' }}>Source</th>
+                            <th style={{ padding: '8px 12px' }}>Health Status</th>
+                            <th style={{ padding: '8px 12px' }}>Last Synced</th>
+                            <th style={{ padding: '8px 12px' }}>New Jobs (Today)</th>
+                            <th style={{ padding: '8px 12px' }}>Failures</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ingestionMonitor.sources.map(s => (
+                            <tr key={s.name} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ padding: '12px', fontWeight: 600 }}>{s.name}</td>
+                              <td style={{ padding: '12px' }}>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 8px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 600,
+                                  background: s.status === 'healthy' ? 'rgba(76, 175, 80, 0.15)' : s.status === 'degraded' ? 'rgba(255, 152, 0, 0.15)' : 'rgba(244, 67, 54, 0.15)',
+                                  color: s.status === 'healthy' ? 'var(--success)' : s.status === 'degraded' ? '#ff9800' : 'var(--danger)'
+                                }}>
+                                  {s.status === 'healthy' ? '✅ Healthy' : s.status === 'degraded' ? '⚠️ Degraded' : '❌ Failed'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>
+                                {s.lastSync ? new Date(s.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                              </td>
+                              <td style={{ padding: '12px', fontWeight: 600 }}>{s.newJobs || '—'}</td>
+                              <td style={{ padding: '12px', color: s.failed > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>{s.failed || 0}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {/* Today's Ingestion Metrics Summary */}
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '12px' }}>Today's Ingestion</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', background: 'var(--bg-secondary)', padding: '20px', borderRadius: '8px', marginBottom: '24px' }}>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Messages Received</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{ingestionMonitor.stats.messagesReceived}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Jobs Detected</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{ingestionMonitor.stats.jobsDetected}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Jobs Created</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{ingestionMonitor.stats.jobsCreated}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Duplicates</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{ingestionMonitor.stats.duplicates}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Pending Review</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>{ingestionMonitor.stats.pendingReview}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Failed</div>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: ingestionMonitor.stats.failed > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{ingestionMonitor.stats.failed}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ color: 'var(--text-muted)' }}>Loading ingestion status metrics...</div>
+                  )}
+                </div>
+
                 <div className="card-panel" style={{ marginBottom: '24px' }}>
                   <h2 className="card-title">Job Sources: Adzuna API Integration</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
@@ -2453,6 +2598,7 @@ function App() {
                           const summary = await api.syncAdzunaJobs();
                           alert(`Adzuna Sync Complete!\nProcessed: ${summary.processed}\nCreated: ${summary.created}\nUpdated: ${summary.updated}\nDuplicates: ${summary.duplicate}\nFailed: ${summary.failed}`);
                           loadJobs();
+                          loadIngestionMonitor();
                         } catch (err) {
                           alert(err.message);
                         }
@@ -2492,6 +2638,7 @@ function App() {
                                   alert(`Gmail Sync Complete!\nEmails Processed: ${res.data.emailsProcessed}\nJobs Found: ${res.data.jobsFound}\nCreated: ${res.data.created}\nUpdated: ${res.data.updated}\nDuplicates: ${res.data.duplicates}\nFailed: ${res.data.failed}`);
                                   loadGmailStatus();
                                   loadJobs();
+                                  loadIngestionMonitor();
                                 } catch (err) {
                                   alert(err.message);
                                 } finally {
@@ -2508,6 +2655,7 @@ function App() {
                                   try {
                                     await api.request('/integrations/gmail/disconnect', { method: 'POST' });
                                     loadGmailStatus();
+                                    loadIngestionMonitor();
                                   } catch (err) {
                                     alert(err.message);
                                   }
@@ -2533,13 +2681,171 @@ function App() {
                   </div>
                 </div>
 
+                <div className="card-panel" style={{ marginBottom: '24px' }}>
+                  <h2 className="card-title">Telegram Job Tracker</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                    Connect your Telegram account to CareerGraph to manually forward or copy-paste job postings directly into your private bot chat.
+                  </p>
+
+                  <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
+                    {telegramStatus?.connected ? (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, color: 'var(--success)' }}>
+                              🟢 Connected: @{telegramStatus.telegramUsername || telegramStatus.telegramUserId}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                              Bot: @{telegramStatus.botUsername} &bull; Linked: {new Date(telegramStatus.linkedAt).toLocaleDateString()}
+                            </div>
+                            <div style={{ display: 'flex', gap: '20px', marginTop: '12px' }}>
+                              <div><strong>{telegramStatus.stats.received}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Received</span></div>
+                              <div><strong>{telegramStatus.stats.jobsCreated}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Created</span></div>
+                              <div><strong>{telegramStatus.stats.duplicates}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Duplicates</span></div>
+                              <div><strong>{telegramStatus.stats.pendingReview}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Pending Review</span></div>
+                            </div>
+                          </div>
+                          <div>
+                            <button
+                              className="btn btn-danger"
+                              onClick={async () => {
+                                if (confirm('Disconnect Telegram integration?')) {
+                                  try {
+                                    await api.request('/integrations/telegram/disconnect', { method: 'POST' });
+                                    loadTelegramStatus();
+                                    loadIngestionMonitor();
+                                  } catch (err) {
+                                    alert(err.message);
+                                  }
+                                }
+                              }}
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Not Connected</span>
+                          <button
+                            className="btn btn-primary"
+                            onClick={generateTelegramCode}
+                          >
+                            Generate Linking Code
+                          </button>
+                        </div>
+                        {telegramLinkingCode && (
+                          <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-primary)', borderRadius: '6px', border: '1px dashed var(--border-color)' }}>
+                            <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>
+                              1. Open Telegram and search for <strong>@{telegramStatus?.botUsername || 'CareerGraphJobBot'}</strong>
+                            </p>
+                            <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem' }}>
+                              2. Send the command:
+                            </p>
+                            <div style={{ background: 'var(--bg-secondary)', padding: '8px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', color: 'var(--accent)' }}>
+                              /start {telegramLinkingCode}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2.7-I: USER AUTOMATION PREFERENCES PANEL */}
+                <div className="card-panel" style={{ marginBottom: '24px' }}>
+                  <h2 className="card-title">⚙️ Job Discovery Automation Preferences</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                    Configure automatic notifications, filtering rules, and quality thresholds for new job matches.
+                  </p>
+                  
+                  <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={preferences.notificationsEnabled}
+                          onChange={(e) => savePreferences({ ...preferences, notificationsEnabled: e.target.checked })}
+                        />
+                        <span style={{ fontWeight: 600 }}>Enable Real-time Job Notifications</span>
+                      </label>
+
+                      {preferences.notificationsEnabled && (
+                        <div style={{ marginLeft: '24px', display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '2px solid var(--border-color)', paddingLeft: '16px', marginTop: '4px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={preferences.notifyHighlyRelevant}
+                              onChange={(e) => savePreferences({ ...preferences, notifyHighlyRelevant: e.target.checked })}
+                            />
+                            <span>Notify for highly relevant jobs (matching score &ge; threshold)</span>
+                          </label>
+
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={preferences.notifyStrongReferral}
+                              onChange={(e) => savePreferences({ ...preferences, notifyStrongReferral: e.target.checked })}
+                            />
+                            <span>Notify when strong referral exists at the company</span>
+                          </label>
+
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={preferences.notifyTargetCompany}
+                              onChange={(e) => savePreferences({ ...preferences, notifyTargetCompany: e.target.checked })}
+                            />
+                            <span>Notify for target companies list matching roles</span>
+                          </label>
+
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={preferences.dailyDigestEnabled}
+                              onChange={(e) => savePreferences({ ...preferences, dailyDigestEnabled: e.target.checked })}
+                            />
+                            <span>Include new jobs in CareerGraph Daily Digest email</span>
+                          </label>
+
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={preferences.notifyLowRelevance}
+                              onChange={(e) => savePreferences({ ...preferences, notifyLowRelevance: e.target.checked })}
+                            />
+                            <span>Notify for low-relevance jobs (score &lt; 40)</span>
+                          </label>
+
+                          <div style={{ marginTop: '8px' }}>
+                            <label className="form-label" style={{ display: 'block', marginBottom: '6px' }}>
+                              Minimum Match Score for Notification: <strong>{preferences.minimumMatchScore || 80}</strong>
+                            </label>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={preferences.minimumMatchScore || 80}
+                              onChange={(e) => setPreferences({ ...preferences, minimumMatchScore: parseInt(e.target.value) })}
+                              onMouseUp={(e) => savePreferences({ ...preferences, minimumMatchScore: parseInt(e.target.value) })}
+                              onTouchEnd={(e) => savePreferences({ ...preferences, minimumMatchScore: parseInt(e.target.value) })}
+                              style={{ width: '100%', maxWidth: '300px', accentColor: 'var(--accent)' }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="card-panel">
                   <h2 className="card-title">📝 Job Search Profiles</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
                     Configure search queries. The Adzuna sync service will run queries for each active profile to discover relevant roles.
                   </p>
 
-                  {/* Add New Profile Form */}
                   <form onSubmit={async (e) => {
                     e.preventDefault();
                     const formData = new FormData(e.target);
@@ -2739,6 +3045,43 @@ function App() {
                             </div>
                           </div>
                         )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2.7-H: DEDUPLICATION AUDIT LOGS */}
+                <div className="card-panel" style={{ marginTop: '24px' }}>
+                  <h2 className="card-title">🔍 Deduplication & Quality Logs</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                    Audit history of automatically rejected duplicate job postings and their match reasons.
+                  </p>
+
+                  <div style={{ maxHeight: '300px', overflowY: 'auto', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '16px' }}>
+                    {deduplicationLogs.length === 0 ? (
+                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
+                        No duplicates detected yet. Your tracker is completely clean!
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {deduplicationLogs.map(l => (
+                          <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-primary)', padding: '10px 14px', borderRadius: '6px', fontSize: '0.85rem', border: '1px solid var(--border-color)' }}>
+                            <div>
+                              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{l.duplicateText}</span>
+                              <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
+                                via {l.source}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>
+                                {l.reason}
+                              </span>
+                              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                                {new Date(l.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>

@@ -199,6 +199,7 @@ export function initializeModels(sequelize) {
       remoteType: { type: DataTypes.STRING, field: 'remote_type' },
       experienceLevel: { type: DataTypes.STRING, field: 'experience_level' },
       matchScore: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'match_score' },
+      priority: { type: DataTypes.STRING, allowNull: false, defaultValue: 'standard' },
     },
     {
       ...baseOptions,
@@ -326,6 +327,36 @@ export function initializeModels(sequelize) {
         defaultValue: true,
         field: 'notifications_enabled',
       },
+      notifyHighlyRelevant: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'notify_highly_relevant',
+      },
+      notifyStrongReferral: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'notify_strong_referral',
+      },
+      notifyTargetCompany: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'notify_target_company',
+      },
+      dailyDigestEnabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+        field: 'daily_digest_enabled',
+      },
+      notifyLowRelevance: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: 'notify_low_relevance',
+      },
+      minimumMatchScore: {
+        type: DataTypes.INTEGER,
+        defaultValue: 80,
+        field: 'minimum_match_score',
+      },
     },
     { ...baseOptions, tableName: 'user_preferences' },
   );
@@ -415,6 +446,19 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'incoming_jobs' }
   );
 
+  const JobDeduplicationLog = sequelize.define(
+    'JobDeduplicationLog',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      source: { type: DataTypes.STRING, allowNull: false },
+      duplicateText: { type: DataTypes.TEXT, allowNull: false, field: 'duplicate_text' },
+      matchedJobId: { type: DataTypes.UUID, allowNull: true, field: 'matched_job_id' },
+      reason: { type: DataTypes.STRING, allowNull: false },
+      loggedAt: { type: DataTypes.DATE, allowNull: false, field: 'logged_at' }
+    },
+    { ...baseOptions, tableName: 'job_deduplication_logs' }
+  );
+
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -489,6 +533,12 @@ export function initializeModels(sequelize) {
   User.hasMany(IncomingJob, { foreignKey: 'user_id', as: 'incomingJobs' });
   IncomingJob.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+  User.hasMany(JobDeduplicationLog, { foreignKey: 'user_id', as: 'deduplicationLogs' });
+  JobDeduplicationLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  Job.hasMany(JobDeduplicationLog, { foreignKey: 'matched_job_id', as: 'duplicateLogs' });
+  JobDeduplicationLog.belongsTo(Job, { foreignKey: 'matched_job_id', as: 'matchedJob' });
+
   return {
     User,
     RefreshToken,
@@ -511,5 +561,6 @@ export function initializeModels(sequelize) {
     JobIngestionEvent,
     TelegramIntegration,
     IncomingJob,
+    JobDeduplicationLog,
   };
 }

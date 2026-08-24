@@ -176,4 +176,108 @@ router.post(
   }),
 );
 
+// Fetch Ingestion Monitor metrics
+router.get(
+  '/ingestion-monitor',
+  asyncHandler(async (req, res) => {
+    const userId = req.auth.userId;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const { env } = await import('../config/env.js');
+
+    // 1. Calculate Source Health
+    // Adzuna
+    let adzunaHealth = env.adzunaEnabled ? 'healthy' : 'disabled';
+    
+    // LinkedIn Email
+    const gmailIntegration = await models.GmailIntegration.findOne({ where: { user_id: userId } });
+    let gmailHealth = env.gmailEnabled ? (gmailIntegration ? 'healthy' : 'degraded') : 'disabled';
+
+    // Telegram
+    const telegramIntegration = await models.TelegramIntegration.findOne({ where: { user_id: userId } });
+    let telegramHealth = env.telegramEnabled ? (telegramIntegration ? 'healthy' : 'degraded') : 'disabled';
+
+    // Check recent ingestion failures to update health status
+    const recentFailedIngestions = await models.JobIngestionEvent.count({
+      where: {
+        user_id: userId,
+        status: 'failed',
+        processedAt: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+      }
+    });
+
+    if (recentFailedIngestions > 0) {
+      if (gmailHealth === 'healthy') gmailHealth = 'degraded';
+    }
+
+    // 2. Fetch Sync Statuses
+    const lastGmailSync = gmailIntegration?.lastSyncAt || null;
+    
+    // Get last Adzuna job creation date
+    const lastAdzunaJob = await models.Job.findOne({
+      where: { user_id: userId, source: 'adzuna' },
+      order: [['createdAt', 'DESC']]
+    });
+    const lastAdzunaSync = lastAdzunaJob?.createdAt || null;
+
+    // Get last Telegram sync
+    const lastTelegramJob = await models.IncomingJob.findOne({
+      where: { user_id: userId, source: 'telegram' },
+      order: [['receivedAt', 'DESC']]
+    });
+    const lastTelegramSync = lastTelegramJob?.receivedAt || null;
+
+    // 3. Stats Summary Metrics
+    const gmailJobEvents = await models.JobIngestionEvent.findAll({
+      where: { user_id: userId, sourceType: 'linkedin_email', processedAt: { [Op.gte]: startOfToday } }
+    });
+    const telegramEvents = await models.IncomingJob.findAll({
+      where: { user_id: userId, source: 'telegram', receivedAt: { [Op.gte]: startOfToday } }
+    });
+
+    const totalReceivedMessages = gmailJobEvents.length + telegramEvents.length;
+    const totalJobsCreated = await models.Job.count({
+      where: { user_id: userId, createdAt: { [Op.gte]: startOfToday } }
+    });
+    const totalDuplicates = await models.JobDeduplicationLog.count({
+      where: { user_id: userId, loggedAt: { [Op.gte]: startOfToday } }
+    });
+    const totalPending = await models.IncomingJob.count({
+      where: { user_id: userId, status: 'pending_review' }
+    });
+    const totalFailed = gmailJobEvents.filter(e => e.status === 'failed').length;
+
+    ok(res, {
+      sources: [
+        { name: 'Adzuna', status: adzunaHealth, lastSync: lastAdzunaSync, newJobs: totalJobsCreated, failed: 0 },
+        { name: 'LinkedIn Email', status: gmailHealth, lastSync: lastGmailSync, newJobs: gmailJobEvents.filter(e => e.status === 'success').length, failed: totalFailed },
+        { name: 'Telegram', status: telegramHealth, lastSync: lastTelegramSync, newJobs: telegramEvents.filter(e => e.status === 'approved').length, failed: telegramEvents.filter(e => e.status === 'ignored').length }
+      ],
+      stats: {
+        messagesReceived: totalReceivedMessages,
+        jobsDetected: totalReceivedMessages,
+        jobsCreated: totalJobsCreated,
+        duplicates: totalDuplicates,
+        pendingReview: totalPending,
+        failed: totalFailed
+      }
+    });
+  })
+);
+
+// Fetch Deduplication matching audit logs
+router.get(
+  '/deduplication-logs',
+  asyncHandler(async (req, res) => {
+    const userId = req.auth.userId;
+    const logs = await models.JobDeduplicationLog.findAll({
+      where: { user_id: userId },
+      order: [['loggedAt', 'DESC']],
+      limit: 50
+    });
+    ok(res, logs);
+  })
+);
+
 export default router;
