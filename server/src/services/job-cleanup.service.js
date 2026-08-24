@@ -12,6 +12,9 @@ export async function cleanupExpiredAndLowMatchJobs(userId) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
   // Fetch IDs of jobs that are actively tracked in applications
   const activeApplications = await models.Application.findAll({
     where: { user_id: userId },
@@ -26,7 +29,10 @@ export async function cleanupExpiredAndLowMatchJobs(userId) {
       user_id: userId,
       id: { [Op.notIn]: protectedJobIds },
       [Op.or]: [
-        { matchScore: { [Op.lt]: 20 } },
+        {
+          matchScore: { [Op.lt]: 20 },
+          fetchedAt: { [Op.lt]: sevenDaysAgo }
+        },
         { fetchedAt: { [Op.lt]: thirtyDaysAgo } },
         { postedDate: { [Op.lt]: thirtyDaysAgo.toISOString().split('T')[0] } }
       ]
