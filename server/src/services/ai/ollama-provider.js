@@ -8,11 +8,31 @@ export class OllamaProvider extends AIProvider {
     this.modelName = env.ollamaModel;
   }
 
-  async generateStructured(prompt) {
+  async generateStructured(prompt, schema) {
     const url = `${this.baseUrl}/api/generate`;
     
-    // Explicit instructions to model for JSON output format
-    const jsonPrompt = `${prompt}\n\nYou MUST respond with a valid JSON object matching the requested schema. Do not include markdown wraps or code block syntax.`;
+    let schemaTemplateStr = '';
+    if (schema && typeof schema.describe === 'function') {
+      try {
+        const desc = schema.describe();
+        const keys = desc.keys || {};
+        const template = {};
+        Object.entries(keys).forEach(([key, val]) => {
+          if (val.type === 'array') {
+            template[key] = ['string'];
+          } else if (val.type === 'number') {
+            template[key] = 0.0;
+          } else {
+            template[key] = 'string';
+          }
+        });
+        schemaTemplateStr = `\n\nYou MUST return a JSON object with the following keys and structure:\n${JSON.stringify(template, null, 2)}`;
+      } catch (err) {
+        // fallback if schema describe fails
+      }
+    }
+
+    const jsonPrompt = `${prompt}${schemaTemplateStr}\n\nDo not include markdown wraps or code block syntax. Respond with raw JSON only.`;
 
     const response = await fetch(url, {
       method: 'POST',

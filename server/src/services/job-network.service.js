@@ -93,6 +93,7 @@ export async function getJobNetworkDetails(userId, jobId, queryParams = {}) {
         email: conn.email,
         location: conn.location
       },
+      skills: conn.skills,
       referralScore: refScore,
       reasons,
       relationshipStatus: conn.relationshipStatus || 'not_contacted',
@@ -182,13 +183,65 @@ export async function getJobNetworkDetails(userId, jobId, queryParams = {}) {
   const totalPages = Math.ceil(total / limit);
   const offset = (page - 1) * limit;
 
-  const paginatedCandidates = candidates.slice(offset, offset + limit).map(c => ({
-    connection: c.connection,
-    referralScore: c.referralScore,
-    reasons: c.reasons,
-    relationshipStatus: c.relationshipStatus,
-    priority: c.priority
-  }));
+  const paginatedCandidates = await Promise.all(
+    candidates.slice(offset, offset + limit).map(async (c) => {
+      const enrich = await models.ConnectionAiEnrichment.findOne({
+        where: { connectionId: c.connection.id }
+      });
+
+      const aiEvidence = {
+        skillAlignment: [],
+        domainAlignment: [],
+        roleAlignment: 'neutral'
+      };
+
+      if (enrich) {
+        const skills = c.skills || [];
+        const technologies = enrich.userCorrectedTechnologies || enrich.technologies || [];
+        const technicalDomains = enrich.userCorrectedTechnicalDomains || enrich.technicalDomains || [];
+        const jobText = `${job.title || ''} ${job.description || ''}`.toLowerCase();
+
+        technologies.forEach(tech => {
+          if (jobText.includes(tech.toLowerCase())) {
+            aiEvidence.skillAlignment.push(tech);
+          }
+        });
+        skills.forEach(skill => {
+          if (jobText.includes(skill.toLowerCase()) && !aiEvidence.skillAlignment.includes(skill)) {
+            aiEvidence.skillAlignment.push(skill);
+          }
+        });
+
+        technicalDomains.forEach(domain => {
+          if (jobText.includes(domain.toLowerCase())) {
+            aiEvidence.domainAlignment.push(domain);
+          }
+        });
+
+        const profRole = (enrich.userCorrectedProfessionalRole || enrich.professionalRole || '').toLowerCase();
+        const jobTitle = (job.title || '').toLowerCase();
+        if (profRole && jobTitle) {
+          if (jobTitle.includes(profRole) || profRole.includes(jobTitle)) {
+            aiEvidence.roleAlignment = 'strong';
+          } else {
+            const matchingWords = profRole.split(' ').filter(w => w.length > 3 && jobTitle.includes(w));
+            if (matchingWords.length > 0) {
+              aiEvidence.roleAlignment = 'moderate';
+            }
+          }
+        }
+      }
+
+      return {
+        connection: c.connection,
+        referralScore: c.referralScore,
+        reasons: c.reasons,
+        relationshipStatus: c.relationshipStatus,
+        priority: c.priority,
+        aiEvidence: enrich ? aiEvidence : null
+      };
+    })
+  );
 
   return {
     job: {

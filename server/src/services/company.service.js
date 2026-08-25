@@ -193,6 +193,35 @@ export async function getCompanyDetail(userId, companyKey) {
     }
   });
 
+  // AI-derived domains/expertise aggregates
+  const aiEnrichments = await models.ConnectionAiEnrichment.findAll({
+    include: [{
+      model: models.Connection,
+      as: 'connection',
+      where: {
+        user_id: userId,
+        normalizedCompany: companyKey
+      },
+      attributes: []
+    }]
+  });
+
+  const expertiseCounts = {};
+  aiEnrichments.forEach(enrich => {
+    const domains = enrich.userCorrectedTechnicalDomains || enrich.technicalDomains || [];
+    domains.forEach(d => {
+      if (d) {
+        const normalized = d.trim().replace(/^\w/, c => c.toUpperCase());
+        expertiseCounts[normalized] = (expertiseCounts[normalized] || 0) + 1;
+      }
+    });
+  });
+
+  const aiExpertise = Object.entries(expertiseCounts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
   return {
     companyKey,
     companyName,
@@ -203,6 +232,7 @@ export async function getCompanyDetail(userId, companyKey) {
     notContacted,
     rolesDistribution: roles.map(r => ({ category: r.category, count: parseInt(r.count, 10) })),
     seniorityDistribution: seniority.map(s => ({ level: s.level, count: parseInt(s.count, 10) })),
-    relationshipDistribution: relationships.map(rel => ({ status: rel.status, count: parseInt(rel.count, 10) }))
+    relationshipDistribution: relationships.map(rel => ({ status: rel.status, count: parseInt(rel.count, 10) })),
+    aiExpertise
   };
 }

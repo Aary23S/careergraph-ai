@@ -535,6 +535,43 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'resume_ai_enrichments' }
   );
 
+  const ConnectionAiEnrichment = sequelize.define(
+    'ConnectionAiEnrichment',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      connectionId: { type: DataTypes.UUID, allowNull: false, field: 'connection_id' },
+      provider: { type: DataTypes.STRING, allowNull: false },
+      model: { type: DataTypes.STRING, allowNull: false },
+      promptVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'prompt_version' },
+      schemaVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'schema_version' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
+      inputHash: { type: DataTypes.STRING, allowNull: false, field: 'input_hash' },
+      professionalRole: { type: DataTypes.STRING, field: 'professional_role' },
+      roleFamily: { type: DataTypes.STRING, field: 'role_family' },
+      careerLevel: { type: DataTypes.STRING, field: 'career_level' },
+      technicalDomains: { type: DataTypes.JSON, field: 'technical_domains' },
+      technologies: { type: DataTypes.JSON },
+      industryDomains: { type: DataTypes.JSON, field: 'industry_domains' },
+      expertiseAreas: { type: DataTypes.JSON, field: 'expertise_areas' },
+      leadershipLevel: { type: DataTypes.STRING, field: 'leadership_level' },
+      summary: { type: DataTypes.TEXT },
+      confidence: { type: DataTypes.FLOAT },
+      rawResponse: { type: DataTypes.TEXT, field: 'raw_response' },
+      latencyMs: { type: DataTypes.INTEGER, field: 'latency_ms' },
+      errorCode: { type: DataTypes.STRING, field: 'error_code' },
+      userCorrectedProfessionalRole: { type: DataTypes.STRING, field: 'user_corrected_professional_role' },
+      userCorrectedRoleFamily: { type: DataTypes.STRING, field: 'user_corrected_role_family' },
+      userCorrectedCareerLevel: { type: DataTypes.STRING, field: 'user_corrected_career_level' },
+      userCorrectedTechnicalDomains: { type: DataTypes.JSON, field: 'user_corrected_technical_domains' },
+      userCorrectedTechnologies: { type: DataTypes.JSON, field: 'user_corrected_technologies' },
+      userCorrectedIndustryDomains: { type: DataTypes.JSON, field: 'user_corrected_industry_domains' },
+      userCorrectedExpertiseAreas: { type: DataTypes.JSON, field: 'user_corrected_expertise_areas' },
+      userCorrectedLeadershipLevel: { type: DataTypes.STRING, field: 'user_corrected_leadership_level' },
+      userCorrectedSummary: { type: DataTypes.TEXT, field: 'user_corrected_summary' },
+    },
+    { ...baseOptions, tableName: 'connection_ai_enrichments' }
+  );
+
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -621,6 +658,9 @@ export function initializeModels(sequelize) {
   Resume.hasOne(ResumeAiEnrichment, { foreignKey: 'resume_id', as: 'aiEnrichment' });
   ResumeAiEnrichment.belongsTo(Resume, { foreignKey: 'resume_id', as: 'resume' });
 
+  Connection.hasOne(ConnectionAiEnrichment, { foreignKey: 'connection_id', as: 'aiEnrichment' });
+  ConnectionAiEnrichment.belongsTo(Connection, { foreignKey: 'connection_id', as: 'connection' });
+
   return {
     User,
     RefreshToken,
@@ -646,5 +686,6 @@ export function initializeModels(sequelize) {
     JobDeduplicationLog,
     JobAiEnrichment,
     ResumeAiEnrichment,
+    ConnectionAiEnrichment,
   };
 }

@@ -174,9 +174,14 @@ async function serializeConnection(connection) {
     order: [['tag', 'ASC']],
   });
 
+  const aiEnrichment = await models.ConnectionAiEnrichment.findOne({
+    where: { connectionId: connection.id }
+  });
+
   return {
     ...connection.toJSON(),
     tags: tags.map((tag) => tag.tag),
+    aiEnrichment
   };
 }
 
@@ -245,6 +250,10 @@ router.post(
     }
 
     created(res, await serializeConnection(connection));
+    
+    // Auto enqueue AI enrichment
+    const { enqueueConnectionEnrichment } = await import('../services/connection-ai-enrichment.service.js');
+    await enqueueConnectionEnrichment(connection.id);
   }),
 );
 
@@ -309,6 +318,10 @@ router.post(
         user_id: req.auth.userId,
         importBatchId: batchId,
         ...value,
+      }).then(async (c) => {
+        // Auto enqueue AI enrichment
+        const { enqueueConnectionEnrichment } = await import('../services/connection-ai-enrichment.service.js');
+        await enqueueConnectionEnrichment(c.id).catch(() => {});
       });
       imported += 1;
     }
@@ -801,6 +814,11 @@ router.post(
       updates.lastEnrichedAt = new Date();
 
       await connection.update(updates);
+      
+      // Auto enqueue AI enrichment
+      const { enqueueConnectionEnrichment } = await import('../services/connection-ai-enrichment.service.js');
+      await enqueueConnectionEnrichment(connection.id);
+
       ok(res, await serializeConnection(connection));
     } else if (action === 'create') {
       const newConnection = await models.Connection.create({
@@ -836,6 +854,11 @@ router.post(
         },
         lastEnrichedAt: new Date()
       });
+
+      // Auto enqueue AI enrichment
+      const { enqueueConnectionEnrichment } = await import('../services/connection-ai-enrichment.service.js');
+      await enqueueConnectionEnrichment(newConnection.id);
+
       created(res, await serializeConnection(newConnection));
     } else {
       throw new AppError(400, 'INVALID_ACTION', 'Action must be enrich or create.');
@@ -959,6 +982,96 @@ router.delete(
     await connection.destroy();
     ok(res, { deleted: true });
   }),
+);
+
+router.get(
+  '/:connectionId/ai',
+  asyncHandler(async (req, res) => {
+    const connection = await ensureConnectionOwnership(req.auth.userId, req.params.connectionId);
+    const aiEnrichment = await models.ConnectionAiEnrichment.findOne({
+      where: { connectionId: connection.id }
+    });
+    if (!aiEnrichment) {
+      throw new AppError(404, 'NOT_FOUND', 'AI enrichment not found for this connection.');
+    }
+    ok(res, aiEnrichment);
+  })
+);
+
+router.post(
+  '/:connectionId/ai-enrich',
+  asyncHandler(async (req, res) => {
+    const connection = await ensureConnectionOwnership(req.auth.userId, req.params.connectionId);
+    const { executeEnrichment } = await import('../services/connection-ai-enrichment.service.js');
+    await executeEnrichment(connection.id);
+    const updatedEnrichment = await models.ConnectionAiEnrichment.findOne({
+      where: { connectionId: connection.id }
+    });
+    ok(res, updatedEnrichment);
+  })
+);
+
+router.post(
+  '/:connectionId/ai-enrich/retry',
+  asyncHandler(async (req, res) => {
+    const connection = await ensureConnectionOwnership(req.auth.userId, req.params.connectionId);
+    const { executeEnrichment } = await import('../services/connection-ai-enrichment.service.js');
+    await executeEnrichment(connection.id);
+    const updatedEnrichment = await models.ConnectionAiEnrichment.findOne({
+      where: { connectionId: connection.id }
+    });
+    ok(res, updatedEnrichment);
+  })
+);
+
+router.put(
+  '/:connectionId/ai-corrections',
+  asyncHandler(async (req, res) => {
+    const connection = await ensureConnectionOwnership(req.auth.userId, req.params.connectionId);
+    const { saveUserCorrections } = await import('../services/connection-ai-enrichment.service.js');
+    const updatedEnrichment = await saveUserCorrections(connection.id, req.body);
+    ok(res, updatedEnrichment);
+  })
+);
+
+router.post(
+  '/ai-enrich/batch',
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(parseInt(req.body.limit, 10) || 25, 100);
+    const onlyWithoutAiEnrichment = req.body.onlyWithoutAiEnrichment !== false;
+    
+    const findOptions = {
+      where: { user_id: req.auth.userId },
+      limit
+    };
+
+    if (onlyWithoutAiEnrichment) {
+      findOptions.include = [{
+        model: models.ConnectionAiEnrichment,
+        as: 'aiEnrichment',
+        required: false
+      }];
+      findOptions.where[Op.or] = [
+        { '$aiEnrichment.id$': null },
+        { '$aiEnrichment.status$': 'failed' }
+      ];
+    }
+
+    const connections = await models.Connection.findAll(findOptions);
+    
+    const enqueued = [];
+    const { enqueueConnectionEnrichment } = await import('../services/connection-ai-enrichment.service.js');
+    for (const conn of connections) {
+      await enqueueConnectionEnrichment(conn.id);
+      enqueued.push(conn.id);
+    }
+
+    ok(res, {
+      message: `Enqueued ${enqueued.length} connections for AI enrichment.`,
+      count: enqueued.length,
+      ids: enqueued
+    });
+  })
 );
 
 export default router;
