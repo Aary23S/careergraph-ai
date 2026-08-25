@@ -4293,10 +4293,19 @@ function App() {
       {/* Job Detail Intelligence Modal */}
       {modal === 'job_detail' && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '750px', width: '90%' }}>
+          <div className="modal-content" style={{ maxWidth: '750px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
             <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span>Job Workspace: {editItem?.title}</span>
-              <span className="badge badge-info">{editItem?.status}</span>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span className="badge badge-info">{editItem?.status}</span>
+                <button
+                  className="btn btn-secondary"
+                  style={{ padding: '4px 8px', fontSize: '0.8rem', cursor: 'pointer', border: 'none', background: 'rgba(255,255,255,0.1)' }}
+                  onClick={() => setModal(null)}
+                >
+                  ✕
+                </button>
+              </div>
             </h2>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ color: 'var(--text-secondary)' }}>
@@ -4484,120 +4493,199 @@ function App() {
                   <div>
                     {/* Display Mode or Edit Mode */}
                     {!editingAiEnrichment ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        
+                        {/* Header Status Bar */}
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          padding: '12px 16px',
+                          borderRadius: '8px',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: 'var(--success)',
+                              boxShadow: '0 0 8px var(--success)'
+                            }}></span>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Enrichment Complete</span>
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            Model: <code style={{ color: 'var(--primary)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{editItem.aiEnrichment.model}</code>
+                            <span style={{ margin: '0 8px' }}>&bull;</span>
+                            Latency: <strong style={{ color: '#fff' }}>{editItem.aiEnrichment.latencyMs}ms</strong>
+                          </div>
+                        </div>
+
+                        {/* 2x2 Info Matrix Cards */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                          <div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Role Category</div>
-                            <div style={{ fontWeight: 600 }}>
-                              {editItem.aiEnrichment.userCorrectedRoleCategory || editItem.aiEnrichment.roleCategory || 'Not Extracted'}
-                              {editItem.aiEnrichment.userCorrectedRoleCategory && (
-                                <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '6px' }}>
-                                  (Corrected)
-                                </span>
-                              )}
+                          
+                          {/* Classification Card */}
+                          <div style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            padding: '16px',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px'
+                          }}>
+                            <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Job Classification</h4>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                              <div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Role Category</div>
+                                <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>
+                                  {editItem.aiEnrichment.userCorrectedRoleCategory || editItem.aiEnrichment.roleCategory || 'N/A'}
+                                  {editItem.aiEnrichment.userCorrectedRoleCategory && (
+                                    <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Seniority</div>
+                                <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
+                                  {editItem.aiEnrichment.userCorrectedSeniority || editItem.aiEnrichment.seniority || 'N/A'}
+                                  {editItem.aiEnrichment.userCorrectedSeniority && (
+                                    <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Seniority</div>
-                            <div style={{ fontWeight: 600 }}>
-                              {editItem.aiEnrichment.userCorrectedSeniority || editItem.aiEnrichment.seniority || 'Not Extracted'}
-                              {editItem.aiEnrichment.userCorrectedSeniority && (
-                                <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '6px' }}>
-                                  (Corrected)
-                                </span>
-                              )}
+
+                          {/* Work Type Card */}
+                          <div style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            padding: '16px',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px'
+                          }}>
+                            <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Position Parameters</h4>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                              <div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remote setup</div>
+                                <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
+                                  {editItem.aiEnrichment.userCorrectedRemoteType || editItem.aiEnrichment.remoteType || 'N/A'}
+                                  {editItem.aiEnrichment.userCorrectedRemoteType && (
+                                    <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Employment Type</div>
+                                <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
+                                  {editItem.aiEnrichment.userCorrectedEmploymentType || editItem.aiEnrichment.employmentType || 'N/A'}
+                                  {editItem.aiEnrichment.userCorrectedEmploymentType && (
+                                    <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                          <div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Remote Type</div>
-                            <div>
-                              {editItem.aiEnrichment.userCorrectedRemoteType || editItem.aiEnrichment.remoteType || 'Not Extracted'}
-                              {editItem.aiEnrichment.userCorrectedRemoteType && (
-                                <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '6px' }}>
-                                  (Corrected)
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Employment Type</div>
-                            <div>
-                              {editItem.aiEnrichment.userCorrectedEmploymentType || editItem.aiEnrichment.employmentType || 'Not Extracted'}
-                              {editItem.aiEnrichment.userCorrectedEmploymentType && (
-                                <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '6px' }}>
-                                  (Corrected)
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                          <div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Required Skills</div>
-                            <div className="tags-list">
-                              {(editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).length === 0 ? (
-                                <span style={{ color: 'var(--text-muted)' }}>None</span>
-                              ) : (
-                                (editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).map(s => (
-                                  <span key={s} className="badge badge-success">{s}</span>
-                                ))
-                              )}
-                            </div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Preferred Skills</div>
-                            <div className="tags-list">
-                              {(editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).length === 0 ? (
-                                <span style={{ color: 'var(--text-muted)' }}>None</span>
-                              ) : (
-                                (editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).map(s => (
-                                  <span key={s} className="badge badge-secondary">{s}</span>
-                                ))
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                          <div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Experience Requirement</div>
-                            <div>
+                        {/* Experience and Domains */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px' }}>
+                          <div style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            padding: '16px',
+                            borderRadius: '10px'
+                          }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Required Experience</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)' }}>
                               {(editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears) !== null ? (
-                                `${editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears} to ${editItem.aiEnrichment.userCorrectedExperienceMaxYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMaxYears : (editItem.aiEnrichment.experienceMaxYears || 'unspecified')} years`
-                              ) : 'Not Extracted'}
+                                `${editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears} to ${editItem.aiEnrichment.userCorrectedExperienceMaxYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMaxYears : (editItem.aiEnrichment.experienceMaxYears || 'unspecified')} yrs`
+                              ) : 'N/A'}
                             </div>
                           </div>
-                          <div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Domain / Industry</div>
+
+                          <div style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            padding: '16px',
+                            borderRadius: '10px'
+                          }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Target Domains</div>
                             <div className="tags-list">
                               {(editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).length === 0 ? (
-                                <span style={{ color: 'var(--text-muted)' }}>None</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None identified</span>
                               ) : (
                                 (editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).map(d => (
-                                  <span key={d} className="badge badge-info">{d}</span>
+                                  <span key={d} className="badge badge-info" style={{ textTransform: 'capitalize' }}>{d}</span>
                                 ))
                               )}
                             </div>
                           </div>
                         </div>
 
-                        <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Role Summary</div>
-                          <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            {editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || 'None'}
+                        {/* Skills breakdown */}
+                        <div style={{
+                          background: 'var(--bg-secondary)',
+                          border: '1px solid rgba(255,255,255,0.05)',
+                          padding: '16px',
+                          borderRadius: '10px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '16px'
+                        }}>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Required Technical Skills</div>
+                            <div className="tags-list">
+                              {(editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).length === 0 ? (
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None extracted</span>
+                              ) : (
+                                (editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).map(s => (
+                                  <span key={s} className="badge badge-success" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>{s}</span>
+                                ))
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Preferred / Desired Skills</div>
+                            <div className="tags-list">
+                              {(editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).length === 0 ? (
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None extracted</span>
+                              ) : (
+                                (editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).map(s => (
+                                  <span key={s} className="badge badge-secondary" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>{s}</span>
+                                ))
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        <div style={{ borderTop: '1px solid var(--bg-secondary)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            AI Model: <code>{editItem.aiEnrichment.model}</code> &bull; Latency: {editItem.aiEnrichment.latencyMs}ms
-                          </span>
-                          <button className="btn btn-primary" onClick={() => setEditingAiEnrichment(true)}>
-                            Correct AI Information
+                        {/* AI Summary Block */}
+                        <div style={{
+                          borderLeft: '4px solid var(--primary)',
+                          background: 'rgba(255,255,255,0.02)',
+                          padding: '16px',
+                          borderRadius: '0 8px 8px 0'
+                        }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Role Intel Summary</div>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                            "{editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || 'No summary available.'}"
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--bg-secondary)', paddingTop: '16px' }}>
+                          <button className="btn btn-secondary" onClick={() => setEditingAiEnrichment(true)}>
+                            Correct AI Details
                           </button>
                         </div>
                       </div>
