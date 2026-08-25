@@ -1,8 +1,16 @@
 import Joi from 'joi';
+import request from 'supertest';
 import { env } from '../src/config/env.js';
 import { aiService } from '../src/services/ai/ai.service.js';
+import { createApp } from '../src/app.js';
 
 describe('AI Foundation & Provider Abstraction Test Suite', () => {
+  let app;
+
+  beforeAll(() => {
+    app = createApp();
+  });
+
   beforeEach(() => {
     // Reset configuration parameters before each test run
     env.aiEnabled = true;
@@ -49,6 +57,11 @@ describe('AI Foundation & Provider Abstraction Test Suite', () => {
     ).rejects.toThrow('Structured output schema validation failed');
   });
 
+  test('AIService generateText returns plain string successfully', async () => {
+    const text = await aiService.generateText('Tell me a short joke.');
+    expect(text).toContain('Simulated mock text response for prompt');
+  });
+
   test('Orchestrator timeout aborts execution successfully', async () => {
     env.aiTimeoutMs = 10; // Trigger instant timeout
     if (aiService.provider) {
@@ -79,5 +92,13 @@ describe('AI Foundation & Provider Abstraction Test Suite', () => {
 
     console.warn = originalWarn;
     expect(warnCount).toBe(3); // 1 initial attempt + 2 retries = 3 logs
+  });
+
+  test('GET /api/ai/health returns correctly when enabled and mock is up', async () => {
+    const response = await request(app).get('/api/ai/health');
+    expect(response.status).toBe(200);
+    expect(response.body.data.enabled).toBe(true);
+    expect(response.body.data.provider).toBe('mock');
+    expect(response.body.data.available).toBe(true);
   });
 });

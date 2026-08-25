@@ -42,6 +42,13 @@ export class MockProvider extends AIProvider {
     };
   }
 
+  async generateText(prompt) {
+    if (this.delayMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, this.delayMs));
+    }
+    return `Simulated mock text response for prompt: ${prompt.substring(0, 30)}...`;
+  }
+
   async healthCheck() {
     return true;
   }

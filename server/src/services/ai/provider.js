@@ -13,6 +13,15 @@ export class AIProvider {
   }
 
   /**
+   * Generates a plain unstructured text output.
+   * @param {string} prompt - The text prompt.
+   * @returns {Promise<string>} Plain text result.
+   */
+  async generateText(prompt) {
+    throw new Error('Method not implemented: generateText');
+  }
+
+  /**
    * Verifies provider connectivity and capability.
    * @returns {Promise<boolean>} Healthy state flag.
    */

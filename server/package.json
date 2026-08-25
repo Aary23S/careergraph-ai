@@ -14,7 +14,8 @@
     "db:migrate": "sequelize-cli db:migrate --config src/config/database-cli.cjs --migrations-path src/database/migrations",
     "db:migrate:undo": "sequelize-cli db:migrate:undo --config src/config/database-cli.cjs --migrations-path src/database/migrations",
     "connections:backfill": "node scripts/backfill-connection-intelligence.js",
-    "connections:validate": "node scripts/validate-connection-intelligence.js"
+    "connections:validate": "node scripts/validate-connection-intelligence.js",
+    "ai:benchmark": "node scripts/ai-benchmark.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
