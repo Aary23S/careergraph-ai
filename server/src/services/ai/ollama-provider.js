@@ -41,6 +41,27 @@ export class OllamaProvider extends AIProvider {
     }
   }
 
+  async generateText(prompt) {
+    const url = `${this.baseUrl}/api/generate`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: this.modelName,
+        prompt,
+        stream: false
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama generation request failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.response || '';
+  }
+
   async healthCheck() {
     try {
       const response = await fetch(`${this.baseUrl}/api/tags`);

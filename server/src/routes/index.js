@@ -14,6 +14,7 @@ import noteRoutes from '../modules/notes.routes.js';
 import integrationsRoutes from '../modules/integrations.routes.js';
 import telegramRoutes from '../modules/telegram.routes.js';
 import incomingJobRoutes from '../modules/incoming-jobs.routes.js';
+import aiRoutes from '../modules/ai.routes.js';
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use('/notes', noteRoutes);
 router.use('/integrations', integrationsRoutes);
 router.use('/integrations/telegram', telegramRoutes);
 router.use('/incoming-jobs', incomingJobRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;

@@ -75,6 +75,42 @@ export class AIService {
     throw new Error(`AI generation pipeline failed after ${attempt} attempts. Last error: ${lastError?.message}`);
   }
 
+  async generateText(prompt) {
+    if (!env.aiEnabled) {
+      throw new Error('AI layer is currently disabled. Toggle AI_ENABLED to true.');
+    }
+
+    let attempt = 0;
+    const maxRetries = env.aiMaxRetries || 0;
+    const timeoutMs = env.aiTimeoutMs || 15000;
+
+    let lastError = null;
+
+    while (attempt <= maxRetries) {
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('AI request timeout exceeded.')), timeoutMs)
+        );
+
+        const responseData = await Promise.race([
+          this.provider.generateText(prompt),
+          timeoutPromise
+        ]);
+
+        return responseData;
+      } catch (err) {
+        lastError = err;
+        attempt++;
+        console.warn(`[AIService] Attempt ${attempt} failed: ${err.message}`);
+        if (attempt > maxRetries) {
+          break;
+        }
+      }
+    }
+
+    throw new Error(`AI generation pipeline failed after ${attempt} attempts. Last error: ${lastError?.message}`);
+  }
+
   async healthCheck() {
     if (!env.aiEnabled) return false;
     return this.provider.healthCheck();
