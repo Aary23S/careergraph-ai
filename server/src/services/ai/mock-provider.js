@@ -6,7 +6,7 @@ export class MockProvider extends AIProvider {
     this.delayMs = 0;
   }
 
-  async generateStructured(prompt, schema) {
+  async generateStructured(prompt) {
     if (this.delayMs > 0) {
       await new Promise(resolve => setTimeout(resolve, this.delayMs));
     }

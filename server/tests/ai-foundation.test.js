@@ -86,7 +86,7 @@ describe('AI Foundation & Provider Abstraction Test Suite', () => {
 
     try {
       await aiService.generateStructured('Hiring engineers description', Joi.object());
-    } catch (e) {
+    } catch {
       // Ignored for counter verification
     }
 

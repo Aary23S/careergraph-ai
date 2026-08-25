@@ -59,6 +59,8 @@ function App() {
     remotePreference: ''
   });
 
+  const [editingAiEnrichment, setEditingAiEnrichment] = useState(false);
+
   // Connection detail states
   const [activeConnectionId, setActiveConnectionId] = useState(null);
   const [connectionDetail, setConnectionDetail] = useState(null);
@@ -4336,6 +4338,13 @@ function App() {
               >
                 Referral Network Workspace
               </button>
+              <button
+                className={`btn ${jobNetworkSubTab === 'ai' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                onClick={() => { setJobNetworkSubTab('ai'); setEditingAiEnrichment(false); }}
+              >
+                🤖 AI Job Intelligence
+              </button>
             </div>
 
             {/* TAB 1: OVERVIEW & MATCH */}
@@ -4388,6 +4397,311 @@ function App() {
                     <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', maxHeight: '180px', overflowY: 'auto' }}>
                       {editItem.description}
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB: AI JOB INTELLIGENCE */}
+            {jobNetworkSubTab === 'ai' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>AI Job Understanding &amp; Enrichment</h3>
+                  {editItem?.aiEnrichment && (
+                    <button
+                      className="btn btn-secondary"
+                      style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                      onClick={async () => {
+                        if (confirm('Re-run AI extraction? This takes a few seconds.')) {
+                          try {
+                            const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
+                            setEditItem(data.data);
+                            alert('AI enrichment re-run completed!');
+                          } catch (e) {
+                            alert(e.message);
+                          }
+                        }
+                      }}
+                    >
+                      Force Re-Enrich Job
+                    </button>
+                  )}
+                </div>
+
+                {!editItem?.aiEnrichment ? (
+                  <div className="empty-state" style={{ padding: '24px', textAlign: 'center' }}>
+                    <p>AI Enrichment has not run or is disabled.</p>
+                    <button
+                      className="btn btn-primary"
+                      onClick={async () => {
+                        try {
+                          const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
+                          setEditItem(data.data);
+                          alert('AI Enrichment initiated!');
+                        } catch (e) {
+                          alert(e.message);
+                        }
+                      }}
+                    >
+                      Run AI Enrichment Now
+                    </button>
+                  </div>
+                ) : editItem.aiEnrichment.status === 'pending' || editItem.aiEnrichment.status === 'processing' ? (
+                  <div className="empty-state" style={{ padding: '24px', textAlign: 'center' }}>
+                    <p>AI Ingestion Monitor: Enrichment status is <strong>{editItem.aiEnrichment.status}</strong>...</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Refreshing in a few seconds.</p>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={async () => {
+                        const data = await api.request(`/jobs/${editItem.id}`);
+                        setEditItem(data.data);
+                      }}
+                    >
+                      Refresh Status
+                    </button>
+                  </div>
+                ) : editItem.aiEnrichment.status === 'failed' ? (
+                  <div className="empty-state" style={{ padding: '24px', border: '1px solid var(--danger)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                    <p style={{ color: 'var(--danger)', fontWeight: 600 }}>⚠️ AI Enrichment Failed</p>
+                    <p style={{ fontSize: '0.85rem' }}>Error Code: <code>{editItem.aiEnrichment.errorCode}</code></p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{editItem.aiEnrichment.rawResponse}</p>
+                    <button
+                      className="btn btn-primary"
+                      style={{ marginTop: '12px' }}
+                      onClick={async () => {
+                        try {
+                          const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
+                          setEditItem(data.data);
+                        } catch (e) {
+                          alert(e.message);
+                        }
+                      }}
+                    >
+                      Retry Enrichment
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Display Mode or Edit Mode */}
+                    {!editingAiEnrichment ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Role Category</div>
+                            <div style={{ fontWeight: 600 }}>
+                              {editItem.aiEnrichment.userCorrectedRoleCategory || editItem.aiEnrichment.roleCategory || 'Not Extracted'}
+                              {editItem.aiEnrichment.userCorrectedRoleCategory && (
+                                <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '6px' }}>
+                                  (Corrected)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Seniority</div>
+                            <div style={{ fontWeight: 600 }}>
+                              {editItem.aiEnrichment.userCorrectedSeniority || editItem.aiEnrichment.seniority || 'Not Extracted'}
+                              {editItem.aiEnrichment.userCorrectedSeniority && (
+                                <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '6px' }}>
+                                  (Corrected)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Remote Type</div>
+                            <div>
+                              {editItem.aiEnrichment.userCorrectedRemoteType || editItem.aiEnrichment.remoteType || 'Not Extracted'}
+                              {editItem.aiEnrichment.userCorrectedRemoteType && (
+                                <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '6px' }}>
+                                  (Corrected)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Employment Type</div>
+                            <div>
+                              {editItem.aiEnrichment.userCorrectedEmploymentType || editItem.aiEnrichment.employmentType || 'Not Extracted'}
+                              {editItem.aiEnrichment.userCorrectedEmploymentType && (
+                                <span style={{ fontSize: '0.8rem', color: 'var(--success)', marginLeft: '6px' }}>
+                                  (Corrected)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Required Skills</div>
+                            <div className="tags-list">
+                              {(editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).length === 0 ? (
+                                <span style={{ color: 'var(--text-muted)' }}>None</span>
+                              ) : (
+                                (editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).map(s => (
+                                  <span key={s} className="badge badge-success">{s}</span>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Preferred Skills</div>
+                            <div className="tags-list">
+                              {(editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).length === 0 ? (
+                                <span style={{ color: 'var(--text-muted)' }}>None</span>
+                              ) : (
+                                (editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).map(s => (
+                                  <span key={s} className="badge badge-secondary">{s}</span>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Experience Requirement</div>
+                            <div>
+                              {(editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears) !== null ? (
+                                `${editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears} to ${editItem.aiEnrichment.userCorrectedExperienceMaxYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMaxYears : (editItem.aiEnrichment.experienceMaxYears || 'unspecified')} years`
+                              ) : 'Not Extracted'}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Domain / Industry</div>
+                            <div className="tags-list">
+                              {(editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).length === 0 ? (
+                                <span style={{ color: 'var(--text-muted)' }}>None</span>
+                              ) : (
+                                (editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).map(d => (
+                                  <span key={d} className="badge badge-info">{d}</span>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Role Summary</div>
+                          <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            {editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || 'None'}
+                          </div>
+                        </div>
+
+                        <div style={{ borderTop: '1px solid var(--bg-secondary)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            AI Model: <code>{editItem.aiEnrichment.model}</code> &bull; Latency: {editItem.aiEnrichment.latencyMs}ms
+                          </span>
+                          <button className="btn btn-primary" onClick={() => setEditingAiEnrichment(true)}>
+                            Correct AI Information
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.target);
+                        const data = Object.fromEntries(formData.entries());
+                        
+                        const payload = {
+                          roleCategory: data.roleCategory,
+                          seniority: data.seniority,
+                          remoteType: data.remoteType,
+                          employmentType: data.employmentType,
+                          experienceMinYears: data.experienceMinYears ? parseInt(data.experienceMinYears) : null,
+                          experienceMaxYears: data.experienceMaxYears ? parseInt(data.experienceMaxYears) : null,
+                          requiredSkills: data.requiredSkills ? data.requiredSkills.split(',').map(s => s.trim()).filter(Boolean) : [],
+                          preferredSkills: data.preferredSkills ? data.preferredSkills.split(',').map(s => s.trim()).filter(Boolean) : [],
+                          domain: data.domain ? data.domain.split(',').map(s => s.trim()).filter(Boolean) : [],
+                          summary: data.summary
+                        };
+
+                        try {
+                          const refreshed = await api.request(`/jobs/${editItem.id}/ai-corrections`, {
+                            method: 'PUT',
+                            body: payload
+                          });
+                          setEditItem(refreshed.data);
+                          setEditingAiEnrichment(false);
+                          loadJobs();
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                      }}>
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">Role Category</label>
+                            <input type="text" name="roleCategory" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedRoleCategory || editItem.aiEnrichment.roleCategory || ''} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Seniority</label>
+                            <input type="text" name="seniority" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedSeniority || editItem.aiEnrichment.seniority || ''} />
+                          </div>
+                        </div>
+
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">Remote Type</label>
+                            <select name="remoteType" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedRemoteType || editItem.aiEnrichment.remoteType || ''}>
+                              <option value="">Choose remote preference...</option>
+                              <option value="remote">Remote</option>
+                              <option value="hybrid">Hybrid</option>
+                              <option value="onsite">Onsite</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Employment Type</label>
+                            <select name="employmentType" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedEmploymentType || editItem.aiEnrichment.employmentType || ''}>
+                              <option value="">Choose employment...</option>
+                              <option value="full-time">Full-time</option>
+                              <option value="part-time">Part-time</option>
+                              <option value="contract">Contract</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">Required Skills (comma separated)</label>
+                            <input type="text" name="requiredSkills" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).join(', ')} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Preferred Skills (comma separated)</label>
+                            <input type="text" name="preferredSkills" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).join(', ')} />
+                          </div>
+                        </div>
+
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">Min Experience (Years)</label>
+                            <input type="number" name="experienceMinYears" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears || ''} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Max Experience (Years)</label>
+                            <input type="number" name="experienceMaxYears" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedExperienceMaxYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMaxYears : editItem.aiEnrichment.experienceMaxYears || ''} />
+                          </div>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Domains / Industry Keywords (comma separated)</label>
+                          <input type="text" name="domain" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).join(', ')} />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Summary</label>
+                          <textarea name="summary" className="form-input" rows="3" defaultValue={editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || ''}></textarea>
+                        </div>
+
+                        <div className="modal-actions">
+                          <button type="button" className="btn btn-secondary" onClick={() => setEditingAiEnrichment(false)}>Cancel</button>
+                          <button type="submit" className="btn btn-primary">Save Corrections</button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 )}
               </div>

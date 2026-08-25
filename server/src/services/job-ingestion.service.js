@@ -1,9 +1,9 @@
 import { ManualSource, APIJobSource, EmailAlertSource, CompanyCareerSource, AdzunaJobSource } from './job-source.service.js';
 import { LinkedInEmailJobSource } from './linkedin-email-job-source.js';
 import { models } from '../config/database.js';
-import { Op } from 'sequelize';
 
 import { emailService } from './email.service.js';
+import { enqueueEnrichment } from './job-ai-enrichment.service.js';
 
 const SOURCES = {
   manual: new ManualSource(),
@@ -213,6 +213,9 @@ export async function ingestJob(userId, rawInput) {
     const created = await models.Job.create(jobPayload);
     // Reload to obtain matchScore calculated in hooks
     await created.reload();
+
+    // Trigger asynchronous AI enrichment in the background
+    enqueueEnrichment(created.id).catch(e => console.error(`[JobIngestionService] Async enrichment trigger failed: ${e.message}`));
 
     // Check notification rules
     const referralCount = normalized.companyName ? await models.Connection.count({

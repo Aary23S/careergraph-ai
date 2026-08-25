@@ -8,7 +8,7 @@ export class OllamaProvider extends AIProvider {
     this.modelName = env.ollamaModel;
   }
 
-  async generateStructured(prompt, schema) {
+  async generateStructured(prompt) {
     const url = `${this.baseUrl}/api/generate`;
     
     // Explicit instructions to model for JSON output format
@@ -66,7 +66,7 @@ export class OllamaProvider extends AIProvider {
     try {
       const response = await fetch(`${this.baseUrl}/api/tags`);
       return response.ok;
-    } catch (e) {
+    } catch {
       return false;
     }
   }

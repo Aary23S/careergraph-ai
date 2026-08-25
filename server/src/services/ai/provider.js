@@ -8,7 +8,7 @@ export class AIProvider {
    * @param {object} schema - Joi schema or validation rules.
    * @returns {Promise<object>} Parsed JSON result.
    */
-  async generateStructured(prompt, schema) {
+  async generateStructured() {
     throw new Error('Method not implemented: generateStructured');
   }
 
@@ -17,7 +17,7 @@ export class AIProvider {
    * @param {string} prompt - The text prompt.
    * @returns {Promise<string>} Plain text result.
    */
-  async generateText(prompt) {
+  async generateText() {
     throw new Error('Method not implemented: generateText');
   }
 
