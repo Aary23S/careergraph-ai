@@ -59,7 +59,7 @@ const testCases = [
 // Helper to grade model extraction quality on a 1-10 scale
 function evaluateExtraction(output, expected) {
   let score = 0;
-  
+
   // 1. Role similarity (simple check)
   const outRole = (output.role || '').toLowerCase();
   const expRole = expected.role.toLowerCase();
@@ -77,7 +77,7 @@ function evaluateExtraction(output, expected) {
   // 3. Skills recall
   const outSkills = (output.skills || []).map(s => s.toLowerCase());
   const expSkills = expected.skills.map(s => s.toLowerCase());
-  
+
   if (expSkills.length === 0) {
     if (outSkills.length === 0) score += 4;
     else score += Math.max(0, 4 - outSkills.length);
@@ -105,7 +105,7 @@ async function runBenchmark() {
   env.aiMaxRetries = 0;
 
   console.log('==================================================');
-  console.log('🤖 STARTING CAREERGRAPH AI MODEL BENCHMARK RUNNER');
+  console.log(' STARTING CAREERGRAPH AI MODEL BENCHMARK RUNNER');
   console.log('==================================================\n');
 
   const finalReports = [];
@@ -113,7 +113,7 @@ async function runBenchmark() {
   for (const model of models) {
     console.log(`Evaluating Model: ${model}...`);
     env.ollamaModel = model;
-    
+
     // Re-resolve provider to update selected model
     aiService.provider = aiService._resolveProvider();
 
@@ -135,7 +135,7 @@ async function runBenchmark() {
         const res = await aiService.generateStructured(prompt, schema);
         const latency = Date.now() - start;
         latencies.push(latency);
-        
+
         successCount++;
         jsonValidCount++; // Joi validation passed
 
@@ -146,7 +146,7 @@ async function runBenchmark() {
       } catch (err) {
         const latency = Date.now() - start;
         latencies.push(latency);
-        
+
         if (err.message.includes('timeout')) {
           timeoutCount++;
         } else {

@@ -4343,7 +4343,7 @@ function App() {
                 style={{ padding: '6px 12px', fontSize: '0.85rem' }}
                 onClick={() => { setJobNetworkSubTab('ai'); setEditingAiEnrichment(false); }}
               >
-                🤖 AI Job Intelligence
+                AI Job Intelligence
               </button>
             </div>
 
@@ -4606,7 +4606,7 @@ function App() {
                         e.preventDefault();
                         const formData = new FormData(e.target);
                         const data = Object.fromEntries(formData.entries());
-                        
+
                         const payload = {
                           roleCategory: data.roleCategory,
                           seniority: data.seniority,
