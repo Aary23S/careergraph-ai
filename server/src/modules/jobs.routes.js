@@ -493,4 +493,23 @@ router.put(
   }),
 );
 
+router.get(
+  '/:jobId/resume-analysis',
+  asyncHandler(async (req, res) => {
+    const job = await ensureJobOwnership(req.auth.userId, req.params.jobId);
+    
+    const activeResume = await models.Resume.findOne({
+      where: { user_id: req.auth.userId, isActive: true }
+    });
+
+    if (!activeResume) {
+      throw new AppError(404, 'ACTIVE_RESUME_NOT_FOUND', 'No active resume found. Please upload and set a resume as active first.');
+    }
+
+    const { analyzeJobResumeFit } = await import('../services/resume-analysis.service.js');
+    const analysis = await analyzeJobResumeFit(job.id, activeResume.id);
+    ok(res, analysis);
+  }),
+);
+
 export default router;

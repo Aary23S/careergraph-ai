@@ -502,6 +502,39 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'job_ai_enrichments' }
   );
 
+  const ResumeAiEnrichment = sequelize.define(
+    'ResumeAiEnrichment',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      resumeId: { type: DataTypes.UUID, allowNull: false, field: 'resume_id' },
+      provider: { type: DataTypes.STRING, allowNull: false },
+      model: { type: DataTypes.STRING, allowNull: false },
+      promptVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'prompt_version' },
+      schemaVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'schema_version' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
+      inputHash: { type: DataTypes.STRING, allowNull: false, field: 'input_hash' },
+      professionalTitle: { type: DataTypes.STRING, field: 'professional_title' },
+      careerLevel: { type: DataTypes.STRING, field: 'career_level' },
+      skills: { type: DataTypes.JSON },
+      technicalDomains: { type: DataTypes.JSON, field: 'technical_domains' },
+      experience: { type: DataTypes.JSON },
+      projects: { type: DataTypes.JSON },
+      education: { type: DataTypes.JSON },
+      certifications: { type: DataTypes.JSON },
+      achievements: { type: DataTypes.JSON },
+      summary: { type: DataTypes.TEXT },
+      confidence: { type: DataTypes.FLOAT },
+      rawResponse: { type: DataTypes.TEXT, field: 'raw_response' },
+      latencyMs: { type: DataTypes.INTEGER, field: 'latency_ms' },
+      errorCode: { type: DataTypes.STRING, field: 'error_code' },
+      userCorrectedProfessionalTitle: { type: DataTypes.STRING, field: 'user_corrected_professional_title' },
+      userCorrectedCareerLevel: { type: DataTypes.STRING, field: 'user_corrected_career_level' },
+      userCorrectedSkills: { type: DataTypes.JSON, field: 'user_corrected_skills' },
+      userCorrectedSummary: { type: DataTypes.TEXT, field: 'user_corrected_summary' },
+    },
+    { ...baseOptions, tableName: 'resume_ai_enrichments' }
+  );
+
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -585,6 +618,9 @@ export function initializeModels(sequelize) {
   Job.hasOne(JobAiEnrichment, { foreignKey: 'job_id', as: 'aiEnrichment' });
   JobAiEnrichment.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
 
+  Resume.hasOne(ResumeAiEnrichment, { foreignKey: 'resume_id', as: 'aiEnrichment' });
+  ResumeAiEnrichment.belongsTo(Resume, { foreignKey: 'resume_id', as: 'resume' });
+
   return {
     User,
     RefreshToken,
@@ -609,5 +645,6 @@ export function initializeModels(sequelize) {
     IncomingJob,
     JobDeduplicationLog,
     JobAiEnrichment,
+    ResumeAiEnrichment,
   };
 }
