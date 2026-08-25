@@ -14,6 +14,16 @@ function App() {
   const [editingConnectionAi, setEditingConnectionAi] = useState(false);
   const [loadingConnectionAi, setLoadingConnectionAi] = useState(false);
 
+  // AI Outreach Assistant States
+  const [aiIntent, setAiIntent] = useState('referral_request');
+  const [aiTone, setAiTone] = useState('professional');
+  const [aiLength, setAiLength] = useState('short');
+  const [aiDraft, setAiDraft] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+  const [aiWarnings, setAiWarnings] = useState([]);
+  const [aiForceGenerate, setAiForceGenerate] = useState(false);
+
   const handleEnrichConnectionAi = async (connectionId) => {
     setLoadingConnectionAi(true);
     try {
@@ -38,6 +48,63 @@ function App() {
       setEditingConnectionAi(false);
     } catch (err) {
       alert(err.message || 'Failed to save corrections.');
+    }
+  };
+
+  const handleGenerateAiDraft = async (force = false) => {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await api.request('/outreach/ai-drafts/generate', {
+        method: 'POST',
+        body: {
+          jobId: editItem?.job_id || null,
+          connectionId: editItem?.id || null,
+          intent: aiIntent,
+          tone: aiTone,
+          length: aiLength,
+          forceGenerate: force
+        }
+      });
+      if (res.success) {
+        const payload = res.data;
+        if (!payload.allowed) {
+          setAiWarnings(payload.warnings || []);
+        } else {
+          setAiDraft(payload.draft);
+          setAiWarnings(payload.warnings || []);
+          // Populate notes textarea automatically
+          const notesTextarea = document.querySelector('textarea[name="notes"]');
+          if (notesTextarea) {
+            notesTextarea.value = payload.draft.message;
+          }
+        }
+      }
+    } catch (err) {
+      if (err.message === 'AI_PROVIDER_UNAVAILABLE') {
+        setAiError('AI draft generation is temporarily unavailable. You can still create outreach manually.');
+      } else {
+        setAiError(err.message || 'Generation failed.');
+      }
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleDiscardDraft = async () => {
+    if (aiDraft?.id) {
+      try {
+        await api.request(`/outreach/ai-drafts/${aiDraft.id}/discard`, { method: 'POST' });
+      } catch (e) {
+        console.warn('Discard failed:', e.message);
+      }
+    }
+    setAiDraft(null);
+    setAiWarnings([]);
+    setAiForceGenerate(false);
+    const notesTextarea = document.querySelector('textarea[name="notes"]');
+    if (notesTextarea) {
+      notesTextarea.value = '';
     }
   };
 
@@ -179,6 +246,19 @@ function App() {
       loadSession();
     }
   }, []);
+
+  useEffect(() => {
+    if (modal !== 'outreach') {
+      setAiIntent('referral_request');
+      setAiTone('professional');
+      setAiLength('short');
+      setAiDraft(null);
+      setAiLoading(false);
+      setAiError(null);
+      setAiWarnings([]);
+      setAiForceGenerate(false);
+    }
+  }, [modal]);
 
   // Reload data when active tab changes or filters change
   useEffect(() => {
@@ -4310,6 +4390,15 @@ function App() {
               formData.get('contactDate'),
               formData.get('followUpDate')
             );
+            if (aiDraft?.id) {
+              await api.request(`/outreach/ai-drafts/${aiDraft.id}`, {
+                method: 'PATCH',
+                body: { draft: formData.get('notes') }
+              });
+              await api.request(`/outreach/ai-drafts/${aiDraft.id}/save`, {
+                method: 'POST'
+              });
+            }
             setModal(null);
             loadOutreach();
             loadDashboard();
@@ -4319,7 +4408,7 @@ function App() {
         }}>
           <div className="form-group">
             <label className="form-label">Outreach Stage</label>
-            <select name="status" className="form-input">
+            <select name="status" className="form-input" defaultValue="contacted">
               <option value="not_contacted">Not Contacted</option>
               <option value="researching">Researching</option>
               <option value="contacted">Contacted</option>
@@ -4333,16 +4422,151 @@ function App() {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Contact Date</label>
-              <input type="date" name="contactDate" className="form-input" />
+              <input type="date" name="contactDate" className="form-input" defaultValue={new Date().toISOString().split('T')[0]} />
             </div>
             <div className="form-group">
               <label className="form-label">Next Follow Up Date</label>
               <input type="date" name="followUpDate" className="form-input" />
             </div>
           </div>
+
+          {/* AI OUTREACH ASSISTANT PANEL */}
+          <div className="card-panel" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
+            <h3 style={{ fontSize: '1.05rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
+              <span>🤖 AI Outreach Assistant</span>
+            </h3>
+
+            {aiError && (
+              <div className="alert alert-danger" style={{ marginBottom: '12px', padding: '10px 14px', borderRadius: '6px', fontSize: '0.9rem' }}>
+                {aiError}
+              </div>
+            )}
+
+            {!aiDraft && (
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Intent</label>
+                    <select
+                      className="form-input"
+                      value={aiIntent}
+                      onChange={(e) => setAiIntent(e.target.value)}
+                      style={{ padding: '6px 8px', fontSize: '0.85rem' }}
+                    >
+                      <option value="referral_request">Referral Request</option>
+                      <option value="guidance_request">Guidance Request</option>
+                      <option value="introduction">Introduction</option>
+                      <option value="networking">Networking</option>
+                      <option value="follow_up">Follow Up</option>
+                      <option value="thank_you">Thank You</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Tone</label>
+                    <select
+                      className="form-input"
+                      value={aiTone}
+                      onChange={(e) => setAiTone(e.target.value)}
+                      style={{ padding: '6px 8px', fontSize: '0.85rem' }}
+                    >
+                      <option value="professional">Professional</option>
+                      <option value="friendly">Friendly</option>
+                      <option value="concise">Concise</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Length</label>
+                    <select
+                      className="form-input"
+                      value={aiLength}
+                      onChange={(e) => setAiLength(e.target.value)}
+                      style={{ padding: '6px 8px', fontSize: '0.85rem' }}
+                    >
+                      <option value="short">Short</option>
+                      <option value="medium">Medium</option>
+                    </select>
+                  </div>
+                </div>
+
+                {aiWarnings.length > 0 && (
+                  <div className="alert alert-warning" style={{ marginBottom: '12px', padding: '12px', borderRadius: '6px', fontSize: '0.85rem' }}>
+                    <strong style={{ display: 'block', marginBottom: '4px' }}>⚠ Outreach Warning:</strong>
+                    <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                      {aiWarnings.map((w, idx) => (
+                        <li key={idx} style={{ marginBottom: '4px' }}>{w.message}</li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      className="btn btn-warning"
+                      style={{ marginTop: '8px', padding: '4px 10px', fontSize: '0.8rem', width: '100%' }}
+                      onClick={() => handleGenerateAiDraft(true)}
+                      disabled={aiLoading}
+                    >
+                      {aiLoading ? 'Generating...' : 'I Understand, Generate Anyway'}
+                    </button>
+                  </div>
+                )}
+
+                {aiWarnings.length === 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ width: '100%', padding: '8px' }}
+                    onClick={() => handleGenerateAiDraft(false)}
+                    disabled={aiLoading}
+                  >
+                    {aiLoading ? 'Generating Draft...' : '✨ Generate AI Outreach Draft'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {aiDraft && (
+              <div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                  <strong>Selected Intent:</strong> {aiIntent.replace('_', ' ')} &bull; <strong>Tone:</strong> {aiDraft.tone}
+                </div>
+                
+                {aiDraft.personalizationPoints && aiDraft.personalizationPoints.length > 0 && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Personalization factors applied:</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {aiDraft.personalizationPoints.map((p, idx) => (
+                        <span key={idx} className="badge badge-success" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>
+                          ✓ {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ flex: 1, padding: '6px' }}
+                    onClick={() => handleGenerateAiDraft(true)}
+                    disabled={aiLoading}
+                  >
+                    {aiLoading ? 'Regenerating...' : '🔄 Regenerate'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ flex: 1, padding: '6px', color: 'var(--danger)' }}
+                    onClick={handleDiscardDraft}
+                  >
+                    Discard Draft
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="form-group">
             <label className="form-label">Interaction Log / Message Notes</label>
-            <textarea name="notes" className="form-input" rows="3"></textarea>
+            <textarea name="notes" className="form-input" rows="3" placeholder="Message content goes here..."></textarea>
           </div>
           <div className="modal-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>

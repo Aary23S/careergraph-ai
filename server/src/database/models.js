@@ -571,6 +571,26 @@ export function initializeModels(sequelize) {
     },
     { ...baseOptions, tableName: 'connection_ai_enrichments' }
   );
+  const OutreachAiDraft = sequelize.define(
+    'OutreachAiDraft',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      userId: { type: DataTypes.UUID, allowNull: false, field: 'user_id' },
+      connectionId: { type: DataTypes.UUID, allowNull: true, field: 'connection_id' },
+      jobId: { type: DataTypes.UUID, allowNull: true, field: 'job_id' },
+      intent: { type: DataTypes.STRING, allowNull: false },
+      tone: { type: DataTypes.STRING, allowNull: false },
+      length: { type: DataTypes.STRING, allowNull: false },
+      provider: { type: DataTypes.STRING, allowNull: false },
+      model: { type: DataTypes.STRING, allowNull: false },
+      promptVersion: { type: DataTypes.STRING, allowNull: false, field: 'prompt_version' },
+      draft: { type: DataTypes.TEXT, allowNull: false },
+      personalizationPoints: { type: DataTypes.JSON, allowNull: true, field: 'personalization_points' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'generated' },
+    },
+    { ...baseOptions, tableName: 'outreach_ai_drafts' }
+  );
+
 
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -661,6 +681,15 @@ export function initializeModels(sequelize) {
   Connection.hasOne(ConnectionAiEnrichment, { foreignKey: 'connection_id', as: 'aiEnrichment' });
   ConnectionAiEnrichment.belongsTo(Connection, { foreignKey: 'connection_id', as: 'connection' });
 
+  User.hasMany(OutreachAiDraft, { foreignKey: 'user_id', as: 'aiDrafts' });
+  OutreachAiDraft.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  Connection.hasMany(OutreachAiDraft, { foreignKey: 'connection_id', as: 'aiDrafts' });
+  OutreachAiDraft.belongsTo(Connection, { foreignKey: 'connection_id', as: 'connection' });
+
+  Job.hasMany(OutreachAiDraft, { foreignKey: 'job_id', as: 'aiDrafts' });
+  OutreachAiDraft.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
+
   return {
     User,
     RefreshToken,
@@ -687,5 +716,6 @@ export function initializeModels(sequelize) {
     JobAiEnrichment,
     ResumeAiEnrichment,
     ConnectionAiEnrichment,
+    OutreachAiDraft,
   };
 }
