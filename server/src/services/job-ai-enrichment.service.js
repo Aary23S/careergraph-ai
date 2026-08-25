@@ -120,10 +120,35 @@ export async function enqueueEnrichment(jobId) {
  * @param {string} jobId - UUID of the Job.
  */
 export async function executeEnrichment(jobId) {
-  const enrichment = await models.JobAiEnrichment.findOne({
+  let enrichment = await models.JobAiEnrichment.findOne({
     where: { jobId: jobId },
     include: [{ model: models.Job, as: 'job' }]
   });
+
+  if (!enrichment) {
+    const job = await models.Job.findByPk(jobId);
+    if (!job) return;
+
+    const inputHash = crypto
+      .createHash('sha256')
+      .update(`${job.title || ''}:${job.description || ''}`)
+      .digest('hex');
+
+    enrichment = await models.JobAiEnrichment.create({
+      jobId: jobId,
+      provider: env.aiProvider,
+      model: env.ollamaModel,
+      promptVersion: PROMPT_VERSION,
+      schemaVersion: SCHEMA_VERSION,
+      status: 'pending',
+      inputHash
+    });
+
+    enrichment = await models.JobAiEnrichment.findOne({
+      where: { jobId: jobId },
+      include: [{ model: models.Job, as: 'job' }]
+    });
+  }
 
   if (!enrichment || !enrichment.job) return;
 
