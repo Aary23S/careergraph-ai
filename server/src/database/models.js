@@ -459,6 +459,49 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'job_deduplication_logs' }
   );
 
+  const JobAiEnrichment = sequelize.define(
+    'JobAiEnrichment',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      jobId: { type: DataTypes.UUID, allowNull: false, field: 'job_id' },
+      provider: { type: DataTypes.STRING, allowNull: false },
+      model: { type: DataTypes.STRING, allowNull: false },
+      promptVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'prompt_version' },
+      schemaVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'schema_version' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
+      inputHash: { type: DataTypes.STRING, allowNull: false, field: 'input_hash' },
+      roleCategory: { type: DataTypes.STRING, field: 'role_category' },
+      seniority: { type: DataTypes.STRING },
+      requiredSkills: { type: DataTypes.JSON, field: 'required_skills' },
+      preferredSkills: { type: DataTypes.JSON, field: 'preferred_skills' },
+      location: { type: DataTypes.STRING },
+      remoteType: { type: DataTypes.STRING, field: 'remote_type' },
+      employmentType: { type: DataTypes.STRING, field: 'employment_type' },
+      experienceMinYears: { type: DataTypes.INTEGER, field: 'experience_min_years' },
+      experienceMaxYears: { type: DataTypes.INTEGER, field: 'experience_max_years' },
+      domain: { type: DataTypes.JSON },
+      responsibilities: { type: DataTypes.JSON },
+      summary: { type: DataTypes.TEXT },
+      confidence: { type: DataTypes.FLOAT },
+      rawResponse: { type: DataTypes.TEXT, field: 'raw_response' },
+      latencyMs: { type: DataTypes.INTEGER, field: 'latency_ms' },
+      errorCode: { type: DataTypes.STRING, field: 'error_code' },
+      userCorrectedRoleCategory: { type: DataTypes.STRING, field: 'user_corrected_role_category' },
+      userCorrectedSeniority: { type: DataTypes.STRING, field: 'user_corrected_seniority' },
+      userCorrectedRequiredSkills: { type: DataTypes.JSON, field: 'user_corrected_required_skills' },
+      userCorrectedPreferredSkills: { type: DataTypes.JSON, field: 'user_corrected_preferred_skills' },
+      userCorrectedLocation: { type: DataTypes.STRING, field: 'user_corrected_location' },
+      userCorrectedRemoteType: { type: DataTypes.STRING, field: 'user_corrected_remote_type' },
+      userCorrectedEmploymentType: { type: DataTypes.STRING, field: 'user_corrected_employment_type' },
+      userCorrectedExperienceMinYears: { type: DataTypes.INTEGER, field: 'user_corrected_experience_min_years' },
+      userCorrectedExperienceMaxYears: { type: DataTypes.INTEGER, field: 'user_corrected_experience_max_years' },
+      userCorrectedDomain: { type: DataTypes.JSON, field: 'user_corrected_domain' },
+      userCorrectedResponsibilities: { type: DataTypes.JSON, field: 'user_corrected_responsibilities' },
+      userCorrectedSummary: { type: DataTypes.TEXT, field: 'user_corrected_summary' },
+    },
+    { ...baseOptions, tableName: 'job_ai_enrichments' }
+  );
+
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -539,6 +582,9 @@ export function initializeModels(sequelize) {
   Job.hasMany(JobDeduplicationLog, { foreignKey: 'matched_job_id', as: 'duplicateLogs' });
   JobDeduplicationLog.belongsTo(Job, { foreignKey: 'matched_job_id', as: 'matchedJob' });
 
+  Job.hasOne(JobAiEnrichment, { foreignKey: 'job_id', as: 'aiEnrichment' });
+  JobAiEnrichment.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
+
   return {
     User,
     RefreshToken,
@@ -562,5 +608,6 @@ export function initializeModels(sequelize) {
     TelegramIntegration,
     IncomingJob,
     JobDeduplicationLog,
+    JobAiEnrichment,
   };
 }

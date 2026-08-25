@@ -43,14 +43,12 @@ export class AIService {
         );
 
         // Execute generation
-        const start = Date.now();
         const responseData = await Promise.race([
           this.provider.generateStructured(prompt, schema),
           timeoutPromise
         ]);
         
         clearTimeout(timeoutId);
-        const duration = Date.now() - start;
 
         // Perform schema validation check if schema exists
         if (schema) {

@@ -86,7 +86,10 @@ async function findOrCreateCompany(companyName) {
 async function ensureJobOwnership(userId, jobId) {
   const job = await models.Job.findOne({
     where: { id: jobId, user_id: userId },
-    include: [{ model: models.Company, as: 'company' }],
+    include: [
+      { model: models.Company, as: 'company' },
+      { model: models.JobAiEnrichment, as: 'aiEnrichment' }
+    ],
   });
 
   if (!job) {
@@ -457,6 +460,32 @@ router.delete(
     const job = await ensureJobOwnership(req.auth.userId, req.params.jobId);
     await job.destroy();
     ok(res, { deleted: true });
+  }),
+);
+
+router.post(
+  '/:jobId/ai-enrich',
+  asyncHandler(async (req, res) => {
+    const job = await ensureJobOwnership(req.auth.userId, req.params.jobId);
+    const { executeEnrichment } = await import('../services/job-ai-enrichment.service.js');
+    await executeEnrichment(job.id);
+    const refreshed = await ensureJobOwnership(req.auth.userId, job.id);
+    const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
+    const serialized = await serializeJob(refreshed, profile, req.auth.userId);
+    ok(res, serialized);
+  }),
+);
+
+router.put(
+  '/:jobId/ai-corrections',
+  asyncHandler(async (req, res) => {
+    const job = await ensureJobOwnership(req.auth.userId, req.params.jobId);
+    const { saveUserCorrections } = await import('../services/job-ai-enrichment.service.js');
+    await saveUserCorrections(job.id, req.body);
+    const refreshed = await ensureJobOwnership(req.auth.userId, job.id);
+    const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
+    const serialized = await serializeJob(refreshed, profile, req.auth.userId);
+    ok(res, serialized);
   }),
 );
 
