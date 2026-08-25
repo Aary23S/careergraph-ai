@@ -15,6 +15,7 @@ import integrationsRoutes from '../modules/integrations.routes.js';
 import telegramRoutes from '../modules/telegram.routes.js';
 import incomingJobRoutes from '../modules/incoming-jobs.routes.js';
 import aiRoutes from '../modules/ai.routes.js';
+import outreachAiRoutes from '../modules/outreach-ai.routes.js';
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.use('/connections', connectionRoutes);
 router.use('/jobs', jobRoutes);
 router.use('/applications', applicationRoutes);
 router.use('/outreach', outreachRoutes);
+router.use('/outreach/ai-drafts', outreachAiRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/notes', noteRoutes);
