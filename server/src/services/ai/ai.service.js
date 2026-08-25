@@ -52,7 +52,16 @@ export class AIService {
 
         // Perform schema validation check if schema exists
         if (schema) {
-          const { error, value } = schema.validate(responseData, { abortEarly: false });
+          if (responseData && typeof responseData === 'object') {
+            if (responseData.domainCategories && !responseData.domain) {
+              responseData.domain = responseData.domainCategories;
+            }
+            if (responseData.domain_categories && !responseData.domain) {
+              responseData.domain = responseData.domain_categories;
+            }
+          }
+
+          const { error, value } = schema.validate(responseData, { abortEarly: false, stripUnknown: true });
           if (error) {
             throw new Error(`Structured output schema validation failed: ${error.message}`);
           }
