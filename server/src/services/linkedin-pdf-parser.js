@@ -401,11 +401,22 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
         }
       }
 
+      let cleanCompany = company || 'Unknown Company';
+      let cleanLocation = roleLocation;
+      const separatorRegex = /&middot;|·|•|\||\s+-\s+|\s+–\s+/;
+      if (cleanCompany && separatorRegex.test(cleanCompany)) {
+        const parts = cleanCompany.split(separatorRegex);
+        cleanCompany = parts[0].trim();
+        if (!cleanLocation && parts[1]) {
+          cleanLocation = parts.slice(1).join(' ').trim();
+        }
+      }
+
       experiences.push({
-        company: company || 'Unknown Company',
+        company: cleanCompany,
         title: roleTitle,
         dateRange,
-        location: roleLocation,
+        location: cleanLocation || '',
         description: descriptionLines.join('\n').trim()
       });
 
@@ -431,6 +442,15 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
       company = atMatch[2].trim();
     } else {
       title = headline;
+    }
+  }
+
+  const separatorRegex = /&middot;|·|•|\||\s+-\s+|\s+–\s+/;
+  if (company && separatorRegex.test(company)) {
+    const parts = company.split(separatorRegex);
+    company = parts[0].trim();
+    if (!location && parts[1]) {
+      location = parts.slice(1).join(' ').trim();
     }
   }
 

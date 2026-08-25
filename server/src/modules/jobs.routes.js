@@ -65,18 +65,30 @@ const searchProfileSchema = Joi.object({
 });
 
 function normalizeCompanyName(name) {
-  return name.trim().toLowerCase().replace(/\s+/g, ' ');
+  const separatorRegex = /&middot;|·|•|\||\s+-\s+|\s+–\s+/;
+  let cleanName = name;
+  if (separatorRegex.test(cleanName)) {
+    cleanName = cleanName.split(separatorRegex)[0];
+  }
+  return cleanName.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 async function findOrCreateCompany(companyName) {
-  const normalizedName = normalizeCompanyName(companyName);
+  const separatorRegex = /&middot;|·|•|\||\s+-\s+|\s+–\s+/;
+  let cleanCompanyName = companyName;
+  if (separatorRegex.test(cleanCompanyName)) {
+    cleanCompanyName = cleanCompanyName.split(separatorRegex)[0];
+  }
+  cleanCompanyName = cleanCompanyName.trim();
+
+  const normalizedName = normalizeCompanyName(cleanCompanyName);
   const [company] = await models.Company.findOrCreate({
     where: { normalizedName },
-    defaults: { name: companyName.trim(), normalizedName },
+    defaults: { name: cleanCompanyName, normalizedName },
   });
 
-  if (company.name !== companyName.trim()) {
-    company.name = companyName.trim();
+  if (company.name !== cleanCompanyName) {
+    company.name = cleanCompanyName;
     await company.save();
   }
 
@@ -103,8 +115,31 @@ async function serializeJob(job, profile, userId) {
   const jobJson = job.toJSON();
   const companyName = job.company?.name ?? null;
 
+  // Retrieve active resume and merge its AI-extracted details for matching
+  const activeResume = await models.Resume.findOne({
+    where: { user_id: userId, isActive: true },
+    include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }]
+  });
+
+  const mergedProfile = profile ? profile.toJSON() : { skills: [], targetRoles: [] };
+  if (activeResume?.aiEnrichment && activeResume.aiEnrichment.status === 'completed') {
+    const resumeEnrich = activeResume.aiEnrichment;
+    const resumeSkills = resumeEnrich.userCorrectedSkills || resumeEnrich.skills || [];
+    const resumeTitle = resumeEnrich.userCorrectedProfessionalTitle || resumeEnrich.professionalTitle;
+
+    const existingSkills = new Set((mergedProfile.skills || []).map(s => s.toLowerCase()));
+    resumeSkills.forEach(s => existingSkills.add(s.toLowerCase()));
+    mergedProfile.skills = Array.from(existingSkills);
+
+    if (resumeTitle) {
+      const existingRoles = new Set((mergedProfile.targetRoles || []).map(r => r.toLowerCase()));
+      existingRoles.add(resumeTitle.toLowerCase());
+      mergedProfile.targetRoles = Array.from(existingRoles);
+    }
+  }
+
   // Calculate matching intelligence on the fly
-  const matchScore = calculateMatchScore(profile, job);
+  const matchScore = calculateMatchScore(mergedProfile, job);
   
   // Find connections at this company
   let connections = [];

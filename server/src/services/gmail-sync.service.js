@@ -34,7 +34,8 @@ export async function syncGmailJobs(userId) {
   const refreshToken = decryptSecret(integration.encryptedRefreshToken);
   const authClient = getAuthenticatedClient(refreshToken);
 
-  const queryStr = `label:${env.gmailJobLabel || 'CareerGraph/LinkedInJobs'}`;
+  const label = env.gmailJobLabel || 'CareerGraph/LinkedInJobs';
+  const queryStr = `label:"${label}" OR label:"${label.replace(/\//g, '-')}" OR label:"${label.toLowerCase()}" OR label:"${label.toLowerCase().replace(/\//g, '-')}"`;
   const { messages } = await listMessages(authClient, queryStr);
 
   if (!messages || messages.length === 0) {

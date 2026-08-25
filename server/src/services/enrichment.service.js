@@ -1,6 +1,11 @@
 export function normalizeCompany(company) {
   if (!company) return null;
-  let cleaned = company.trim()
+  const separatorRegex = /&middot;|·|•|\||\s+-\s+|\s+–\s+/;
+  let rawCompany = company;
+  if (separatorRegex.test(rawCompany)) {
+    rawCompany = rawCompany.split(separatorRegex)[0];
+  }
+  let cleaned = rawCompany.trim()
     .replace(/\s+(?:inc|llc|ltd|corp|co|gmbh)\b\.?/gi, '')
     .replace(/\s+/g, ' ');
   if (!cleaned) return null;
