@@ -60,6 +60,9 @@ function App() {
   });
 
   const [editingAiEnrichment, setEditingAiEnrichment] = useState(false);
+  const [selectedResumeId, setSelectedResumeId] = useState(null);
+  const [resumeAnalysis, setResumeAnalysis] = useState(null);
+  const [loadingResumeAnalysis, setLoadingResumeAnalysis] = useState(false);
 
   // Connection detail states
   const [activeConnectionId, setActiveConnectionId] = useState(null);
@@ -601,8 +604,32 @@ function App() {
     try {
       const data = await api.listResumes();
       setResumes(data);
+      if (data.length > 0 && !selectedResumeId) {
+        const active = data.find(r => r.isActive);
+        setSelectedResumeId(active ? active.id : data[0].id);
+      }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const loadResumeFitAnalysis = async (jobId) => {
+    setLoadingResumeAnalysis(true);
+    try {
+      const res = await api.request(`/jobs/${jobId}/resume-analysis`);
+      setResumeAnalysis(res.data);
+    } catch (e) {
+      console.error(e);
+      setResumeAnalysis({
+        matchedSkills: [],
+        missingSkills: [],
+        strengths: [],
+        potentialGaps: [],
+        analysisSummary: e.message || 'Failed to load analysis.',
+        compatibilityAssessment: 'unknown'
+      });
+    } finally {
+      setLoadingResumeAnalysis(false);
     }
   };
 
@@ -1210,66 +1237,421 @@ function App() {
               </button>
             </div>
 
-            <div className="card-panel">
-              {resumes.length === 0 ? (
-                <div className="empty-state">No resumes uploaded yet. Click upload to get started.</div>
-              ) : (
-                <div className="data-table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>File Name</th>
-                        <th>Version</th>
-                        <th>Status</th>
-                        <th>Uploaded Date</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {resumes.map((res) => (
-                        <tr key={res.id}>
-                          <td style={{ fontWeight: 600 }}>{res.fileName}</td>
-                          <td>v{res.version}</td>
-                          <td>
-                            {res.isActive ? (
-                              <span className="badge badge-success">Active Resume</span>
-                            ) : (
-                              <button className="btn-link" onClick={async () => {
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+
+              {/* Left Column: Resumes list */}
+              <div style={{ flex: 1, minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {resumes.length === 0 ? (
+                  <div className="card-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    No resumes uploaded yet. Click upload to get started.
+                  </div>
+                ) : (
+                  resumes.map((res) => {
+                    const isSelected = selectedResumeId === res.id;
+                    return (
+                      <div
+                        key={res.id}
+                        className={`card-panel ${isSelected ? 'active-card' : ''}`}
+                        onClick={() => { setSelectedResumeId(res.id); setEditingAiEnrichment(false); }}
+                        style={{
+                          padding: '16px',
+                          cursor: 'pointer',
+                          border: isSelected ? '2px solid var(--primary)' : '1px solid rgba(255,255,255,0.08)',
+                          background: isSelected ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-secondary)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#fff' }}>{res.fileName}</span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>v{res.version}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                          <span>{new Date(res.createdAt).toLocaleDateString()}</span>
+                          {res.isActive ? (
+                            <span className="badge badge-success">Active</span>
+                          ) : (
+                            <button
+                              className="btn-link"
+                              style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--primary)' }}
+                              onClick={async (e) => {
+                                e.stopPropagation();
                                 await api.setActiveResume(res.id);
                                 loadResumes();
-                              }}>Set Active</button>
-                            )}
-                          </td>
-                          <td>{new Date(res.createdAt).toLocaleDateString()}</td>
-                          <td style={{ textAlign: 'right' }}>
-                            <a
-                              href={api.getResumeDownloadUrl(res.id)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="btn btn-secondary"
-                              style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
+                              }}
                             >
-                              Download
-                            </a>
+                              Set Active
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
+                          <a
+                            href={api.getResumeDownloadUrl(res.id)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-secondary"
+                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Download
+                          </a>
+                          <button
+                            className="btn btn-danger"
+                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (confirm('Delete this resume?')) {
+                                await api.deleteResume(res.id);
+                                if (selectedResumeId === res.id) setSelectedResumeId(null);
+                                loadResumes();
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Right Column: AI details overview */}
+              <div style={{ flex: 2, background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '24px' }}>
+                {selectedResumeId ? (
+                  (() => {
+                    const res = resumes.find(r => r.id === selectedResumeId);
+                    if (!res) return null;
+
+                    return (
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>AI Resume Intelligence</h3>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>File: {res.fileName}</span>
+                          </div>
+                          {res.aiEnrichment && (
                             <button
-                              className="btn btn-danger"
-                              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                              className="btn btn-secondary"
+                              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                               onClick={async () => {
-                                if (confirm('Delete this resume?')) {
-                                  await api.deleteResume(res.id);
-                                  loadResumes();
+                                if (confirm('Re-run AI extraction for this resume? This takes a few seconds.')) {
+                                  try {
+                                    const refreshed = await api.request(`/resumes/${res.id}/ai-enrich`, { method: 'POST' });
+                                    setResumes(resumes.map(item => item.id === res.id ? refreshed.data : item));
+                                  } catch (e) {
+                                    alert(e.message);
+                                  }
                                 }
                               }}
                             >
-                              Delete
+                              Re-run Analysis
                             </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                          )}
+                        </div>
+
+                        {!res.aiEnrichment ? (
+                          <div className="empty-state" style={{ padding: '32px', textAlign: 'center' }}>
+                            <p>AI Resume Analysis has not run or is disabled.</p>
+                            <button
+                              className="btn btn-primary"
+                              onClick={async () => {
+                                try {
+                                  const refreshed = await api.request(`/resumes/${res.id}/ai-enrich`, { method: 'POST' });
+                                  setResumes(resumes.map(item => item.id === res.id ? refreshed.data : item));
+                                } catch (e) {
+                                  alert(e.message);
+                                }
+                              }}
+                            >
+                              Run AI Analysis Now
+                            </button>
+                          </div>
+                        ) : res.aiEnrichment.status === 'pending' || res.aiEnrichment.status === 'processing' ? (
+                          <div className="empty-state" style={{ padding: '32px', textAlign: 'center' }}>
+                            <div style={{
+                              display: 'inline-block',
+                              width: '12px',
+                              height: '12px',
+                              borderRadius: '50%',
+                              background: '#f59e0b',
+                              marginRight: '8px',
+                              boxShadow: '0 0 8px #f59e0b',
+                              animation: 'pulsate 1.5s infinite ease-in-out'
+                            }}></div>
+                            <span>Analyzing Resume ({res.aiEnrichment.status})...</span>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>Refreshing automatically in a few seconds.</p>
+                            <button
+                              className="btn btn-secondary"
+                              style={{ marginTop: '12px' }}
+                              onClick={async () => {
+                                const refreshed = await api.request(`/resumes/${res.id}`);
+                                setResumes(resumes.map(item => item.id === res.id ? refreshed.data : item));
+                              }}
+                            >
+                              Refresh Status
+                            </button>
+                          </div>
+                        ) : res.aiEnrichment.status === 'failed' ? (
+                          <div className="empty-state" style={{ padding: '24px', border: '1px solid var(--danger)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                            <p style={{ color: 'var(--danger)', fontWeight: 600 }}>⚠️ AI Analysis Failed</p>
+                            <p style={{ fontSize: '0.85rem' }}>Error Code: <code>{res.aiEnrichment.errorCode}</code></p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{res.aiEnrichment.rawResponse}</p>
+                            <button
+                              className="btn btn-primary"
+                              style={{ marginTop: '12px' }}
+                              onClick={async () => {
+                                try {
+                                  const refreshed = await api.request(`/resumes/${res.id}/ai-enrich/retry`, { method: 'POST' });
+                                  setResumes(resumes.map(item => item.id === res.id ? refreshed.data : item));
+                                } catch (e) {
+                                  alert(e.message);
+                                }
+                              }}
+                            >
+                              Retry Analysis
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            {!editingAiEnrichment ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                                {/* Status bar */}
+                                <div style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  background: 'rgba(255, 255, 255, 0.03)',
+                                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                                  padding: '12px 16px',
+                                  borderRadius: '8px',
+                                }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{
+                                      display: 'inline-block',
+                                      width: '8px',
+                                      height: '8px',
+                                      borderRadius: '50%',
+                                      background: 'var(--success)',
+                                      boxShadow: '0 0 8px var(--success)'
+                                    }}></span>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Enriched</span>
+                                  </div>
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    Model: <code style={{ color: 'var(--primary)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{res.aiEnrichment.model}</code>
+                                    <span style={{ margin: '0 8px' }}>&bull;</span>
+                                    Latency: <strong style={{ color: '#fff' }}>{res.aiEnrichment.latencyMs}ms</strong>
+                                  </div>
+                                </div>
+
+                                {/* Title & Career Level Card */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+                                  <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Professional Title</div>
+                                    <div style={{ fontWeight: 600, fontSize: '1.1rem', marginTop: '4px' }}>
+                                      {res.aiEnrichment.userCorrectedProfessionalTitle || res.aiEnrichment.professionalTitle || 'N/A'}
+                                      {res.aiEnrichment.userCorrectedProfessionalTitle && (
+                                        <span className="badge badge-success" style={{ marginLeft: '6px', fontSize: '0.65rem' }}>Edited</span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Career Level</div>
+                                    <div style={{ fontWeight: 600, fontSize: '1.1rem', marginTop: '4px', textTransform: 'capitalize' }}>
+                                      {res.aiEnrichment.userCorrectedCareerLevel || res.aiEnrichment.careerLevel || 'N/A'}
+                                      {res.aiEnrichment.userCorrectedCareerLevel && (
+                                        <span className="badge badge-success" style={{ marginLeft: '6px', fontSize: '0.65rem' }}>Edited</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Skills and Domains */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                  <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Core Skills</div>
+                                    <div className="tags-list">
+                                      {(res.aiEnrichment.userCorrectedSkills || res.aiEnrichment.skills || []).length === 0 ? (
+                                        <span style={{ color: 'var(--text-muted)' }}>None extracted</span>
+                                      ) : (
+                                        (res.aiEnrichment.userCorrectedSkills || res.aiEnrichment.skills || []).map(s => (
+                                          <span key={s} className="badge badge-success">{s}</span>
+                                        ))
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Technical Domains</div>
+                                    <div className="tags-list">
+                                      {(res.aiEnrichment.technicalDomains || []).length === 0 ? (
+                                        <span style={{ color: 'var(--text-muted)' }}>None extracted</span>
+                                      ) : (
+                                        (res.aiEnrichment.technicalDomains || []).map(d => (
+                                          <span key={d} className="badge badge-info" style={{ textTransform: 'capitalize' }}>{d}</span>
+                                        ))
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Summary */}
+                                <div style={{ borderLeft: '4px solid var(--primary)', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '0 8px 8px 0' }}>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Summary Bio</div>
+                                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                                    "{res.aiEnrichment.userCorrectedSummary || res.aiEnrichment.summary || 'No summary bio extracted.'}"
+                                  </div>
+                                </div>
+
+                                {/* Work Experience List */}
+                                <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>AI-Derived Work History</div>
+                                  {(res.aiEnrichment.experience || []).length === 0 ? (
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No history extracted</div>
+                                  ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                      {(res.aiEnrichment.experience || []).map((exp, idx) => (
+                                        <div key={idx} style={{ borderBottom: idx < res.aiEnrichment.experience.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', paddingBottom: '8px' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{exp.title} &bull; {exp.company}</strong>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{exp.startDate} - {exp.endDate}</span>
+                                          </div>
+                                          <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                            {(exp.responsibilities || []).map((resp, rIdx) => (
+                                              <li key={rIdx}>{resp}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Projects List */}
+                                <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>Extracted Projects</div>
+                                  {(res.aiEnrichment.projects || []).length === 0 ? (
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No projects extracted</div>
+                                  ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                      {(res.aiEnrichment.projects || []).map((proj, idx) => (
+                                        <div key={idx}>
+                                          <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.9rem' }}>{proj.name}</div>
+                                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{proj.description}</div>
+                                          <div className="tags-list" style={{ marginTop: '4px' }}>
+                                            {(proj.technologies || []).map(tech => (
+                                              <span key={tech} className="badge badge-secondary" style={{ fontSize: '0.7rem', padding: '2px 6px' }}>{tech}</span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                  <button className="btn btn-secondary" onClick={() => setEditingAiEnrichment(true)}>
+                                    Correct AI Output
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              // EDIT CORRECTIONS FORM
+                              <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.target);
+                                const data = Object.fromEntries(formData.entries());
+
+                                const payload = {
+                                  professionalTitle: data.professionalTitle,
+                                  careerLevel: data.careerLevel,
+                                  skills: data.skills.split(',').map(s => s.trim()).filter(Boolean),
+                                  summary: data.summary
+                                };
+
+                                try {
+                                  const refreshed = await api.request(`/resumes/${res.id}/ai-corrections`, {
+                                    method: 'PUT',
+                                    body: payload
+                                  });
+                                  setResumes(resumes.map(item => item.id === res.id ? refreshed.data : item));
+                                  setEditingAiEnrichment(false);
+                                } catch (err) {
+                                  alert(err.message);
+                                }
+                              }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                  <div className="form-group">
+                                    <label className="form-label">Professional Title</label>
+                                    <input
+                                      type="text"
+                                      name="professionalTitle"
+                                      className="form-input"
+                                      defaultValue={res.aiEnrichment.userCorrectedProfessionalTitle || res.aiEnrichment.professionalTitle || ''}
+                                    />
+                                  </div>
+
+                                  <div className="form-group">
+                                    <label className="form-label">Career Level</label>
+                                    <select
+                                      name="careerLevel"
+                                      className="form-input"
+                                      defaultValue={res.aiEnrichment.userCorrectedCareerLevel || res.aiEnrichment.careerLevel || 'unknown'}
+                                    >
+                                      <option value="intern">Intern</option>
+                                      <option value="entry">Entry</option>
+                                      <option value="mid">Mid</option>
+                                      <option value="senior">Senior</option>
+                                      <option value="lead">Lead</option>
+                                      <option value="principal">Principal</option>
+                                      <option value="executive">Executive</option>
+                                      <option value="unknown">Unknown</option>
+                                    </select>
+                                  </div>
+
+                                  <div className="form-group">
+                                    <label className="form-label">Core Skills (Comma separated)</label>
+                                    <input
+                                      type="text"
+                                      name="skills"
+                                      className="form-input"
+                                      defaultValue={(res.aiEnrichment.userCorrectedSkills || res.aiEnrichment.skills || []).join(', ')}
+                                    />
+                                  </div>
+
+                                  <div className="form-group">
+                                    <label className="form-label">Summary Bio</label>
+                                    <textarea
+                                      name="summary"
+                                      className="form-input"
+                                      rows={4}
+                                      defaultValue={res.aiEnrichment.userCorrectedSummary || res.aiEnrichment.summary || ''}
+                                    />
+                                  </div>
+
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                    <button type="button" className="btn btn-secondary" onClick={() => setEditingAiEnrichment(false)}>Cancel</button>
+                                    <button type="submit" className="btn btn-primary">Save Corrections</button>
+                                  </div>
+                                </div>
+                              </form>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', minHeight: '300px' }}>
+                    Select a resume from the list to inspect details.
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
         )}
@@ -4354,6 +4736,13 @@ function App() {
               >
                 AI Job Intelligence
               </button>
+              <button
+                className={`btn ${jobNetworkSubTab === 'resume_analysis' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                onClick={() => { setJobNetworkSubTab('resume_analysis'); loadResumeFitAnalysis(editItem.id); }}
+              >
+                AI Resume Fit
+              </button>
             </div>
 
             {/* TAB 1: OVERVIEW & MATCH */}
@@ -4494,7 +4883,7 @@ function App() {
                     {/* Display Mode or Edit Mode */}
                     {!editingAiEnrichment ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        
+
                         {/* Header Status Bar */}
                         <div style={{
                           display: 'flex',
@@ -4525,7 +4914,7 @@ function App() {
 
                         {/* 2x2 Info Matrix Cards */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                          
+
                           {/* Classification Card */}
                           <div style={{
                             background: 'var(--bg-secondary)',
@@ -4537,7 +4926,7 @@ function App() {
                             gap: '12px'
                           }}>
                             <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Job Classification</h4>
-                            
+
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                               <div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Role Category</div>
@@ -4548,7 +4937,7 @@ function App() {
                                   )}
                                 </div>
                               </div>
-                              
+
                               <div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Seniority</div>
                                 <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
@@ -4572,7 +4961,7 @@ function App() {
                             gap: '12px'
                           }}>
                             <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Position Parameters</h4>
-                            
+
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                               <div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remote setup</div>
@@ -4790,6 +5179,111 @@ function App() {
                         </div>
                       </form>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {jobNetworkSubTab === 'resume_analysis' && (
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '16px' }}>AI Resume ↔ Job Fit Analysis</h3>
+
+                {loadingResumeAnalysis ? (
+                  <div className="empty-state" style={{ padding: '32px', textAlign: 'center' }}>
+                    <p>Generating alignment analysis...</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                    {/* Compatibility Rating Card */}
+                    <div style={{
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      padding: '20px',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Compatibility Assessment</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 800, textTransform: 'capitalize', color: resumeAnalysis?.compatibilityAssessment === 'high' ? 'var(--success)' : resumeAnalysis?.compatibilityAssessment === 'medium' ? '#f59e0b' : 'var(--danger)' }}>
+                          {resumeAnalysis?.compatibilityAssessment || 'unknown'}
+                        </div>
+                      </div>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => loadResumeFitAnalysis(editItem.id)}
+                      >
+                        Re-Analyze Fit
+                      </button>
+                    </div>
+
+                    {/* Summary Bio */}
+                    <div style={{ borderLeft: '4px solid var(--primary)', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '0 8px 8px 0' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Analysis Summary</div>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                        {resumeAnalysis?.analysisSummary}
+                      </p>
+                    </div>
+
+                    {/* Matched vs Missing Skills */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Matched Skills</div>
+                        <div className="tags-list">
+                          {(resumeAnalysis?.matchedSkills || []).length === 0 ? (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No matching skills detected</span>
+                          ) : (
+                            (resumeAnalysis.matchedSkills || []).map(s => (
+                              <span key={s} className="badge badge-success">{s}</span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Potential Gaps / Missing Skills</div>
+                        <div className="tags-list">
+                          {(resumeAnalysis?.missingSkills || []).length === 0 ? (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No gaps detected</span>
+                          ) : (
+                            (resumeAnalysis.missingSkills || []).map(s => (
+                              <span key={s} className="badge badge-danger">{s}</span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Strengths List */}
+                    <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Core Alignment Strengths</div>
+                      {(resumeAnalysis?.strengths || []).length === 0 ? (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No key strengths highlighted yet.</div>
+                      ) : (
+                        <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                          {(resumeAnalysis.strengths || []).map((str, idx) => (
+                            <li key={idx} style={{ marginBottom: '4px' }}>{str}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    {/* Gaps List */}
+                    <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Areas of Improvement / Growth</div>
+                      {(resumeAnalysis?.potentialGaps || []).length === 0 ? (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No potential gaps highlighted.</div>
+                      ) : (
+                        <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                          {(resumeAnalysis.potentialGaps || []).map((gap, idx) => (
+                            <li key={idx} style={{ marginBottom: '4px' }}>{gap}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
                   </div>
                 )}
               </div>

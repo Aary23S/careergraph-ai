@@ -13,6 +13,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 async function ensureResumeOwnership(userId, resumeId) {
   const resume = await models.Resume.findOne({
     where: { id: resumeId, user_id: userId },
+    include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }]
   });
 
   if (!resume) {
@@ -29,6 +30,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const resumes = await models.Resume.findAll({
       where: { user_id: req.auth.userId },
+      include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }],
       order: [['created_at', 'DESC']],
     });
     ok(res, resumes);
@@ -62,6 +64,9 @@ router.post(
       isActive: currentCount === 0,
       version: currentCount + 1,
     });
+
+    const { enqueueResumeEnrichment } = await import('../services/resume-ai-enrichment.service.js');
+    enqueueResumeEnrichment(resume.id);
 
     created(res, resume);
   }),
@@ -114,6 +119,10 @@ router.put(
       sizeBytes: req.file.size,
       version: resume.version + 1,
     });
+
+    const { enqueueResumeEnrichment } = await import('../services/resume-ai-enrichment.service.js');
+    enqueueResumeEnrichment(resume.id);
+
     ok(res, resume);
   }),
 );
@@ -125,6 +134,57 @@ router.delete(
     await fileStorage.delete(resume.storageKey);
     await resume.destroy();
     ok(res, { deleted: true });
+  }),
+);
+
+router.get(
+  '/:resumeId/ai',
+  asyncHandler(async (req, res) => {
+    const resume = await ensureResumeOwnership(req.auth.userId, req.params.resumeId);
+    ok(res, resume.aiEnrichment || {});
+  }),
+);
+
+router.post(
+  '/:resumeId/ai-enrich',
+  asyncHandler(async (req, res) => {
+    const resume = await ensureResumeOwnership(req.auth.userId, req.params.resumeId);
+    const { executeResumeEnrichment } = await import('../services/resume-ai-enrichment.service.js');
+    await executeResumeEnrichment(resume.id);
+    const refreshed = await ensureResumeOwnership(req.auth.userId, resume.id);
+    ok(res, refreshed);
+  }),
+);
+
+router.post(
+  '/:resumeId/ai-enrich/retry',
+  asyncHandler(async (req, res) => {
+    const resume = await ensureResumeOwnership(req.auth.userId, req.params.resumeId);
+    if (resume.aiEnrichment && resume.aiEnrichment.status === 'failed') {
+      const { executeResumeEnrichment } = await import('../services/resume-ai-enrichment.service.js');
+      await executeResumeEnrichment(resume.id);
+    }
+    const refreshed = await ensureResumeOwnership(req.auth.userId, resume.id);
+    ok(res, refreshed);
+  }),
+);
+
+router.put(
+  '/:resumeId/ai-corrections',
+  validate(
+    Joi.object({
+      professionalTitle: Joi.string().allow('', null).optional(),
+      careerLevel: Joi.string().allow('', null).optional(),
+      skills: Joi.array().items(Joi.string()).optional(),
+      summary: Joi.string().allow('', null).optional()
+    })
+  ),
+  asyncHandler(async (req, res) => {
+    const resume = await ensureResumeOwnership(req.auth.userId, req.params.resumeId);
+    const { saveResumeCorrections } = await import('../services/resume-ai-enrichment.service.js');
+    await saveResumeCorrections(resume.id, req.body);
+    const refreshed = await ensureResumeOwnership(req.auth.userId, resume.id);
+    ok(res, refreshed);
   }),
 );
 
