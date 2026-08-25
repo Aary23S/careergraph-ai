@@ -109,11 +109,15 @@ async function serializeJob(job, profile, userId) {
   // Find connections at this company
   let connections = [];
   if (job.company) {
-    connections = await models.Connection.findAll({
+    const allConnections = await models.Connection.findAll({
       where: {
-        user_id: userId,
-        company: { [Op.like]: `%${job.company.name}%` }
+        user_id: userId
       }
+    });
+    const cleanCompanyName = str => (str || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    const targetCompanyKey = cleanCompanyName(job.company.normalizedName || job.company.name);
+    connections = allConnections.filter(conn => {
+      return cleanCompanyName(conn.company) === targetCompanyKey || cleanCompanyName(conn.normalizedCompany) === targetCompanyKey;
     });
   }
 

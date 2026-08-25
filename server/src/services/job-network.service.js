@@ -33,12 +33,18 @@ export async function getJobNetworkDetails(userId, jobId, queryParams = {}) {
     };
   }
 
-  // 2. Query all connections belonging to the user at the target company
-  const connections = await models.Connection.findAll({
+  // 2. Query all connections belonging to the user and filter by company
+  const allConnections = await models.Connection.findAll({
     where: {
-      user_id: userId,
-      normalizedCompany: job.company.normalizedName
+      user_id: userId
     }
+  });
+
+  const cleanCompanyName = str => (str || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+  const targetCompanyKey = cleanCompanyName(job.company.normalizedName || job.company.name);
+
+  const connections = allConnections.filter(conn => {
+    return cleanCompanyName(conn.company) === targetCompanyKey || cleanCompanyName(conn.normalizedCompany) === targetCompanyKey;
   });
 
   // Keywords used to determine relevance
