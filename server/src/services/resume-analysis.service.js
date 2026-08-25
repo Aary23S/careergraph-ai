@@ -2,6 +2,7 @@ import Joi from 'joi';
 import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
+import { extractResumeText, normalizeResumeText } from './resume-ai-enrichment.service.js';
 
 export const resumeAnalysisSchema = Joi.object({
   matchedSkills: Joi.array().items(Joi.string()).default([]),
@@ -12,8 +13,8 @@ export const resumeAnalysisSchema = Joi.object({
   compatibilityAssessment: Joi.string().valid('high', 'medium', 'low', 'unknown').default('unknown')
 });
 
-function buildAnalysisPrompt(jobIntel, resumeIntel) {
-  return `Analyze the alignment between the following Job requirements and Candidate Resume profile:
+function buildAnalysisPrompt(jobIntel, rawResumeText) {
+  return `Analyze the alignment between the following Job requirements and Candidate Resume raw text:
 
 === JOB REQUIREMENTS ===
 Role Category: ${jobIntel.roleCategory || 'N/A'}
@@ -22,11 +23,8 @@ Required Skills: ${(jobIntel.requiredSkills || []).join(', ')}
 Preferred Skills: ${(jobIntel.preferredSkills || []).join(', ')}
 Summary: ${jobIntel.summary || 'N/A'}
 
-=== CANDIDATE RESUME ===
-Title: ${resumeIntel.professionalTitle || 'N/A'}
-Level: ${resumeIntel.careerLevel || 'N/A'}
-Skills: ${(resumeIntel.skills || []).join(', ')}
-Summary: ${resumeIntel.summary || 'N/A'}
+=== CANDIDATE RESUME RAW TEXT ===
+${rawResumeText}
 
 Instructions:
 1. Identify matchedSkills (skills from the job posting that are supported by the resume).
@@ -71,22 +69,26 @@ export async function analyzeJobResumeFit(jobId, resumeId) {
       };
     }
 
-    // 2. Fetch and auto-enrich Resume AI details if missing/incomplete
-    let resumeEnrichment = await models.ResumeAiEnrichment.findOne({ where: { resumeId } });
-    if (!resumeEnrichment || resumeEnrichment.status !== 'completed') {
-      const { executeResumeEnrichment } = await import('./resume-ai-enrichment.service.js');
-      await executeResumeEnrichment(resumeId);
-      resumeEnrichment = await models.ResumeAiEnrichment.findOne({ where: { resumeId } });
-    }
-
-    if (!resumeEnrichment || resumeEnrichment.status !== 'completed') {
+    // 2. Fetch active Resume and extract its raw text directly
+    const resume = await models.Resume.findByPk(resumeId);
+    if (!resume) {
       return {
         ...defaultAnalysis,
-        analysisSummary: 'Resume details could not be fully enriched. Please ensure AI is enabled and retry.'
+        analysisSummary: 'Active resume not found in records.'
       };
     }
 
-    // 3. Resolve user overrides for both Job and Resume if available
+    const rawText = await extractResumeText(resume);
+    const normalizedResumeText = normalizeResumeText(rawText);
+
+    if (!normalizedResumeText) {
+      return {
+        ...defaultAnalysis,
+        analysisSummary: 'Resume text is empty or could not be extracted.'
+      };
+    }
+
+    // 3. Resolve user overrides for Job if available
     const jobIntel = {
       roleCategory: jobEnrichment.userCorrectedRoleCategory || jobEnrichment.roleCategory,
       seniority: jobEnrichment.userCorrectedSeniority || jobEnrichment.seniority,
@@ -95,14 +97,7 @@ export async function analyzeJobResumeFit(jobId, resumeId) {
       summary: jobEnrichment.userCorrectedSummary || jobEnrichment.summary
     };
 
-    const resumeIntel = {
-      professionalTitle: resumeEnrichment.userCorrectedProfessionalTitle || resumeEnrichment.professionalTitle,
-      careerLevel: resumeEnrichment.userCorrectedCareerLevel || resumeEnrichment.careerLevel,
-      skills: resumeEnrichment.userCorrectedSkills || resumeEnrichment.skills || [],
-      summary: resumeEnrichment.userCorrectedSummary || resumeEnrichment.summary
-    };
-
-    const prompt = buildAnalysisPrompt(jobIntel, resumeIntel);
+    const prompt = buildAnalysisPrompt(jobIntel, (normalizedResumeText || '').slice(0, 4000));
     const parsed = await aiService.generateStructured(prompt, resumeAnalysisSchema);
 
     return {

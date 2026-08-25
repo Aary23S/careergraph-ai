@@ -52,8 +52,8 @@ const schema = Joi.object({
   AI_PROVIDER: Joi.string().valid('mock', 'ollama').default('mock'),
   OLLAMA_BASE_URL: Joi.string().uri().default('http://localhost:11434'),
   OLLAMA_MODEL: Joi.string().default('gemma2:2b'),
-  AI_TIMEOUT_MS: Joi.number().integer().default(15000),
-  AI_MAX_RETRIES: Joi.number().integer().default(1),
+  AI_TIMEOUT_MS: Joi.number().integer().default(300000),
+  AI_MAX_RETRIES: Joi.number().integer().default(2),
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });

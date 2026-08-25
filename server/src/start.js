@@ -54,6 +54,7 @@ export async function startServer({
       console.log(`CareerGraph API listening on port ${port}`);
       resolve(server);
     });
+    server.timeout = 300000;
 
     server.once('error', reject);
   });

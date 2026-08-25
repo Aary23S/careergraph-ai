@@ -80,7 +80,7 @@ describe('CareerGraph Phase 2.5-H2: CRM Enrichment & Company Directory API Tests
       normalizedCompany: 'saffronedge',
       title: 'Product Manager'
     });
-  });
+  }, 15000);
 
   afterAll(async () => {
     await sequelize.close();
