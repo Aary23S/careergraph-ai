@@ -21,14 +21,14 @@ export class AIService {
    * @param {object} schema - Joi schema to validate structure.
    * @returns {Promise<object>} Clean validated JSON.
    */
-  async generateStructured(prompt, schema) {
+  async generateStructured(prompt, schema, options = {}) {
     if (!env.aiEnabled) {
       throw new Error('AI layer is currently disabled. Toggle AI_ENABLED to true.');
     }
 
     let attempt = 0;
     const maxRetries = env.aiMaxRetries || 0;
-    const timeoutMs = env.aiTimeoutMs || 15000;
+    const timeoutMs = options.timeoutMs || env.aiTimeoutMs || 15000;
 
     let lastError = null;
 

@@ -52,8 +52,17 @@ export class LinkedInEmailJobSource extends EmailAlertSource {
         .map(l => l.trim())
         .filter(l => l.length > 1 && !l.includes('•') && !l.includes('Apply') && !l.includes('View job') && !l.toLowerCase().includes('actively hiring') && !l.toLowerCase().includes('hiring'));
 
-      const companyName = (lines[0] || 'LinkedIn Connection').substring(0, 255);
-      const location = (lines[1] || 'Remote').substring(0, 255);
+      let companyName = (lines[0] || 'LinkedIn Connection').substring(0, 255);
+      let location = (lines[1] || 'Remote').substring(0, 255);
+
+      const separatorRegex = /&middot;|·|•|\||\s+-\s+|\s+–\s+/;
+      if (companyName && separatorRegex.test(companyName)) {
+        const parts = companyName.split(separatorRegex);
+        companyName = parts[0].trim();
+        if (parts[1]) {
+          location = parts.slice(1).join(' ').trim();
+        }
+      }
 
       jobs.push({
         title: title.substring(0, 255),

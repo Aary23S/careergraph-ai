@@ -88,15 +88,22 @@ export async function extractResumeText(resume) {
 }
 
 function buildEnrichmentPrompt(text) {
-  return `You are a professional recruiting coordinator. Analyze the following resume text:
-
-${text}
-
-Instructions:
-1. Extract details strictly supported by the text. Do NOT invent companies, dates, skills, or achievements.
-2. Infer careerLevel (e.g. 'intern', 'entry', 'mid', 'senior', 'lead', 'principal', 'executive') only if supported by evidence.
-3. Group technicalDomains (e.g. 'backend', 'frontend', 'devops', 'machine learning').
-4. Return a valid JSON matching the schema format.`;
+  return `Analyze this resume and output JSON matching the keys exactly:
+{
+  "professionalTitle": "Backend Developer",
+  "careerLevel": "entry/mid/senior/lead/principal/executive",
+  "skills": ["JavaScript", "Node.js"],
+  "technicalDomains": ["backend", "web"],
+  "experience": [{"company": "A", "title": "B", "startDate": "YYYY-MM", "endDate": "YYYY-MM/present", "isCurrent": false, "responsibilities": ["C"]}],
+  "projects": [{"name": "D", "description": "E", "technologies": ["F"]}],
+  "education": [{"institution": "G", "degree": "H", "field": "I", "startYear": "YYYY", "endYear": "YYYY"}],
+  "certifications": ["J"],
+  "achievements": ["K"],
+  "summary": "Short summary",
+  "confidence": 1.0
+}
+Resume Text:
+${text}`;
 }
 
 // In-Memory Background Processing Queue
@@ -216,7 +223,7 @@ export async function executeResumeEnrichment(resumeId) {
     const rawText = await extractResumeText(enrichment.resume);
     const normalized = normalizeResumeText(rawText);
     const prompt = buildEnrichmentPrompt(normalized);
-    const parsed = await aiService.generateStructured(prompt, resumeEnrichmentSchema);
+    const parsed = await aiService.generateStructured(prompt, resumeEnrichmentSchema, { timeoutMs: 120000 });
     const latency = Date.now() - start;
 
     await enrichment.update({
