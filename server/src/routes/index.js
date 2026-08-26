@@ -16,6 +16,7 @@ import telegramRoutes from '../modules/telegram.routes.js';
 import incomingJobRoutes from '../modules/incoming-jobs.routes.js';
 import aiRoutes from '../modules/ai.routes.js';
 import outreachAiRoutes from '../modules/outreach-ai.routes.js';
+import searchRoutes from '../modules/search.routes.js';
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use('/integrations', integrationsRoutes);
 router.use('/integrations/telegram', telegramRoutes);
 router.use('/incoming-jobs', incomingJobRoutes);
 router.use('/ai', aiRoutes);
+router.use('/search', searchRoutes);
 
 export default router;

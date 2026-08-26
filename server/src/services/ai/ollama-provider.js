@@ -82,6 +82,28 @@ export class OllamaProvider extends AIProvider {
     return data.response || '';
   }
 
+  async generateEmbedding(text, model) {
+    const url = `${this.baseUrl}/api/embeddings`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model || this.modelName,
+        prompt: text
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama embedding request failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!data.embedding) {
+      throw new Error('Ollama response did not contain an embedding array.');
+    }
+    return data.embedding;
+  }
+
   async healthCheck() {
     try {
       const response = await fetch(`${this.baseUrl}/api/tags`);

@@ -1,6 +1,7 @@
 import { models } from '../config/database.js';
 import { AppError } from '../lib/http.js';
 import { calculateReferralScore } from './intelligence.service.js';
+import { cosineSimilarity } from './semantic-search.service.js';
 
 export async function getJobNetworkDetails(userId, jobId, queryParams = {}) {
   // 1. Fetch Job and ensure user ownership
@@ -232,13 +233,31 @@ export async function getJobNetworkDetails(userId, jobId, queryParams = {}) {
         }
       }
 
+      // Fetch semantic embeddings for similarity calculation
+      const jobEmbedding = await models.SemanticEmbedding.findOne({
+        where: { user_id: userId, entity_type: 'job', entity_id: job.id }
+      });
+      const connEmbedding = await models.SemanticEmbedding.findOne({
+        where: { user_id: userId, entity_type: 'connection', entity_id: c.connection.id }
+      });
+
+      let semanticSimilarity = undefined;
+      if (jobEmbedding && connEmbedding) {
+        let jobVec = jobEmbedding.embedding;
+        let connVec = connEmbedding.embedding;
+        if (typeof jobVec === 'string') jobVec = JSON.parse(jobVec);
+        if (typeof connVec === 'string') connVec = JSON.parse(connVec);
+        semanticSimilarity = cosineSimilarity(jobVec, connVec);
+      }
+
       return {
         connection: c.connection,
         referralScore: c.referralScore,
         reasons: c.reasons,
         relationshipStatus: c.relationshipStatus,
         priority: c.priority,
-        aiEvidence: enrich ? aiEvidence : null
+        aiEvidence: enrich ? aiEvidence : null,
+        semanticSimilarity
       };
     })
   );

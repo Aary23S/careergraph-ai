@@ -1,6 +1,7 @@
 import { env } from '../../config/env.js';
 import { MockProvider } from './mock-provider.js';
 import { OllamaProvider } from './ollama-provider.js';
+import { GroqProvider } from './groq-provider.js';
 
 export class AIService {
   constructor() {
@@ -11,6 +12,9 @@ export class AIService {
     const providerName = env.aiProvider;
     if (providerName === 'ollama') {
       return new OllamaProvider();
+    }
+    if (providerName === 'groq') {
+      return new GroqProvider();
     }
     return new MockProvider();
   }
@@ -116,6 +120,42 @@ export class AIService {
     }
 
     throw new Error(`AI generation pipeline failed after ${attempt} attempts. Last error: ${lastError?.message}`);
+  }
+
+  async generateEmbedding(text, model) {
+    if (!env.aiEnabled) {
+      throw new Error('AI layer is currently disabled. Toggle AI_ENABLED to true.');
+    }
+
+    let attempt = 0;
+    const maxRetries = env.aiMaxRetries || 0;
+    const timeoutMs = env.aiTimeoutMs || 15000;
+
+    let lastError = null;
+
+    while (attempt <= maxRetries) {
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('AI request timeout exceeded.')), timeoutMs)
+        );
+
+        const responseData = await Promise.race([
+          this.provider.generateEmbedding(text, model),
+          timeoutPromise
+        ]);
+
+        return responseData;
+      } catch (err) {
+        lastError = err;
+        attempt++;
+        console.warn(`[AIService] Embedding Attempt ${attempt} failed: ${err.message}`);
+        if (attempt > maxRetries) {
+          break;
+        }
+      }
+    }
+
+    throw new Error(`AI embedding pipeline failed after ${attempt} attempts. Last error: ${lastError?.message}`);
   }
 
   async healthCheck() {

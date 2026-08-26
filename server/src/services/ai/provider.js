@@ -25,6 +25,16 @@ export class AIProvider {
    * Verifies provider connectivity and capability.
    * @returns {Promise<boolean>} Healthy state flag.
    */
+  /**
+   * Generates a numeric vector embedding for the input text.
+   * @param {string} text - The input content.
+   * @param {string} [model] - Optional override model.
+   * @returns {Promise<number[]>} Numeric vector array.
+   */
+  async generateEmbedding() {
+    throw new Error('Method not implemented: generateEmbedding');
+  }
+
   async healthCheck() {
     throw new Error('Method not implemented: healthCheck');
   }

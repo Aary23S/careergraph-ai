@@ -591,6 +591,25 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'outreach_ai_drafts' }
   );
 
+  const SemanticEmbedding = sequelize.define(
+    'SemanticEmbedding',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      userId: { type: DataTypes.UUID, allowNull: false, field: 'user_id' },
+      entityType: { type: DataTypes.STRING, allowNull: false, field: 'entity_type' },
+      entityId: { type: DataTypes.UUID, allowNull: false, field: 'entity_id' },
+      embedding: {
+        type: DataTypes.JSON,
+        allowNull: false
+      },
+      contentHash: { type: DataTypes.STRING, allowNull: false, field: 'content_hash' },
+      embeddingModel: { type: DataTypes.STRING, allowNull: false, field: 'embedding_model' },
+      embeddingDimension: { type: DataTypes.INTEGER, allowNull: false, field: 'embedding_dimension' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'completed' },
+    },
+    { ...baseOptions, tableName: 'semantic_embeddings' }
+  );
+
 
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -690,6 +709,9 @@ export function initializeModels(sequelize) {
   Job.hasMany(OutreachAiDraft, { foreignKey: 'job_id', as: 'aiDrafts' });
   OutreachAiDraft.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
 
+  User.hasMany(SemanticEmbedding, { foreignKey: 'user_id', as: 'embeddings' });
+  SemanticEmbedding.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
   return {
     User,
     RefreshToken,
@@ -717,5 +739,6 @@ export function initializeModels(sequelize) {
     ResumeAiEnrichment,
     ConnectionAiEnrichment,
     OutreachAiDraft,
+    SemanticEmbedding,
   };
 }
