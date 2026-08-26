@@ -4,6 +4,7 @@ import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
 import { buildConnectionAiInput } from './connection-ai-input.service.js';
+import { aiObservability } from './ai/observability.service.js';
 
 export const connectionAiSchema = Joi.object({
   professionalRole: Joi.string().allow('', null).default(''),
@@ -49,6 +50,13 @@ CRITICAL RULES:
 // Background Queue
 const queue = [];
 let processing = false;
+let queueFailures = 0;
+
+aiObservability.registerQueueProvider('connection_enrichment', () => ({
+  pending: queue.length,
+  processing,
+  failed: queueFailures
+}));
 
 async function processQueue() {
   if (processing) return;
@@ -150,7 +158,15 @@ export async function executeEnrichment(connectionId) {
   try {
     const inputData = buildConnectionAiInput(enrichment.connection);
     const prompt = buildEnrichmentPrompt(inputData);
-    const parsed = await aiService.generateStructured(prompt, connectionAiSchema);
+    const parsed = await aiService.generateStructured(prompt, connectionAiSchema, {
+      operation: 'connection_enrichment',
+      evidenceText: inputData,
+      userId: enrichment.connection.user_id,
+      entityType: 'connection',
+      entityId: enrichment.connection.id,
+      promptVersion: PROMPT_VERSION,
+      schemaVersion: SCHEMA_VERSION
+    });
     const latency = Date.now() - start;
 
     await enrichment.update({
@@ -170,6 +186,7 @@ export async function executeEnrichment(connectionId) {
       errorCode: null
     });
   } catch (err) {
+    queueFailures++;
     const latency = Date.now() - start;
     let errorCode = 'UNKNOWN';
     const errMessage = err.message.toLowerCase();

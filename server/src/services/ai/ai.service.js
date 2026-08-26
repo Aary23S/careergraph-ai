@@ -4,6 +4,7 @@ import { OllamaProvider } from './ollama-provider.js';
 import { GroqProvider } from './groq-provider.js';
 import { models } from '../../config/database.js';
 import { detectAndSanitizePromptInjection, validateClaims } from './guardrails.service.js';
+import { aiObservability } from './observability.service.js';
 
 export class AIService {
   constructor() {
@@ -46,6 +47,9 @@ export class AIService {
     // Shield against prompt injection (3H-12)
     const sanitizedPrompt = detectAndSanitizePromptInjection(prompt);
 
+    // 3I-3: Trace Correlation ID
+    const correlationId = options.correlationId || crypto.randomUUID();
+
     let attempt = 0;
     const maxRetries = env.aiMaxRetries || 0;
     const timeoutMs = options.timeoutMs || env.aiTimeoutMs || 15000;
@@ -84,6 +88,11 @@ export class AIService {
 
           const { error, value } = schema.validate(responseData, { abortEarly: false, stripUnknown: true });
           if (error) {
+            aiObservability.recordRequest({
+              success: false,
+              invalidOutput: true,
+              isRetry: attempt > 0
+            });
             throw new Error(`Structured output schema validation failed: ${error.message}`);
           }
 
@@ -100,8 +109,16 @@ export class AIService {
             value.confidence = value.confidence || 0.95;
           }
 
-          // 3H-14: Audit Logging on success
+          // 3I-1: Record success telemetry
           const latency = Date.now() - start;
+          aiObservability.recordRequest({
+            success: true,
+            latencyMs: latency,
+            qualityScore: value.confidence,
+            isRetry: attempt > 0
+          });
+
+          // 3H-14: Audit Logging on success
           if (models.AiAuditLog) {
             await models.AiAuditLog.create({
               userId: options.userId || '00000000-0000-0000-0000-000000000000',
@@ -114,7 +131,8 @@ export class AIService {
               schemaVersion: options.schemaVersion || 1,
               latencyMs: latency,
               status: 'success',
-              evaluationScore: value.confidence
+              evaluationScore: value.confidence,
+              correlationId
             }).catch(() => {});
           }
 
@@ -132,8 +150,17 @@ export class AIService {
       }
     }
 
-    // 3H-14: Audit Logging on failure
+    // 3I-1: Record failure telemetry
     const latency = Date.now() - start;
+    const isTimeout = lastError?.message?.includes('timeout');
+    aiObservability.recordRequest({
+      success: false,
+      timeout: isTimeout,
+      latencyMs: latency,
+      isRetry: attempt > 0
+    });
+
+    // 3H-14: Audit Logging on failure
     if (models.AiAuditLog) {
       await models.AiAuditLog.create({
         userId: options.userId || '00000000-0000-0000-0000-000000000000',
@@ -146,7 +173,8 @@ export class AIService {
         schemaVersion: options.schemaVersion || 1,
         latencyMs: latency,
         status: 'failed',
-        evaluationScore: 0.0
+        evaluationScore: 0.0,
+        correlationId
       }).catch(() => {});
     }
 
@@ -166,6 +194,9 @@ export class AIService {
     // Shield against prompt injection (3H-12)
     const sanitizedPrompt = detectAndSanitizePromptInjection(prompt);
 
+    // 3I-3: Trace Correlation ID
+    const correlationId = options.correlationId || crypto.randomUUID();
+
     let attempt = 0;
     const maxRetries = env.aiMaxRetries || 0;
     const timeoutMs = options.timeoutMs || env.aiTimeoutMs || 15000;
@@ -184,8 +215,16 @@ export class AIService {
           timeoutPromise
         ]);
 
-        // 3H-14: Audit Logging on success
         const latency = Date.now() - start;
+
+        // 3I-1: Record success telemetry
+        aiObservability.recordRequest({
+          success: true,
+          latencyMs: latency,
+          isRetry: attempt > 0
+        });
+
+        // 3H-14: Audit Logging on success
         if (models.AiAuditLog) {
           await models.AiAuditLog.create({
             userId: options.userId || '00000000-0000-0000-0000-000000000000',
@@ -198,7 +237,8 @@ export class AIService {
             schemaVersion: options.schemaVersion || 1,
             latencyMs: latency,
             status: 'success',
-            evaluationScore: 1.0
+            evaluationScore: 1.0,
+            correlationId
           }).catch(() => {});
         }
 
@@ -213,8 +253,18 @@ export class AIService {
       }
     }
 
-    // 3H-14: Audit Logging on failure
     const latency = Date.now() - start;
+    const isTimeout = lastError?.message?.includes('timeout');
+
+    // 3I-1: Record failure telemetry
+    aiObservability.recordRequest({
+      success: false,
+      timeout: isTimeout,
+      latencyMs: latency,
+      isRetry: attempt > 0
+    });
+
+    // 3H-14: Audit Logging on failure
     if (models.AiAuditLog) {
       await models.AiAuditLog.create({
         userId: options.userId || '00000000-0000-0000-0000-000000000000',
@@ -227,7 +277,8 @@ export class AIService {
         schemaVersion: options.schemaVersion || 1,
         latencyMs: latency,
         status: 'failed',
-        evaluationScore: 0.0
+        evaluationScore: 0.0,
+        correlationId
       }).catch(() => {});
     }
 
@@ -244,6 +295,7 @@ export class AIService {
     const timeoutMs = env.aiTimeoutMs || 15000;
 
     let lastError = null;
+    const start = Date.now();
 
     while (attempt <= maxRetries) {
       try {
@@ -255,6 +307,9 @@ export class AIService {
           this.provider.generateEmbedding(text, model),
           timeoutPromise
         ]);
+
+        const latency = Date.now() - start;
+        aiObservability.recordEmbedding(latency);
 
         return responseData;
       } catch (err) {

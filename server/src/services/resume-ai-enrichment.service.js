@@ -7,6 +7,7 @@ import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
 import { fileStorage } from '../lib/storage.js';
+import { aiObservability } from './ai/observability.service.js';
 
 const require = createRequire(import.meta.url);
 let pdf = require('pdf-parse');
@@ -109,6 +110,13 @@ ${text}`;
 // In-Memory Background Processing Queue
 const resumeQueue = [];
 let queueProcessing = false;
+let queueFailures = 0;
+
+aiObservability.registerQueueProvider('resume_enrichment', () => ({
+  pending: resumeQueue.length,
+  processing: queueProcessing,
+  failed: queueFailures
+}));
 
 async function processQueue() {
   if (queueProcessing) return;
@@ -223,7 +231,16 @@ export async function executeResumeEnrichment(resumeId) {
     const rawText = await extractResumeText(enrichment.resume);
     const normalized = normalizeResumeText(rawText);
     const prompt = buildEnrichmentPrompt(normalized);
-    const parsed = await aiService.generateStructured(prompt, resumeEnrichmentSchema, { timeoutMs: 120000 });
+    const parsed = await aiService.generateStructured(prompt, resumeEnrichmentSchema, {
+      timeoutMs: 120000,
+      operation: 'resume_enrichment',
+      evidenceText: normalized,
+      userId: enrichment.resume.user_id,
+      entityType: 'resume',
+      entityId: enrichment.resume.id,
+      promptVersion: PROMPT_VERSION,
+      schemaVersion: SCHEMA_VERSION
+    });
     const latency = Date.now() - start;
 
     await enrichment.update({
@@ -244,6 +261,7 @@ export async function executeResumeEnrichment(resumeId) {
       errorCode: null
     });
   } catch (err) {
+    queueFailures++;
     const latency = Date.now() - start;
     let errorCode = 'UNKNOWN';
     const errMessage = err.message.toLowerCase();

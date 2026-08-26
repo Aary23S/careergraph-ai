@@ -180,6 +180,8 @@ function App() {
   const [dashboardOverview, setDashboardOverview] = useState(null);
   const [loadingOverview, setLoadingOverview] = useState(false);
   const [overviewError, setOverviewError] = useState(null);
+  const [aiOpsData, setAiOpsData] = useState(null);
+  const [loadingAiOps, setLoadingAiOps] = useState(false);
 
   // Company directory states
   const [companies, setCompanies] = useState([]);
@@ -286,6 +288,7 @@ function App() {
       }
       if (activeTab === 'applications') loadApplications();
       if (activeTab === 'outreach') loadOutreach();
+      if (activeTab === 'ai-ops') loadAiOps();
       loadNotifications();
     }
   }, [isAuthenticated, activeTab, connFilters, jobFilters, jobFilters.archived]);
@@ -834,6 +837,18 @@ function App() {
     }
   };
 
+  const loadAiOps = async () => {
+    setLoadingAiOps(true);
+    try {
+      const res = await api.request('/ai/health');
+      setAiOpsData(res.data);
+    } catch (err) {
+      console.warn('Failed to load AI Operations health data:', err.message);
+    } finally {
+      setLoadingAiOps(false);
+    }
+  };
+
   const loadGmailStatus = async () => {
     try {
       const res = await api.request('/integrations/gmail/status');
@@ -1128,6 +1143,9 @@ function App() {
           </button>
           <button className={`nav-item ${activeTab === 'outreach' ? 'active' : ''}`} onClick={() => setActiveTab('outreach')}>
             Outreach CRM
+          </button>
+          <button className={`nav-item ${activeTab === 'ai-ops' ? 'active' : ''}`} onClick={() => setActiveTab('ai-ops')}>
+            AI Operations
           </button>
         </nav>
 
@@ -1909,7 +1927,7 @@ function App() {
 
                     {/* AI Derived Expertise aggregated dashboard */}
                     <div className="card-panel" style={{ marginTop: '24px' }}>
-                      <h2 className="card-title">🤖 AI-Derived Technical Expertise / Domains</h2>
+                      <h2 className="card-title">  AI-Derived Technical Expertise / Domains</h2>
                       <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>Aggregate count of contacts matching these technical expertise tags (derived by Ollama profile analysis).</p>
 
                       {companyDetailData.aiExpertise && companyDetailData.aiExpertise.length > 0 ? (
@@ -2185,10 +2203,10 @@ function App() {
                       setNewViewName(activeViewId && activeViewId !== 'all' && activeViewId !== 'high_priority' && activeViewId !== 'never_contacted' && activeViewId !== 'follow_ups' ? `${activeViewName} Copy` : 'My Custom View');
                       setShowSaveViewModal(true);
                     }}>Save View As...</button>
-                    <button 
-                      className="btn btn-primary" 
-                      style={{ padding: '8px 14px', fontSize: '0.85rem', background: 'var(--accent)', borderColor: 'var(--accent)' }} 
-                      onClick={runBackfill} 
+                    <button
+                      className="btn btn-primary"
+                      style={{ padding: '8px 14px', fontSize: '0.85rem', background: 'var(--accent)', borderColor: 'var(--accent)' }}
+                      onClick={runBackfill}
                       disabled={syncingEmbeddings}
                     >
                       {syncingEmbeddings ? 'Syncing...' : '🔄 Sync AI Embeddings'}
@@ -2276,11 +2294,11 @@ function App() {
                     <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>Search Query</span>
                       <div style={{ display: 'flex', gap: '8px', fontSize: '0.8rem' }}>
-                        <span 
+                        <span
                           style={{ cursor: 'pointer', fontWeight: connSearchMode === 'keyword' ? 'bold' : 'normal', color: connSearchMode === 'keyword' ? 'var(--primary)' : 'var(--text-secondary)' }}
                           onClick={() => { setConnSearchMode('keyword'); setSemanticConnResults(null); }}
                         >Keyword</span>
-                        <span 
+                        <span
                           style={{ cursor: 'pointer', fontWeight: connSearchMode === 'semantic' ? 'bold' : 'normal', color: connSearchMode === 'semantic' ? 'var(--primary)' : 'var(--text-secondary)' }}
                           onClick={() => { setConnSearchMode('semantic'); }}
                         >Semantic</span>
@@ -2642,11 +2660,11 @@ function App() {
                     <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>Job Title / keyword</span>
                       <div style={{ display: 'flex', gap: '8px', fontSize: '0.8rem' }}>
-                        <span 
+                        <span
                           style={{ cursor: 'pointer', fontWeight: jobSearchMode === 'keyword' ? 'bold' : 'normal', color: jobSearchMode === 'keyword' ? 'var(--primary)' : 'var(--text-secondary)' }}
                           onClick={() => { setJobSearchMode('keyword'); setSemanticJobResults(null); }}
                         >Keyword</span>
-                        <span 
+                        <span
                           style={{ cursor: 'pointer', fontWeight: jobSearchMode === 'semantic' ? 'bold' : 'normal', color: jobSearchMode === 'semantic' ? 'var(--primary)' : 'var(--text-secondary)' }}
                           onClick={() => { setJobSearchMode('semantic'); }}
                         >Semantic</span>
@@ -3583,6 +3601,143 @@ function App() {
             </div>
           </div>
         )}
+
+        {/* AI OBSERVABILITY & OPERATIONS TAB */}
+        {activeTab === 'ai-ops' && (
+          <div>
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h1 className="page-title">  AI Observability & Operations</h1>
+              <button className="btn btn-primary" onClick={loadAiOps} disabled={loadingAiOps} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                {loadingAiOps ? 'Refreshing...' : '🔄 Refresh Health'}
+              </button>
+            </div>
+
+            {loadingAiOps && !aiOpsData ? (
+              <div className="empty-state">Loading real-time operational telemetry...</div>
+            ) : !aiOpsData ? (
+              <div className="empty-state">No telemetry data returned. Ensure server is active.</div>
+            ) : (
+              <div>
+                {/* 1. Global System Status Alerts */}
+                {aiOpsData.anomalies && aiOpsData.anomalies.length > 0 && (
+                  <div style={{ background: '#fdeded', border: '1px solid var(--danger)', padding: '16px', borderRadius: '8px', marginBottom: '24px', color: '#5f2120' }}>
+                    <h3 style={{ marginTop: 0, fontWeight: 'bold' }}>⚠️ Active Operational Anomalies Detected</h3>
+                    <ul style={{ margin: '8px 0 0 16px', padding: 0 }}>
+                      {aiOpsData.anomalies.map((anom, idx) => (
+                        <li key={idx} style={{ marginBottom: '4px' }}>{anom.message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* 2. Overview Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                  <div className="stat-card" style={{ borderLeft: '4px solid var(--primary)' }}>
+                    <span className="stat-label">AI Health Status</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                      <span className={`badge badge-${aiOpsData.state === 'HEALTHY' ? 'success' : aiOpsData.state === 'DEGRADED' ? 'warning' : 'danger'}`} style={{ fontSize: '1.1rem', padding: '6px 12px' }}>
+                        {aiOpsData.state}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Active Provider / Model</span>
+                    <span className="stat-value" style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginTop: '8px', display: 'block' }}>
+                      {aiOpsData.provider.toUpperCase()} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>({aiOpsData.model})</span>
+                    </span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">Latency (P50 / P95)</span>
+                    <span className="stat-value" style={{ fontSize: '1.5rem', marginTop: '4px' }}>
+                      {aiOpsData.latency?.p50 ? `${(aiOpsData.latency.p50 / 1000).toFixed(2)}s` : '0s'}
+                      <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginLeft: '6px' }}>
+                        / {aiOpsData.latency?.p95 ? `${(aiOpsData.latency.p95 / 1000).toFixed(2)}s` : '0s'}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">AI Response Quality</span>
+                    <span className="stat-value" style={{ fontSize: '1.5rem', color: 'var(--accent)', marginTop: '4px' }}>
+                      {aiOpsData.averageQuality ? `${Math.round(aiOpsData.averageQuality * 100)}%` : '100%'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3. In-Memory Job Queues */}
+                <div className="page-header" style={{ marginTop: '32px' }}>
+                  <h2 className="page-title" style={{ fontSize: '1.25rem' }}>🔄 Background Job Queue Monitors</h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+                  {Object.entries(aiOpsData.queue?.details || {}).map(([qName, qDetails]) => (
+                    <div key={qName} className="stat-card" style={{ background: 'var(--bg-card)' }}>
+                      <h4 style={{ textTransform: 'capitalize', marginTop: 0, borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                        {qName.replace('_', ' ')} Queue
+                      </h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Pending Items:</span>
+                          <span style={{ fontWeight: 'bold' }}>{qDetails.pending || 0}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
+                          <span className={`badge badge-${qDetails.processing ? 'warning' : 'success'}`}>
+                            {qDetails.processing ? 'Processing' : 'Idle'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Accumulated Failures:</span>
+                          <span style={{ color: qDetails.failed > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
+                            {qDetails.failed || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 4. Quality SLO Indicators */}
+                <div className="page-header" style={{ marginTop: '32px' }}>
+                  <h2 className="page-title" style={{ fontSize: '1.25rem' }}>📊 Quality SLO Baselines & Runtime State</h2>
+                </div>
+                <div className="card-panel">
+                  <div className="data-table-container">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>SLO Target Metric</th>
+                          <th>Target Value</th>
+                          <th>Current Performance</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ fontWeight: 600 }}>System Availability Rate</td>
+                          <td>&gt; 99.0%</td>
+                          <td>{aiOpsData.available ? '100%' : '0%'}</td>
+                          <td><span className={`badge badge-${aiOpsData.available ? 'success' : 'danger'}`}>{aiOpsData.available ? 'PASSING' : 'FAILING'}</span></td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 600 }}>Success rate thresholds</td>
+                          <td>&gt; 90.0%</td>
+                          <td>{aiOpsData.metrics?.requests_total > 0 ? `${Math.round((aiOpsData.metrics.requests_success / aiOpsData.metrics.requests_total) * 100)}%` : '100%'}</td>
+                          <td><span className={`badge badge-success`}>PASSING</span></td>
+                        </tr>
+                        <tr>
+                          <td style={{ fontWeight: 600 }}>P95 Generation Latency</td>
+                          <td>&lt; 10s</td>
+                          <td>{aiOpsData.latency?.p95 ? `${(aiOpsData.latency.p95 / 1000).toFixed(2)}s` : '0s'}</td>
+                          <td><span className={`badge badge-${(aiOpsData.latency?.p95 || 0) < 10000 ? 'success' : 'warning'}`}>{(aiOpsData.latency?.p95 || 0) < 10000 ? 'PASSING' : 'WARNING'}</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* CONNECTION DETAIL TAB */}
         {activeTab === 'connection-detail' && (
           <div>
@@ -4129,2260 +4284,2260 @@ function App() {
                   )}
                 </div>
 
-            {/* RELEVANT OPPORTUNITIES */}
-        <div className="card-panel" style={{ marginTop: '24px', marginBottom: '24px' }}>
-          <h2 className="card-title" style={{ marginBottom: '16px' }}>Relevant Opportunities at {connectionDetail.company || 'target company'}</h2>
+                {/* RELEVANT OPPORTUNITIES */}
+                <div className="card-panel" style={{ marginTop: '24px', marginBottom: '24px' }}>
+                  <h2 className="card-title" style={{ marginBottom: '16px' }}>Relevant Opportunities at {connectionDetail.company || 'target company'}</h2>
 
-          {connectionDetail.referralOpportunities && connectionDetail.referralOpportunities.length > 0 ? (
-            <div className="activity-list">
-              {connectionDetail.referralOpportunities.map((opp) => (
-                <div className="activity-item" key={opp.jobId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '1.05rem' }}>{opp.jobTitle}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{connectionDetail.company}</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <span className="badge badge-success" style={{ fontSize: '0.9rem' }}>
-                      Referral Match: {opp.referralScore}%
-                    </span>
-                  </div>
+                  {connectionDetail.referralOpportunities && connectionDetail.referralOpportunities.length > 0 ? (
+                    <div className="activity-list">
+                      {connectionDetail.referralOpportunities.map((opp) => (
+                        <div className="activity-item" key={opp.jobId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '1.05rem' }}>{opp.jobTitle}</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{connectionDetail.company}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <span className="badge badge-success" style={{ fontSize: '0.9rem' }}>
+                              Referral Match: {opp.referralScore}%
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">No active tracked jobs found matching company {connectionDetail.company || 'Not Specified'}.</div>
+                  )}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">No active tracked jobs found matching company {connectionDetail.company || 'Not Specified'}.</div>
-          )}
-        </div>
 
-    </div>
-  )
-}
+              </div>
+            )
+            }
           </div >
         )}
 
       </main >
 
-  {/* ================= MODALS ================= */ }
+      {/* ================= MODALS ================= */}
 
-{/* CSV Import Modal */ }
-{
-  modal === 'csv' && (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="card-title">Import Connections CSV</h2>
-        <div className="form-group">
-          <label className="form-label">Choose CSV File</label>
-          <input
-            type="file"
-            accept=".csv"
-            className="form-input"
-            onChange={async (e) => {
-              const file = e.target.files[0];
-              if (file) {
+      {/* CSV Import Modal */}
+      {
+        modal === 'csv' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h2 className="card-title">Import Connections CSV</h2>
+              <div className="form-group">
+                <label className="form-label">Choose CSV File</label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  className="form-input"
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      try {
+                        const res = await api.importConnections(file);
+                        alert(`Successfully imported ${res.imported} connections! Duplicates found: ${res.duplicates}`);
+                        setModal(null);
+                        loadConnections();
+                      } catch (err) {
+                        alert(err.message);
+                      }
+                    }
+                  }}
+                />
+              </div>
+              <div className="modal-actions">
+                <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Resume File Upload Modal */}
+      {
+        modal === 'resume' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h2 className="card-title">Upload Resume File</h2>
+              <div className="form-group">
+                <label className="form-label">Select Document (PDF/DOCX)</label>
+                <input
+                  type="file"
+                  className="form-input"
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      try {
+                        await api.uploadResume(file);
+                        alert('Resume uploaded successfully!');
+                        setModal(null);
+                        loadResumes();
+                      } catch (err) {
+                        alert(err.message);
+                      }
+                    }
+                  }}
+                />
+              </div>
+              <div className="modal-actions">
+                <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Add/Edit Connection Modal */}
+      {
+        modal === 'connection' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h2 className="card-title">{editItem ? 'Edit Connection' : 'Add Connection'}</h2>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
                 try {
-                  const res = await api.importConnections(file);
-                  alert(`Successfully imported ${res.imported} connections! Duplicates found: ${res.duplicates}`);
+                  if (editItem) {
+                    await api.updateConnection(editItem.id, data);
+                    if (activeTab === 'connection-detail' && activeConnectionId === editItem.id) {
+                      loadConnectionDetail(editItem.id);
+                    }
+                  } else {
+                    await api.createConnection(data);
+                  }
                   setModal(null);
                   loadConnections();
                 } catch (err) {
                   alert(err.message);
                 }
-              }
-            }}
-          />
-        </div>
-        <div className="modal-actions">
-          <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-        </div>
-      </div>
-    </div>
-  )
-}
+              }}>
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <input type="text" name="name" className="form-input" required defaultValue={editItem?.name || ''} />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Company</label>
+                    <input type="text" name="company" className="form-input" defaultValue={editItem?.company || ''} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Job Title</label>
+                    <input type="text" name="title" className="form-input" defaultValue={editItem?.title || ''} />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Email</label>
+                    <input type="email" name="email" className="form-input" defaultValue={editItem?.email || ''} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Location</label>
+                    <input type="text" name="location" className="form-input" defaultValue={editItem?.location || ''} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Next Follow Up Date</label>
+                  <input type="date" name="nextFollowUpDate" className="form-input" defaultValue={editItem?.nextFollowUpDate || ''} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Headline (LinkedIn / Professional Tagline)</label>
+                  <input type="text" name="headline" className="form-input" defaultValue={editItem?.headline || ''} placeholder="e.g. Senior Machine Learning Engineer" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Profile Summary</label>
+                  <textarea name="profileSummary" className="form-input" rows="3" defaultValue={editItem?.profileSummary || ''} placeholder="Add a short professional bio or summary..." />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Skills (Comma-separated)</label>
+                    <input type="text" name="skills" className="form-input" defaultValue={editItem?.skills?.join(', ') || ''} placeholder="React, Node.js, Python" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Profile Links (Comma-separated URLs)</label>
+                    <input type="text" name="externalLinks" className="form-input" defaultValue={editItem?.externalLinks?.join(', ') || ''} placeholder="github.com/user, portfolio.com" />
+                  </div>
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Save Connection</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
 
-{/* Resume File Upload Modal */ }
-{
-  modal === 'resume' && (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="card-title">Upload Resume File</h2>
-        <div className="form-group">
-          <label className="form-label">Select Document (PDF/DOCX)</label>
-          <input
-            type="file"
-            className="form-input"
-            onChange={async (e) => {
-              const file = e.target.files[0];
-              if (file) {
+      {/* Add/Edit Job Modal */}
+      {
+        modal === 'job' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h2 className="card-title">{editItem ? 'Edit Job Posting' : 'Track New Job'}</h2>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
                 try {
-                  await api.uploadResume(file);
-                  alert('Resume uploaded successfully!');
+                  if (editItem) {
+                    await api.updateJob(editItem.id, data);
+                  } else {
+                    await api.createJob(data);
+                  }
                   setModal(null);
-                  loadResumes();
+                  loadJobs();
                 } catch (err) {
                   alert(err.message);
                 }
-              }
-            }}
-          />
-        </div>
-        <div className="modal-actions">
-          <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-{/* Add/Edit Connection Modal */ }
-{
-  modal === 'connection' && (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="card-title">{editItem ? 'Edit Connection' : 'Add Connection'}</h2>
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          const data = Object.fromEntries(formData.entries());
-          try {
-            if (editItem) {
-              await api.updateConnection(editItem.id, data);
-              if (activeTab === 'connection-detail' && activeConnectionId === editItem.id) {
-                loadConnectionDetail(editItem.id);
-              }
-            } else {
-              await api.createConnection(data);
-            }
-            setModal(null);
-            loadConnections();
-          } catch (err) {
-            alert(err.message);
-          }
-        }}>
-          <div className="form-group">
-            <label className="form-label">Full Name</label>
-            <input type="text" name="name" className="form-input" required defaultValue={editItem?.name || ''} />
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Company</label>
-              <input type="text" name="company" className="form-input" defaultValue={editItem?.company || ''} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Job Title</label>
-              <input type="text" name="title" className="form-input" defaultValue={editItem?.title || ''} />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input type="email" name="email" className="form-input" defaultValue={editItem?.email || ''} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Location</label>
-              <input type="text" name="location" className="form-input" defaultValue={editItem?.location || ''} />
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Next Follow Up Date</label>
-            <input type="date" name="nextFollowUpDate" className="form-input" defaultValue={editItem?.nextFollowUpDate || ''} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Headline (LinkedIn / Professional Tagline)</label>
-            <input type="text" name="headline" className="form-input" defaultValue={editItem?.headline || ''} placeholder="e.g. Senior Machine Learning Engineer" />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Profile Summary</label>
-            <textarea name="profileSummary" className="form-input" rows="3" defaultValue={editItem?.profileSummary || ''} placeholder="Add a short professional bio or summary..." />
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Skills (Comma-separated)</label>
-              <input type="text" name="skills" className="form-input" defaultValue={editItem?.skills?.join(', ') || ''} placeholder="React, Node.js, Python" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Profile Links (Comma-separated URLs)</label>
-              <input type="text" name="externalLinks" className="form-input" defaultValue={editItem?.externalLinks?.join(', ') || ''} placeholder="github.com/user, portfolio.com" />
-            </div>
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Save Connection</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-{/* Add/Edit Job Modal */ }
-{
-  modal === 'job' && (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="card-title">{editItem ? 'Edit Job Posting' : 'Track New Job'}</h2>
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          const data = Object.fromEntries(formData.entries());
-          try {
-            if (editItem) {
-              await api.updateJob(editItem.id, data);
-            } else {
-              await api.createJob(data);
-            }
-            setModal(null);
-            loadJobs();
-          } catch (err) {
-            alert(err.message);
-          }
-        }}>
-          <div className="form-group">
-            <label className="form-label">Job Title</label>
-            <input type="text" name="title" className="form-input" required defaultValue={editItem?.title || ''} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Company Name</label>
-            <input type="text" name="companyName" className="form-input" required defaultValue={editItem?.companyName || ''} />
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Location</label>
-              <input type="text" name="location" className="form-input" defaultValue={editItem?.location || ''} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Employment Type</label>
-              <input type="text" name="employmentType" className="form-input" placeholder="e.g. Full-time" defaultValue={editItem?.employmentType || ''} />
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Job URL</label>
-            <input type="url" name="url" className="form-input" defaultValue={editItem?.url || ''} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Job Description</label>
-            <textarea name="description" className="form-input" rows="3" defaultValue={editItem?.description || ''}></textarea>
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Track Job</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-{/* Review & Ingest Telegram Job Modal */ }
-{
-  reviewJob && (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '650px' }}>
-        <h2 className="card-title">Review &amp; Ingest Job</h2>
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          const data = Object.fromEntries(formData.entries());
-
-          // Map skills string to array
-          const skillsArray = data.skills
-            ? data.skills.split(',').map(s => s.trim()).filter(Boolean)
-            : [];
-
-          try {
-            await api.request(`/incoming-jobs/${reviewJob.id}/approve`, {
-              method: 'POST',
-              body: {
-                ...data,
-                skills: skillsArray
-              }
-            });
-            setReviewJob(null);
-            loadIncomingJobs();
-            loadJobs();
-          } catch (err) {
-            alert(err.message);
-          }
-        }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label className="form-label">Job Title</label>
-              <input type="text" name="title" className="form-input" required defaultValue={reviewJob.parsedData?.title || ''} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Company Name</label>
-              <input type="text" name="companyName" className="form-input" required defaultValue={reviewJob.parsedData?.companyName || ''} />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label className="form-label">Location</label>
-              <input type="text" name="location" className="form-input" defaultValue={reviewJob.parsedData?.location || ''} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Job URL / Application Link</label>
-              <input type="text" name="jobUrl" className="form-input" defaultValue={reviewJob.parsedData?.jobUrl || ''} />
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label className="form-label">Employment Type</label>
-              <select name="employmentType" className="form-input" defaultValue={reviewJob.parsedData?.employmentType || ''}>
-                <option value="">Select Option</option>
-                <option value="full-time">Full-time</option>
-                <option value="part-time">Part-time</option>
-                <option value="contract">Contract</option>
-                <option value="internship">Internship</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Remote Type</label>
-              <select name="remoteType" className="form-input" defaultValue={reviewJob.parsedData?.remoteType || ''}>
-                <option value="">Select Option</option>
-                <option value="remote">Remote</option>
-                <option value="hybrid">Hybrid</option>
-                <option value="onsite">On-site</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Experience Required</label>
-              <input type="text" name="experienceLevel" className="form-input" defaultValue={reviewJob.parsedData?.experience || ''} />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Skills (comma-separated)</label>
-            <input type="text" name="skills" className="form-input" defaultValue={reviewJob.parsedData?.skills?.join(', ') || ''} />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Job Description / Raw Text</label>
-            <textarea name="description" className="form-input" rows="5" defaultValue={reviewJob.rawText}></textarea>
-          </div>
-
-          <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={() => setReviewJob(null)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Approve &amp; Import</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-{/* Application Status Update Modal */ }
-{
-  modal === 'application' && (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="card-title">Update Application Pipeline</h2>
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          const data = Object.fromEntries(formData.entries());
-          try {
-            await api.updateApplicationStatus(editItem.id, data.status, data.notes);
-            setModal(null);
-            loadApplications();
-            loadDashboard();
-          } catch (err) {
-            alert(err.message);
-          }
-        }}>
-          <div className="form-group">
-            <label className="form-label">Current Pipeline Stage</label>
-            <select name="status" className="form-input" defaultValue={editItem?.status || 'saved'}>
-              <option value="saved">Saved</option>
-              <option value="applied">Applied</option>
-              <option value="screening">Screening</option>
-              <option value="interview">Interview</option>
-              <option value="offer">Offer</option>
-              <option value="rejected">Rejected</option>
-              <option value="withdrawn">Withdrawn</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Application Event Notes</label>
-            <textarea name="notes" className="form-input" rows="3" placeholder="Add status notes/logs..."></textarea>
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Update Status</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-{/* Log Outreach Modal */ }
-{
-  modal === 'outreach' && (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="card-title">Log Outreach for {editItem?.name}</h2>
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          try {
-            await api.createOutreach(
-              editItem.id,
-              formData.get('status'),
-              formData.get('notes'),
-              formData.get('contactDate'),
-              formData.get('followUpDate')
-            );
-            if (aiDraft?.id) {
-              await api.request(`/outreach/ai-drafts/${aiDraft.id}`, {
-                method: 'PATCH',
-                body: { draft: formData.get('notes') }
-              });
-              await api.request(`/outreach/ai-drafts/${aiDraft.id}/save`, {
-                method: 'POST'
-              });
-            }
-            setModal(null);
-            loadOutreach();
-            loadDashboard();
-          } catch (err) {
-            alert(err.message);
-          }
-        }}>
-          <div className="form-group">
-            <label className="form-label">Outreach Stage</label>
-            <select name="status" className="form-input" defaultValue="contacted">
-              <option value="not_contacted">Not Contacted</option>
-              <option value="researching">Researching</option>
-              <option value="contacted">Contacted</option>
-              <option value="replied">Replied</option>
-              <option value="conversation">Conversation</option>
-              <option value="referral_requested">Referral Requested</option>
-              <option value="referral_received">Referral Received</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Contact Date</label>
-              <input type="date" name="contactDate" className="form-input" defaultValue={new Date().toISOString().split('T')[0]} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Next Follow Up Date</label>
-              <input type="date" name="followUpDate" className="form-input" />
-            </div>
-          </div>
-
-          {/* AI OUTREACH ASSISTANT PANEL */}
-          <div className="card-panel" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '1.05rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
-              <span>🤖 AI Outreach Assistant</span>
-            </h3>
-
-            {aiError && (
-              <div className="alert alert-danger" style={{ marginBottom: '12px', padding: '10px 14px', borderRadius: '6px', fontSize: '0.9rem' }}>
-                {aiError}
-              </div>
-            )}
-
-            {!aiDraft && (
-              <div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Intent</label>
-                    <select
-                      className="form-input"
-                      value={aiIntent}
-                      onChange={(e) => setAiIntent(e.target.value)}
-                      style={{ padding: '6px 8px', fontSize: '0.85rem' }}
-                    >
-                      <option value="referral_request">Referral Request</option>
-                      <option value="guidance_request">Guidance Request</option>
-                      <option value="introduction">Introduction</option>
-                      <option value="networking">Networking</option>
-                      <option value="follow_up">Follow Up</option>
-                      <option value="thank_you">Thank You</option>
-                    </select>
+              }}>
+                <div className="form-group">
+                  <label className="form-label">Job Title</label>
+                  <input type="text" name="title" className="form-input" required defaultValue={editItem?.title || ''} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Company Name</label>
+                  <input type="text" name="companyName" className="form-input" required defaultValue={editItem?.companyName || ''} />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Location</label>
+                    <input type="text" name="location" className="form-input" defaultValue={editItem?.location || ''} />
                   </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Tone</label>
-                    <select
-                      className="form-input"
-                      value={aiTone}
-                      onChange={(e) => setAiTone(e.target.value)}
-                      style={{ padding: '6px 8px', fontSize: '0.85rem' }}
-                    >
-                      <option value="professional">Professional</option>
-                      <option value="friendly">Friendly</option>
-                      <option value="concise">Concise</option>
-                    </select>
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.8rem' }}>Length</label>
-                    <select
-                      className="form-input"
-                      value={aiLength}
-                      onChange={(e) => setAiLength(e.target.value)}
-                      style={{ padding: '6px 8px', fontSize: '0.85rem' }}
-                    >
-                      <option value="short">Short</option>
-                      <option value="medium">Medium</option>
-                    </select>
+                  <div className="form-group">
+                    <label className="form-label">Employment Type</label>
+                    <input type="text" name="employmentType" className="form-input" placeholder="e.g. Full-time" defaultValue={editItem?.employmentType || ''} />
                   </div>
                 </div>
-
-                {aiWarnings.length > 0 && (
-                  <div className="alert alert-warning" style={{ marginBottom: '12px', padding: '12px', borderRadius: '6px', fontSize: '0.85rem' }}>
-                    <strong style={{ display: 'block', marginBottom: '4px' }}>⚠ Outreach Warning:</strong>
-                    <ul style={{ margin: 0, paddingLeft: '16px' }}>
-                      {aiWarnings.map((w, idx) => (
-                        <li key={idx} style={{ marginBottom: '4px' }}>{w.message}</li>
-                      ))}
-                    </ul>
-                    <button
-                      type="button"
-                      className="btn btn-warning"
-                      style={{ marginTop: '8px', padding: '4px 10px', fontSize: '0.8rem', width: '100%' }}
-                      onClick={() => handleGenerateAiDraft(true)}
-                      disabled={aiLoading}
-                    >
-                      {aiLoading ? 'Generating...' : 'I Understand, Generate Anyway'}
-                    </button>
-                  </div>
-                )}
-
-                {aiWarnings.length === 0 && (
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ width: '100%', padding: '8px' }}
-                    onClick={() => handleGenerateAiDraft(false)}
-                    disabled={aiLoading}
-                  >
-                    {aiLoading ? 'Generating Draft...' : '✨ Generate AI Outreach Draft'}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {aiDraft && (
-              <div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                  <strong>Selected Intent:</strong> {aiIntent.replace('_', ' ')} &bull; <strong>Tone:</strong> {aiDraft.tone}
+                <div className="form-group">
+                  <label className="form-label">Job URL</label>
+                  <input type="url" name="url" className="form-input" defaultValue={editItem?.url || ''} />
                 </div>
-                
-                {aiDraft.personalizationPoints && aiDraft.personalizationPoints.length > 0 && (
-                  <div style={{ marginBottom: '12px' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Personalization factors applied:</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {aiDraft.personalizationPoints.map((p, idx) => (
-                        <span key={idx} className="badge badge-success" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>
-                          ✓ {p}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ flex: 1, padding: '6px' }}
-                    onClick={() => handleGenerateAiDraft(true)}
-                    disabled={aiLoading}
-                  >
-                    {aiLoading ? 'Regenerating...' : '🔄 Regenerate'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    style={{ flex: 1, padding: '6px', color: 'var(--danger)' }}
-                    onClick={handleDiscardDraft}
-                  >
-                    Discard Draft
-                  </button>
+                <div className="form-group">
+                  <label className="form-label">Job Description</label>
+                  <textarea name="description" className="form-input" rows="3" defaultValue={editItem?.description || ''}></textarea>
                 </div>
-              </div>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Interaction Log / Message Notes</label>
-            <textarea name="notes" className="form-input" rows="3" placeholder="Message content goes here..."></textarea>
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Log Outreach</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-{/* Update Outreach Modal */ }
-{
-  modal === 'outreach_update' && (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2 className="card-title">Update Outreach Logs</h2>
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          try {
-            await api.createOutreachEvent(
-              editItem.id,
-              formData.get('status'),
-              formData.get('notes')
-            );
-            setModal(null);
-            loadOutreach();
-            loadDashboard();
-          } catch (err) {
-            alert(err.message);
-          }
-        }}>
-          <div className="form-group">
-            <label className="form-label">Outreach Stage</label>
-            <select name="status" className="form-input" defaultValue={editItem?.status}>
-              <option value="not_contacted">Not Contacted</option>
-              <option value="researching">Researching</option>
-              <option value="contacted">Contacted</option>
-              <option value="replied">Replied</option>
-              <option value="conversation">Conversation</option>
-              <option value="referral_requested">Referral Requested</option>
-              <option value="referral_received">Referral Received</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Interaction Log / Message Notes</label>
-            <textarea name="notes" className="form-input" rows="3"></textarea>
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Update Outreach</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-{/* Job Detail Intelligence Modal */ }
-{
-  modal === 'job_detail' && (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '750px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
-        <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span>Job Workspace: {editItem?.title}</span>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span className="badge badge-info">{editItem?.status}</span>
-            <button
-              className="btn btn-secondary"
-              style={{ padding: '4px 8px', fontSize: '0.8rem', cursor: 'pointer', border: 'none', background: 'rgba(255,255,255,0.1)' }}
-              onClick={() => setModal(null)}
-            >
-              ✕
-            </button>
-          </div>
-        </h2>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            {editItem?.companyName} &bull; {editItem?.location}
-          </div>
-          {(editItem?.url || editItem?.sourceUrl) && (
-            <a
-              href={editItem.url || editItem.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary"
-              style={{ padding: '6px 12px', fontSize: '0.85rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-            >
-              Apply / Visit Job Posting
-            </a>
-          )}
-        </div>
-
-        {/* Navigation tabs inside the Job details modal */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--bg-secondary)', marginBottom: '16px', paddingBottom: '8px' }}>
-          <button
-            className={`btn ${jobNetworkSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-            onClick={() => setJobNetworkSubTab('overview')}
-          >
-            Overview & Match
-          </button>
-          <button
-            className={`btn ${jobNetworkSubTab === 'application' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-            onClick={() => setJobNetworkSubTab('application')}
-          >
-            Application Tracker
-          </button>
-          <button
-            className={`btn ${jobNetworkSubTab === 'network' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-            onClick={() => setJobNetworkSubTab('network')}
-          >
-            Referral Network Workspace
-          </button>
-          <button
-            className={`btn ${jobNetworkSubTab === 'ai' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-            onClick={() => { setJobNetworkSubTab('ai'); setEditingAiEnrichment(false); }}
-          >
-            AI Job Intelligence
-          </button>
-          <button
-            className={`btn ${jobNetworkSubTab === 'resume_analysis' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-            onClick={() => { setJobNetworkSubTab('resume_analysis'); loadResumeFitAnalysis(editItem.id); }}
-          >
-            AI Resume Fit
-          </button>
-        </div>
-
-        {/* TAB 1: OVERVIEW & MATCH */}
-        {jobNetworkSubTab === 'overview' && (
-          <div>
-            <div className="metrics-grid" style={{ marginBottom: '24px' }}>
-              <div className="metric-card">
-                <div className="metric-label">Match Score</div>
-                <div className="metric-value" style={{ color: 'var(--success)' }}>{editItem?.matchScore}%</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-label">Opportunity Score</div>
-                <div className="metric-value" style={{ color: 'var(--primary)' }}>{editItem?.opportunityScore}%</div>
-              </div>
+                <div className="modal-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Track Job</button>
+                </div>
+              </form>
             </div>
-
-            <div className="form-group">
-              <label className="form-label">Action Recommendation</label>
-              <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '16px', borderRadius: '8px', color: '#fff', fontWeight: 600 }}>
-                {editItem?.recommendedAction}
-              </div>
-            </div>
-
-            <div className="form-row" style={{ gap: '24px' }}>
-              <div className="form-group">
-                <label className="form-label">Matched Skills</label>
-                <div className="tags-list">
-                  {editItem?.matchedSkills?.length === 0 ? (
-                    <span style={{ color: 'var(--text-muted)' }}>None matched</span>
-                  ) : (
-                    editItem?.matchedSkills?.map(s => <span key={s} className="badge badge-success">{s}</span>)
-                  )}
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Missing Skills</label>
-                <div className="tags-list">
-                  {editItem?.missingSkills?.length === 0 ? (
-                    <span style={{ color: 'var(--text-muted)' }}>None missing</span>
-                  ) : (
-                    editItem?.missingSkills?.map(s => <span key={s} className="badge badge-warning">{s}</span>)
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {editItem?.description && (
-              <div className="form-group" style={{ marginTop: '16px' }}>
-                <label className="form-label">Description</label>
-                <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', maxHeight: '180px', overflowY: 'auto' }}>
-                  {editItem.description}
-                </div>
-              </div>
-            )}
           </div>
-        )}
+        )
+      }
 
-        {/* TAB: AI JOB INTELLIGENCE */}
-        {jobNetworkSubTab === 'ai' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>AI Job Understanding &amp; Enrichment</h3>
-              {editItem?.aiEnrichment && (
-                <button
-                  className="btn btn-secondary"
-                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                  onClick={async () => {
-                    if (confirm('Re-run AI extraction? This takes a few seconds.')) {
-                      try {
-                        const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
-                        setEditItem(data.data);
-                        alert('AI enrichment re-run completed!');
-                      } catch (e) {
-                        alert(e.message);
-                      }
+      {/* Review & Ingest Telegram Job Modal */}
+      {
+        reviewJob && (
+          <div className="modal-overlay">
+            <div className="modal-content" style={{ maxWidth: '650px' }}>
+              <h2 className="card-title">Review &amp; Ingest Job</h2>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+
+                // Map skills string to array
+                const skillsArray = data.skills
+                  ? data.skills.split(',').map(s => s.trim()).filter(Boolean)
+                  : [];
+
+                try {
+                  await api.request(`/incoming-jobs/${reviewJob.id}/approve`, {
+                    method: 'POST',
+                    body: {
+                      ...data,
+                      skills: skillsArray
                     }
-                  }}
-                >
-                  Force Re-Enrich Job
-                </button>
-              )}
-            </div>
-
-            {!editItem?.aiEnrichment ? (
-              <div className="empty-state" style={{ padding: '24px', textAlign: 'center' }}>
-                <p>AI Enrichment has not run or is disabled.</p>
-                <button
-                  className="btn btn-primary"
-                  onClick={async () => {
-                    try {
-                      const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
-                      setEditItem(data.data);
-                      alert('AI Enrichment initiated!');
-                    } catch (e) {
-                      alert(e.message);
-                    }
-                  }}
-                >
-                  Run AI Enrichment Now
-                </button>
-              </div>
-            ) : editItem.aiEnrichment.status === 'pending' || editItem.aiEnrichment.status === 'processing' ? (
-              <div className="empty-state" style={{ padding: '24px', textAlign: 'center' }}>
-                <p>AI Ingestion Monitor: Enrichment status is <strong>{editItem.aiEnrichment.status}</strong>...</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Refreshing in a few seconds.</p>
-                <button
-                  className="btn btn-secondary"
-                  onClick={async () => {
-                    const data = await api.request(`/jobs/${editItem.id}`);
-                    setEditItem(data.data);
-                  }}
-                >
-                  Refresh Status
-                </button>
-              </div>
-            ) : editItem.aiEnrichment.status === 'failed' ? (
-              <div className="empty-state" style={{ padding: '24px', border: '1px solid var(--danger)', background: 'rgba(239, 68, 68, 0.05)' }}>
-                <p style={{ color: 'var(--danger)', fontWeight: 600 }}>⚠️ AI Enrichment Failed</p>
-                <p style={{ fontSize: '0.85rem' }}>Error Code: <code>{editItem.aiEnrichment.errorCode}</code></p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{editItem.aiEnrichment.rawResponse}</p>
-                <button
-                  className="btn btn-primary"
-                  style={{ marginTop: '12px' }}
-                  onClick={async () => {
-                    try {
-                      const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
-                      setEditItem(data.data);
-                    } catch (e) {
-                      alert(e.message);
-                    }
-                  }}
-                >
-                  Retry Enrichment
-                </button>
-              </div>
-            ) : (
-              <div>
-                {/* Display Mode or Edit Mode */}
-                {!editingAiEnrichment ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-                    {/* Header Status Bar */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                      padding: '12px 16px',
-                      borderRadius: '8px',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{
-                          display: 'inline-block',
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: 'var(--success)',
-                          boxShadow: '0 0 8px var(--success)'
-                        }}></span>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Enrichment Complete</span>
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        Model: <code style={{ color: 'var(--primary)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{editItem.aiEnrichment.model}</code>
-                        <span style={{ margin: '0 8px' }}>&bull;</span>
-                        Latency: <strong style={{ color: '#fff' }}>{editItem.aiEnrichment.latencyMs}ms</strong>
-                      </div>
-                    </div>
-
-                    {/* 2x2 Info Matrix Cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-
-                      {/* Classification Card */}
-                      <div style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        padding: '16px',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '12px'
-                      }}>
-                        <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Job Classification</h4>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                          <div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Role Category</div>
-                            <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>
-                              {editItem.aiEnrichment.userCorrectedRoleCategory || editItem.aiEnrichment.roleCategory || 'N/A'}
-                              {editItem.aiEnrichment.userCorrectedRoleCategory && (
-                                <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Seniority</div>
-                            <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
-                              {editItem.aiEnrichment.userCorrectedSeniority || editItem.aiEnrichment.seniority || 'N/A'}
-                              {editItem.aiEnrichment.userCorrectedSeniority && (
-                                <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Work Type Card */}
-                      <div style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        padding: '16px',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '12px'
-                      }}>
-                        <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Position Parameters</h4>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                          <div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remote setup</div>
-                            <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
-                              {editItem.aiEnrichment.userCorrectedRemoteType || editItem.aiEnrichment.remoteType || 'N/A'}
-                              {editItem.aiEnrichment.userCorrectedRemoteType && (
-                                <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
-                              )}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Employment Type</div>
-                            <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
-                              {editItem.aiEnrichment.userCorrectedEmploymentType || editItem.aiEnrichment.employmentType || 'N/A'}
-                              {editItem.aiEnrichment.userCorrectedEmploymentType && (
-                                <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Experience and Domains */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px' }}>
-                      <div style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        padding: '16px',
-                        borderRadius: '10px'
-                      }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Required Experience</div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)' }}>
-                          {(editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears) !== null ? (
-                            `${editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears} to ${editItem.aiEnrichment.userCorrectedExperienceMaxYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMaxYears : (editItem.aiEnrichment.experienceMaxYears || 'unspecified')} yrs`
-                          ) : 'N/A'}
-                        </div>
-                      </div>
-
-                      <div style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        padding: '16px',
-                        borderRadius: '10px'
-                      }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Target Domains</div>
-                        <div className="tags-list">
-                          {(editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).length === 0 ? (
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None identified</span>
-                          ) : (
-                            (editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).map(d => (
-                              <span key={d} className="badge badge-info" style={{ textTransform: 'capitalize' }}>{d}</span>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Skills breakdown */}
-                    <div style={{
-                      background: 'var(--bg-secondary)',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                      padding: '16px',
-                      borderRadius: '10px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '16px'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Required Technical Skills</div>
-                        <div className="tags-list">
-                          {(editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).length === 0 ? (
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None extracted</span>
-                          ) : (
-                            (editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).map(s => (
-                              <span key={s} className="badge badge-success" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>{s}</span>
-                            ))
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Preferred / Desired Skills</div>
-                        <div className="tags-list">
-                          {(editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).length === 0 ? (
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None extracted</span>
-                          ) : (
-                            (editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).map(s => (
-                              <span key={s} className="badge badge-secondary" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>{s}</span>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* AI Summary Block */}
-                    <div style={{
-                      borderLeft: '4px solid var(--primary)',
-                      background: 'rgba(255,255,255,0.02)',
-                      padding: '16px',
-                      borderRadius: '0 8px 8px 0'
-                    }}>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Role Intel Summary</div>
-                      <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                        "{editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || 'No summary available.'}"
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--bg-secondary)', paddingTop: '16px' }}>
-                      <button className="btn btn-secondary" onClick={() => setEditingAiEnrichment(true)}>
-                        Correct AI Details
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.target);
-                    const data = Object.fromEntries(formData.entries());
-
-                    const payload = {
-                      roleCategory: data.roleCategory,
-                      seniority: data.seniority,
-                      remoteType: data.remoteType,
-                      employmentType: data.employmentType,
-                      experienceMinYears: data.experienceMinYears ? parseInt(data.experienceMinYears) : null,
-                      experienceMaxYears: data.experienceMaxYears ? parseInt(data.experienceMaxYears) : null,
-                      requiredSkills: data.requiredSkills ? data.requiredSkills.split(',').map(s => s.trim()).filter(Boolean) : [],
-                      preferredSkills: data.preferredSkills ? data.preferredSkills.split(',').map(s => s.trim()).filter(Boolean) : [],
-                      domain: data.domain ? data.domain.split(',').map(s => s.trim()).filter(Boolean) : [],
-                      summary: data.summary
-                    };
-
-                    try {
-                      const refreshed = await api.request(`/jobs/${editItem.id}/ai-corrections`, {
-                        method: 'PUT',
-                        body: payload
-                      });
-                      setEditItem(refreshed.data);
-                      setEditingAiEnrichment(false);
-                      loadJobs();
-                    } catch (err) {
-                      alert(err.message);
-                    }
-                  }}>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">Role Category</label>
-                        <input type="text" name="roleCategory" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedRoleCategory || editItem.aiEnrichment.roleCategory || ''} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Seniority</label>
-                        <input type="text" name="seniority" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedSeniority || editItem.aiEnrichment.seniority || ''} />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">Remote Type</label>
-                        <select name="remoteType" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedRemoteType || editItem.aiEnrichment.remoteType || ''}>
-                          <option value="">Choose remote preference...</option>
-                          <option value="remote">Remote</option>
-                          <option value="hybrid">Hybrid</option>
-                          <option value="onsite">Onsite</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Employment Type</label>
-                        <select name="employmentType" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedEmploymentType || editItem.aiEnrichment.employmentType || ''}>
-                          <option value="">Choose employment...</option>
-                          <option value="full-time">Full-time</option>
-                          <option value="part-time">Part-time</option>
-                          <option value="contract">Contract</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">Required Skills (comma separated)</label>
-                        <input type="text" name="requiredSkills" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).join(', ')} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Preferred Skills (comma separated)</label>
-                        <input type="text" name="preferredSkills" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).join(', ')} />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">Min Experience (Years)</label>
-                        <input type="number" name="experienceMinYears" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears || ''} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Max Experience (Years)</label>
-                        <input type="number" name="experienceMaxYears" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedExperienceMaxYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMaxYears : editItem.aiEnrichment.experienceMaxYears || ''} />
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Domains / Industry Keywords (comma separated)</label>
-                      <input type="text" name="domain" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).join(', ')} />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Summary</label>
-                      <textarea name="summary" className="form-input" rows="3" defaultValue={editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || ''}></textarea>
-                    </div>
-
-                    <div className="modal-actions">
-                      <button type="button" className="btn btn-secondary" onClick={() => setEditingAiEnrichment(false)}>Cancel</button>
-                      <button type="submit" className="btn btn-primary">Save Corrections</button>
-                    </div>
-                  </form>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-
-        {jobNetworkSubTab === 'resume_analysis' && (
-          <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '16px' }}>AI Resume ↔ Job Fit Analysis</h3>
-
-            {loadingResumeAnalysis ? (
-              <div className="empty-state" style={{ padding: '32px', textAlign: 'center' }}>
-                <p>Generating alignment analysis...</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-                {/* Compatibility Rating Card */}
-                <div style={{
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                  padding: '20px',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Compatibility Assessment</div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 800, textTransform: 'capitalize', color: resumeAnalysis?.compatibilityAssessment === 'high' ? 'var(--success)' : resumeAnalysis?.compatibilityAssessment === 'medium' ? '#f59e0b' : 'var(--danger)' }}>
-                      {resumeAnalysis?.compatibilityAssessment || 'unknown'}
-                    </div>
-                  </div>
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => loadResumeFitAnalysis(editItem.id)}
-                  >
-                    Re-Analyze Fit
-                  </button>
-                </div>
-
-                {/* Summary Bio */}
-                <div style={{ borderLeft: '4px solid var(--primary)', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '0 8px 8px 0' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Analysis Summary</div>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-                    {resumeAnalysis?.analysisSummary}
-                  </p>
-                </div>
-
-                {/* Matched vs Missing Skills */}
+                  });
+                  setReviewJob(null);
+                  loadIncomingJobs();
+                  loadJobs();
+                } catch (err) {
+                  alert(err.message);
+                }
+              }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Matched Skills</div>
-                    <div className="tags-list">
-                      {(resumeAnalysis?.matchedSkills || []).length === 0 ? (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No matching skills detected</span>
-                      ) : (
-                        (resumeAnalysis.matchedSkills || []).map(s => (
-                          <span key={s} className="badge badge-success">{s}</span>
-                        ))
-                      )}
-                    </div>
+                  <div className="form-group">
+                    <label className="form-label">Job Title</label>
+                    <input type="text" name="title" className="form-input" required defaultValue={reviewJob.parsedData?.title || ''} />
                   </div>
-
-                  <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Potential Gaps / Missing Skills</div>
-                    <div className="tags-list">
-                      {(resumeAnalysis?.missingSkills || []).length === 0 ? (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No gaps detected</span>
-                      ) : (
-                        (resumeAnalysis.missingSkills || []).map(s => (
-                          <span key={s} className="badge badge-danger">{s}</span>
-                        ))
-                      )}
-                    </div>
+                  <div className="form-group">
+                    <label className="form-label">Company Name</label>
+                    <input type="text" name="companyName" className="form-input" required defaultValue={reviewJob.parsedData?.companyName || ''} />
                   </div>
                 </div>
 
-                {/* Strengths List */}
-                <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Core Alignment Strengths</div>
-                  {(resumeAnalysis?.strengths || []).length === 0 ? (
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No key strengths highlighted yet.</div>
-                  ) : (
-                    <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                      {(resumeAnalysis.strengths || []).map((str, idx) => (
-                        <li key={idx} style={{ marginBottom: '4px' }}>{str}</li>
-                      ))}
-                    </ul>
-                  )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Location</label>
+                    <input type="text" name="location" className="form-input" defaultValue={reviewJob.parsedData?.location || ''} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Job URL / Application Link</label>
+                    <input type="text" name="jobUrl" className="form-input" defaultValue={reviewJob.parsedData?.jobUrl || ''} />
+                  </div>
                 </div>
 
-                {/* Gaps List */}
-                <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Areas of Improvement / Growth</div>
-                  {(resumeAnalysis?.potentialGaps || []).length === 0 ? (
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No potential gaps highlighted.</div>
-                  ) : (
-                    <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                      {(resumeAnalysis.potentialGaps || []).map((gap, idx) => (
-                        <li key={idx} style={{ marginBottom: '4px' }}>{gap}</li>
-                      ))}
-                    </ul>
-                  )}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Employment Type</label>
+                    <select name="employmentType" className="form-input" defaultValue={reviewJob.parsedData?.employmentType || ''}>
+                      <option value="">Select Option</option>
+                      <option value="full-time">Full-time</option>
+                      <option value="part-time">Part-time</option>
+                      <option value="contract">Contract</option>
+                      <option value="internship">Internship</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Remote Type</label>
+                    <select name="remoteType" className="form-input" defaultValue={reviewJob.parsedData?.remoteType || ''}>
+                      <option value="">Select Option</option>
+                      <option value="remote">Remote</option>
+                      <option value="hybrid">Hybrid</option>
+                      <option value="onsite">On-site</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Experience Required</label>
+                    <input type="text" name="experienceLevel" className="form-input" defaultValue={reviewJob.parsedData?.experience || ''} />
+                  </div>
                 </div>
 
-              </div>
-            )}
+                <div className="form-group">
+                  <label className="form-label">Skills (comma-separated)</label>
+                  <input type="text" name="skills" className="form-input" defaultValue={reviewJob.parsedData?.skills?.join(', ') || ''} />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Job Description / Raw Text</label>
+                  <textarea name="description" className="form-input" rows="5" defaultValue={reviewJob.rawText}></textarea>
+                </div>
+
+                <div className="modal-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => setReviewJob(null)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Approve &amp; Import</button>
+                </div>
+              </form>
+            </div>
           </div>
-        )}
+        )
+      }
 
-        {/* TAB 2: APPLICATION LIFE CYCLE TRACKER */}
-        {jobNetworkSubTab === 'application' && (
-          <div>
-            {!editItem?.application ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Start Tracking Application</h3>
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.target);
-                  const data = Object.fromEntries(formData.entries());
-                  try {
-                    await api.createApplication(editItem.id, data.status, {
-                      resumeId: data.resumeId || null,
-                      coverLetter: data.coverLetter || '',
-                      referralConnectionId: data.referralConnectionId || null,
-                      notes: data.notes || '',
-                      nextFollowUpDate: data.nextFollowUpDate || null
+      {/* Application Status Update Modal */}
+      {
+        modal === 'application' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h2 className="card-title">Update Application Pipeline</h2>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                try {
+                  await api.updateApplicationStatus(editItem.id, data.status, data.notes);
+                  setModal(null);
+                  loadApplications();
+                  loadDashboard();
+                } catch (err) {
+                  alert(err.message);
+                }
+              }}>
+                <div className="form-group">
+                  <label className="form-label">Current Pipeline Stage</label>
+                  <select name="status" className="form-input" defaultValue={editItem?.status || 'saved'}>
+                    <option value="saved">Saved</option>
+                    <option value="applied">Applied</option>
+                    <option value="screening">Screening</option>
+                    <option value="interview">Interview</option>
+                    <option value="offer">Offer</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="withdrawn">Withdrawn</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Application Event Notes</label>
+                  <textarea name="notes" className="form-input" rows="3" placeholder="Add status notes/logs..."></textarea>
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Update Status</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Log Outreach Modal */}
+      {
+        modal === 'outreach' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h2 className="card-title">Log Outreach for {editItem?.name}</h2>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                try {
+                  await api.createOutreach(
+                    editItem.id,
+                    formData.get('status'),
+                    formData.get('notes'),
+                    formData.get('contactDate'),
+                    formData.get('followUpDate')
+                  );
+                  if (aiDraft?.id) {
+                    await api.request(`/outreach/ai-drafts/${aiDraft.id}`, {
+                      method: 'PATCH',
+                      body: { draft: formData.get('notes') }
                     });
-                    const updated = await api.request(`/jobs/${editItem.id}`);
-                    setEditItem(updated.data);
-                    loadJobs();
-                    alert('Application tracker initialized!');
-                  } catch (err) {
-                    alert(err.message);
+                    await api.request(`/outreach/ai-drafts/${aiDraft.id}/save`, {
+                      method: 'POST'
+                    });
                   }
-                }}>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Status</label>
-                      <select name="status" className="form-input" defaultValue="saved">
-                        <option value="saved">Saved</option>
-                        <option value="applying">Applying</option>
-                        <option value="applied">Applied</option>
-                        <option value="recruiter_contact">Recruiter Contact</option>
-                        <option value="screening">Screening</option>
-                        <option value="interview">Interview</option>
-                        <option value="offer">Offer</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="withdrawn">Withdrawn</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Resume Used</label>
-                      <select name="resumeId" className="form-input">
-                        <option value="">No Resume Linked</option>
-                        {resumes.map(r => <option key={r.id} value={r.id}>{r.fileName}</option>)}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label className="form-label">Referral Connection</label>
-                      <select name="referralConnectionId" className="form-input">
-                        <option value="">No Referral</option>
-                        {connections.filter(c => c.company?.toLowerCase().includes(editItem.companyName?.toLowerCase())).map(c => (
-                          <option key={c.id} value={c.id}>{c.name} ({c.title})</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Next Follow Up Date</label>
-                      <input type="date" name="nextFollowUpDate" className="form-input" />
-                    </div>
-                  </div>
-
+                  setModal(null);
+                  loadOutreach();
+                  loadDashboard();
+                } catch (err) {
+                  alert(err.message);
+                }
+              }}>
+                <div className="form-group">
+                  <label className="form-label">Outreach Stage</label>
+                  <select name="status" className="form-input" defaultValue="contacted">
+                    <option value="not_contacted">Not Contacted</option>
+                    <option value="researching">Researching</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="replied">Replied</option>
+                    <option value="conversation">Conversation</option>
+                    <option value="referral_requested">Referral Requested</option>
+                    <option value="referral_received">Referral Received</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Cover Letter</label>
-                    <textarea name="coverLetter" className="form-input" rows="3" placeholder="Paste cover letter used..."></textarea>
+                    <label className="form-label">Contact Date</label>
+                    <input type="date" name="contactDate" className="form-input" defaultValue={new Date().toISOString().split('T')[0]} />
                   </div>
-
                   <div className="form-group">
-                    <label className="form-label">Initial Notes</label>
-                    <textarea name="notes" className="form-input" rows="3" placeholder="Initial thoughts, referral requests, etc..."></textarea>
+                    <label className="form-label">Next Follow Up Date</label>
+                    <input type="date" name="followUpDate" className="form-input" />
                   </div>
-
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Initialize Application</button>
-                </form>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
-                {/* Left Column: Update Form */}
-                <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Application Details</h3>
-                  <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.target);
-                    const data = Object.fromEntries(formData.entries());
-                    try {
-                      await api.updateApplication(editItem.application.id, {
-                        status: data.status,
-                        resumeId: data.resumeId || null,
-                        coverLetter: data.coverLetter || '',
-                        referralConnectionId: data.referralConnectionId || null,
-                        notes: data.notes || '',
-                        nextFollowUpDate: data.nextFollowUpDate || null
-                      });
-                      const updated = await api.request(`/jobs/${editItem.id}`);
-                      setEditItem(updated.data);
-                      loadJobs();
-                      alert('Application details updated!');
-                    } catch (err) {
-                      alert(err.message);
-                    }
-                  }}>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">Status</label>
-                        <select name="status" className="form-input" defaultValue={editItem.application.status}>
-                          <option value="saved">Saved</option>
-                          <option value="applying">Applying</option>
-                          <option value="applied">Applied</option>
-                          <option value="recruiter_contact">Recruiter Contact</option>
-                          <option value="screening">Screening</option>
-                          <option value="interview">Interview</option>
-                          <option value="offer">Offer</option>
-                          <option value="accepted">Accepted</option>
-                          <option value="rejected">Rejected</option>
-                          <option value="withdrawn">Withdrawn</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Resume Used</label>
-                        <select name="resumeId" className="form-input" defaultValue={editItem.application.resumeId || ''}>
-                          <option value="">No Resume Linked</option>
-                          {resumes.map(r => <option key={r.id} value={r.id}>{r.fileName}</option>)}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label">Referral Connection</label>
-                        <select name="referralConnectionId" className="form-input" defaultValue={editItem.application.referralConnectionId || ''}>
-                          <option value="">No Referral</option>
-                          {connections.filter(c => c.company?.toLowerCase().includes(editItem.companyName?.toLowerCase())).map(c => (
-                            <option key={c.id} value={c.id}>{c.name} ({c.title})</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">Next Follow Up Date</label>
-                        <input type="date" name="nextFollowUpDate" className="form-input" defaultValue={editItem.application.nextFollowUpDate || ''} />
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Cover Letter</label>
-                      <textarea name="coverLetter" className="form-input" rows="3" defaultValue={editItem.application.coverLetter || ''}></textarea>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Notes</label>
-                      <textarea name="notes" className="form-input" rows="3" defaultValue={editItem.application.notes || ''}></textarea>
-                    </div>
-
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Save Updates</button>
-                  </form>
                 </div>
 
-                {/* Right Column: Timeline & Add Event */}
-                <div style={{ borderLeft: '1px solid var(--bg-secondary)', paddingLeft: '24px' }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Application Timeline</h3>
+                {/* AI OUTREACH ASSISTANT PANEL */}
+                <div className="card-panel" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '1.05rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
+                    <span>  AI Outreach Assistant</span>
+                  </h3>
 
-                  {/* Visual Timeline */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '180px', overflowY: 'auto', marginBottom: '24px', paddingRight: '8px' }}>
-                    {(!editItem.application.events || editItem.application.events.length === 0) ? (
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No timeline events recorded.</div>
-                    ) : (
-                      editItem.application.events.map((ev, index) => (
-                        <div key={ev.id || index} style={{ display: 'flex', gap: '12px', position: 'relative' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)', marginTop: '4px' }}></div>
-                            {index < editItem.application.events.length - 1 && (
-                              <div style={{ width: '2px', flexGrow: 1, background: 'var(--bg-secondary)', margin: '4px 0' }}></div>
-                            )}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              {new Date(ev.occurredAt).toLocaleDateString()}
-                            </div>
-                            <div style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'capitalize' }}>
-                              {ev.eventType.replace('_', ' ')}: <span className="badge badge-info">{ev.status}</span>
-                            </div>
-                            {ev.notes && (
-                              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
-                                "{ev.notes}"
-                              </div>
-                            )}
-                          </div>
+                  {aiError && (
+                    <div className="alert alert-danger" style={{ marginBottom: '12px', padding: '10px 14px', borderRadius: '6px', fontSize: '0.9rem' }}>
+                      {aiError}
+                    </div>
+                  )}
+
+                  {!aiDraft && (
+                    <div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.8rem' }}>Intent</label>
+                          <select
+                            className="form-input"
+                            value={aiIntent}
+                            onChange={(e) => setAiIntent(e.target.value)}
+                            style={{ padding: '6px 8px', fontSize: '0.85rem' }}
+                          >
+                            <option value="referral_request">Referral Request</option>
+                            <option value="guidance_request">Guidance Request</option>
+                            <option value="introduction">Introduction</option>
+                            <option value="networking">Networking</option>
+                            <option value="follow_up">Follow Up</option>
+                            <option value="thank_you">Thank You</option>
+                          </select>
                         </div>
-                      ))
-                    )}
-                  </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.8rem' }}>Tone</label>
+                          <select
+                            className="form-input"
+                            value={aiTone}
+                            onChange={(e) => setAiTone(e.target.value)}
+                            style={{ padding: '6px 8px', fontSize: '0.85rem' }}
+                          >
+                            <option value="professional">Professional</option>
+                            <option value="friendly">Friendly</option>
+                            <option value="concise">Concise</option>
+                          </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label" style={{ fontSize: '0.8rem' }}>Length</label>
+                          <select
+                            className="form-input"
+                            value={aiLength}
+                            onChange={(e) => setAiLength(e.target.value)}
+                            style={{ padding: '6px 8px', fontSize: '0.85rem' }}
+                          >
+                            <option value="short">Short</option>
+                            <option value="medium">Medium</option>
+                          </select>
+                        </div>
+                      </div>
 
-                  {/* Add Custom Event Form */}
-                  <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.target);
-                    const data = Object.fromEntries(formData.entries());
-                    try {
-                      await api.createApplicationEvent(editItem.application.id, {
-                        eventType: data.eventType,
-                        status: data.status,
-                        notes: data.notes
-                      });
-                      const updated = await api.request(`/jobs/${editItem.id}`);
-                      setEditItem(updated.data);
-                      e.target.reset();
-                      alert('Timeline event added!');
-                    } catch (err) {
-                      alert(err.message);
-                    }
-                  }} style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px' }}>
-                    <h4 style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>Add Timeline Event</h4>
-                    <div className="form-group" style={{ marginBottom: '8px' }}>
-                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Event Type</label>
-                      <select name="eventType" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} defaultValue="interview_scheduled">
-                        <option value="application_submitted">Application Submitted</option>
-                        <option value="recruiter_contacted">Recruiter Contacted</option>
-                        <option value="referral_requested">Referral Requested</option>
-                        <option value="referral_received">Referral Received</option>
-                        <option value="interview_scheduled">Interview Scheduled</option>
-                        <option value="interview_completed">Interview Completed</option>
-                        <option value="offer_received">Offer Received</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="withdrawn">Withdrawn</option>
-                        <option value="follow_up">Follow Up</option>
-                        <option value="note">Note / Event</option>
-                      </select>
+                      {aiWarnings.length > 0 && (
+                        <div className="alert alert-warning" style={{ marginBottom: '12px', padding: '12px', borderRadius: '6px', fontSize: '0.85rem' }}>
+                          <strong style={{ display: 'block', marginBottom: '4px' }}>⚠ Outreach Warning:</strong>
+                          <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                            {aiWarnings.map((w, idx) => (
+                              <li key={idx} style={{ marginBottom: '4px' }}>{w.message}</li>
+                            ))}
+                          </ul>
+                          <button
+                            type="button"
+                            className="btn btn-warning"
+                            style={{ marginTop: '8px', padding: '4px 10px', fontSize: '0.8rem', width: '100%' }}
+                            onClick={() => handleGenerateAiDraft(true)}
+                            disabled={aiLoading}
+                          >
+                            {aiLoading ? 'Generating...' : 'I Understand, Generate Anyway'}
+                          </button>
+                        </div>
+                      )}
+
+                      {aiWarnings.length === 0 && (
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          style={{ width: '100%', padding: '8px' }}
+                          onClick={() => handleGenerateAiDraft(false)}
+                          disabled={aiLoading}
+                        >
+                          {aiLoading ? 'Generating Draft...' : '✨ Generate AI Outreach Draft'}
+                        </button>
+                      )}
                     </div>
-                    <div className="form-group" style={{ marginBottom: '8px' }}>
-                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Associated Stage</label>
-                      <select name="status" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} defaultValue={editItem.application.status}>
-                        <option value="saved">Saved</option>
-                        <option value="applying">Applying</option>
-                        <option value="applied">Applied</option>
-                        <option value="recruiter_contact">Recruiter Contact</option>
-                        <option value="screening">Screening</option>
-                        <option value="interview">Interview</option>
-                        <option value="offer">Offer</option>
-                        <option value="accepted">Accepted</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="withdrawn">Withdrawn</option>
-                      </select>
-                    </div>
-                    <div className="form-group" style={{ marginBottom: '8px' }}>
-                      <label className="form-label" style={{ fontSize: '0.75rem' }}>Event Notes</label>
-                      <input type="text" name="notes" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} placeholder="e.g. Round 1 Technical round" />
-                    </div>
-                    <button type="submit" className="btn btn-secondary" style={{ width: '100%', padding: '6px', fontSize: '0.8rem' }}>Log Event</button>
-                  </form>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                  )}
 
-        {/* TAB 3: REFERRAL NETWORK WORKSPACE */}
-        {jobNetworkSubTab === 'network' && (
-          <div>
-            {jobNetworkLoading ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading referral candidates...</div>
-            ) : (
-              <div>
-                {/* Summary Metrics */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
-                  <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)' }}>
-                      {jobNetworkDetails?.summary?.totalConnections || 0}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Connections</div>
-                  </div>
-                  <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--success)' }}>
-                      {jobNetworkDetails?.summary?.relevantConnections || 0}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Relevant</div>
-                  </div>
-                  <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--warning)' }}>
-                      {jobNetworkDetails?.summary?.highPotential || 0}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>High Potential</div>
-                  </div>
-                  <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>
-                      {jobNetworkDetails?.summary?.recruiters || 0}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Recruiters</div>
-                  </div>
-                </div>
+                  {aiDraft && (
+                    <div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                        <strong>Selected Intent:</strong> {aiIntent.replace('_', ' ')} &bull; <strong>Tone:</strong> {aiDraft.tone}
+                      </div>
 
-                {/* Filters Bar */}
-                <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', marginBottom: '16px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flexGrow: 1 }}>
-                    <select
-                      className="form-input"
-                      style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
-                      value={jobNetworkFilters.roleCategory}
-                      onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, roleCategory: e.target.value, page: 1 })}
-                    >
-                      <option value="">All Roles</option>
-                      <option value="engineering">Engineering Only</option>
-                      <option value="other">Other Roles</option>
-                    </select>
-
-                    <select
-                      className="form-input"
-                      style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
-                      value={jobNetworkFilters.seniority}
-                      onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, seniority: e.target.value, page: 1 })}
-                    >
-                      <option value="">All Seniorities</option>
-                      <option value="senior">Senior</option>
-                      <option value="lead">Lead</option>
-                      <option value="manager">Manager</option>
-                      <option value="director">Director</option>
-                      <option value="executive">Executive</option>
-                      <option value="founder">Founder</option>
-                    </select>
-
-                    <select
-                      className="form-input"
-                      style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
-                      value={jobNetworkFilters.relationshipStatus}
-                      onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, relationshipStatus: e.target.value, page: 1 })}
-                    >
-                      <option value="">All Statuses</option>
-                      <option value="not_contacted">Not Contacted</option>
-                      <option value="researching">Researching</option>
-                      <option value="contacted">Contacted</option>
-                      <option value="replied">Replied</option>
-                      <option value="conversation">Conversation</option>
-                      <option value="referral_requested">Referral Requested</option>
-                      <option value="referral_received">Referral Received</option>
-                    </select>
-
-                    <select
-                      className="form-input"
-                      style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
-                      value={jobNetworkFilters.priority}
-                      onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, priority: e.target.value, page: 1 })}
-                    >
-                      <option value="">All Priorities</option>
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Sort:</span>
-                    <select
-                      className="form-input"
-                      style={{ padding: '6px', fontSize: '0.8rem', minWidth: '130px' }}
-                      value={jobNetworkFilters.sortBy}
-                      onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, sortBy: e.target.value, page: 1 })}
-                    >
-                      <option value="referralScore">Referral Score</option>
-                      <option value="connectionScore">Connection Score</option>
-                      <option value="seniority">Seniority</option>
-                      <option value="relationshipStrength">Strength</option>
-                      <option value="lastContactedDate">Last Contacted</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Recommended Actions */}
-                {jobNetworkDetails?.candidates?.length > 0 && (
-                  <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--primary)', marginBottom: '6px' }}>⭐ Recommended Workspace Actions</div>
-                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.8rem', color: '#fff' }}>
-                      {jobNetworkDetails.candidates.slice(0, 3).map((candidate, idx) => {
-                        let action = 'Research relationship details';
-                        if (candidate.relationshipStatus === 'not_contacted') {
-                          action = `Initiate outreach to request a referral for this ${editItem?.title} role`;
-                        } else if (candidate.relationshipStatus === 'contacted') {
-                          action = 'Follow up to see if they received your request';
-                        } else if (candidate.relationshipStatus === 'referral_received') {
-                          action = 'Proceed with submitting application on company portal';
-                        }
-                        return (
-                          <li key={idx} style={{ marginBottom: '4px' }}>
-                            <strong>Contact {candidate.connection.name}</strong>: {action}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Candidates List */}
-                {jobNetworkDetails?.candidates?.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px', background: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    No referral candidates match your filter criteria at {editItem?.companyName}.
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {jobNetworkDetails?.candidates?.map((candidate) => (
-                      <div
-                        key={candidate.connection.id}
-                        style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '4px solid var(--primary)' }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>{candidate.connection.name}</span>
-                            <span className={`badge ${candidate.relationshipStatus === 'not_contacted' ? 'badge-info' : 'badge-success'}`} style={{ fontSize: '0.75rem' }}>
-                              {candidate.relationshipStatus.replace('_', ' ')}
-                            </span>
-                            {candidate.priority && candidate.priority !== 'none' && (
-                              <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>{candidate.priority} priority</span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            {candidate.connection.title} &bull; {candidate.connection.company}
-                          </div>
-                          {/* Explainable scoring reasons */}
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
-                            {candidate.reasons?.map((reason, ridx) => (
-                              <span key={ridx} style={{ fontSize: '0.75rem', background: 'var(--bg-tertiary)', padding: '4px 8px', borderRadius: '4px', color: 'var(--primary)' }}>
-                                ✓ {reason}
+                      {aiDraft.personalizationPoints && aiDraft.personalizationPoints.length > 0 && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Personalization factors applied:</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {aiDraft.personalizationPoints.map((p, idx) => (
+                              <span key={idx} className="badge badge-success" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>
+                                ✓ {p}
                               </span>
                             ))}
                           </div>
-                          {/* AI Matching Evidence */}
-                          {candidate.aiEvidence && (
-                            <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              {candidate.aiEvidence.skillAlignment.length > 0 && (
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                  💡 <strong style={{ color: 'var(--success)' }}>AI Skill Match:</strong> {candidate.aiEvidence.skillAlignment.join(', ')}
-                                </div>
-                              )}
-                              {candidate.aiEvidence.domainAlignment.length > 0 && (
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                  🌐 <strong style={{ color: 'var(--primary)' }}>AI Domain Match:</strong> {candidate.aiEvidence.domainAlignment.join(', ')}
-                                </div>
-                              )}
-                              {candidate.aiEvidence.roleAlignment !== 'neutral' && (
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                  👔 <strong>AI Role Alignment:</strong> <span style={{ textTransform: 'capitalize', color: candidate.aiEvidence.roleAlignment === 'strong' ? 'var(--success)' : '#f59e0b' }}>{candidate.aiEvidence.roleAlignment}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Score:</span>
-                             <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)' }}>
-                               {candidate.referralScore}
-                             </span>
-                           </div>
-                           {candidate.semanticSimilarity !== undefined && (
-                             <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'bold' }}>
-                               Relevance: {Math.round(candidate.semanticSimilarity * 100)}%
-                             </div>
-                           )}
-                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                              onClick={async () => {
-                                try {
-                                  const res = await api.request(`/connections/${candidate.connection.id}`);
-                                  setEditItem(res.data);
-                                  setModal('connection_detail');
-                                } catch (err) {
-                                  alert(err.message);
-                                }
-                              }}
-                            >
-                              View CRM
-                            </button>
-                            <button
-                              className="btn btn-primary"
-                              style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                              onClick={() => {
-                                setEditItem({
-                                  ...candidate.connection,
-                                  job_id: editItem.id // pass selected job_id context
-                                });
-                                setModal('outreach');
-                              }}
-                            >
-                              Log Outreach
+                      )}
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ flex: 1, padding: '6px' }}
+                          onClick={() => handleGenerateAiDraft(true)}
+                          disabled={aiLoading}
+                        >
+                          {aiLoading ? 'Regenerating...' : '🔄 Regenerate'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ flex: 1, padding: '6px', color: 'var(--danger)' }}
+                          onClick={handleDiscardDraft}
+                        >
+                          Discard Draft
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Interaction Log / Message Notes</label>
+                  <textarea name="notes" className="form-input" rows="3" placeholder="Message content goes here..."></textarea>
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Log Outreach</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Update Outreach Modal */}
+      {
+        modal === 'outreach_update' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h2 className="card-title">Update Outreach Logs</h2>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                try {
+                  await api.createOutreachEvent(
+                    editItem.id,
+                    formData.get('status'),
+                    formData.get('notes')
+                  );
+                  setModal(null);
+                  loadOutreach();
+                  loadDashboard();
+                } catch (err) {
+                  alert(err.message);
+                }
+              }}>
+                <div className="form-group">
+                  <label className="form-label">Outreach Stage</label>
+                  <select name="status" className="form-input" defaultValue={editItem?.status}>
+                    <option value="not_contacted">Not Contacted</option>
+                    <option value="researching">Researching</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="replied">Replied</option>
+                    <option value="conversation">Conversation</option>
+                    <option value="referral_requested">Referral Requested</option>
+                    <option value="referral_received">Referral Received</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Interaction Log / Message Notes</label>
+                  <textarea name="notes" className="form-input" rows="3"></textarea>
+                </div>
+                <div className="modal-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Update Outreach</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Job Detail Intelligence Modal */}
+      {
+        modal === 'job_detail' && (
+          <div className="modal-overlay">
+            <div className="modal-content" style={{ maxWidth: '750px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
+              <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span>Job Workspace: {editItem?.title}</span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span className="badge badge-info">{editItem?.status}</span>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: '4px 8px', fontSize: '0.8rem', cursor: 'pointer', border: 'none', background: 'rgba(255,255,255,0.1)' }}
+                    onClick={() => setModal(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  {editItem?.companyName} &bull; {editItem?.location}
+                </div>
+                {(editItem?.url || editItem?.sourceUrl) && (
+                  <a
+                    href={editItem.url || editItem.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary"
+                    style={{ padding: '6px 12px', fontSize: '0.85rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    Apply / Visit Job Posting
+                  </a>
+                )}
+              </div>
+
+              {/* Navigation tabs inside the Job details modal */}
+              <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--bg-secondary)', marginBottom: '16px', paddingBottom: '8px' }}>
+                <button
+                  className={`btn ${jobNetworkSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  onClick={() => setJobNetworkSubTab('overview')}
+                >
+                  Overview & Match
+                </button>
+                <button
+                  className={`btn ${jobNetworkSubTab === 'application' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  onClick={() => setJobNetworkSubTab('application')}
+                >
+                  Application Tracker
+                </button>
+                <button
+                  className={`btn ${jobNetworkSubTab === 'network' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  onClick={() => setJobNetworkSubTab('network')}
+                >
+                  Referral Network Workspace
+                </button>
+                <button
+                  className={`btn ${jobNetworkSubTab === 'ai' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  onClick={() => { setJobNetworkSubTab('ai'); setEditingAiEnrichment(false); }}
+                >
+                  AI Job Intelligence
+                </button>
+                <button
+                  className={`btn ${jobNetworkSubTab === 'resume_analysis' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  onClick={() => { setJobNetworkSubTab('resume_analysis'); loadResumeFitAnalysis(editItem.id); }}
+                >
+                  AI Resume Fit
+                </button>
+              </div>
+
+              {/* TAB 1: OVERVIEW & MATCH */}
+              {jobNetworkSubTab === 'overview' && (
+                <div>
+                  <div className="metrics-grid" style={{ marginBottom: '24px' }}>
+                    <div className="metric-card">
+                      <div className="metric-label">Match Score</div>
+                      <div className="metric-value" style={{ color: 'var(--success)' }}>{editItem?.matchScore}%</div>
+                    </div>
+                    <div className="metric-card">
+                      <div className="metric-label">Opportunity Score</div>
+                      <div className="metric-value" style={{ color: 'var(--primary)' }}>{editItem?.opportunityScore}%</div>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Action Recommendation</label>
+                    <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '16px', borderRadius: '8px', color: '#fff', fontWeight: 600 }}>
+                      {editItem?.recommendedAction}
+                    </div>
+                  </div>
+
+                  <div className="form-row" style={{ gap: '24px' }}>
+                    <div className="form-group">
+                      <label className="form-label">Matched Skills</label>
+                      <div className="tags-list">
+                        {editItem?.matchedSkills?.length === 0 ? (
+                          <span style={{ color: 'var(--text-muted)' }}>None matched</span>
+                        ) : (
+                          editItem?.matchedSkills?.map(s => <span key={s} className="badge badge-success">{s}</span>)
+                        )}
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Missing Skills</label>
+                      <div className="tags-list">
+                        {editItem?.missingSkills?.length === 0 ? (
+                          <span style={{ color: 'var(--text-muted)' }}>None missing</span>
+                        ) : (
+                          editItem?.missingSkills?.map(s => <span key={s} className="badge badge-warning">{s}</span>)
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {editItem?.description && (
+                    <div className="form-group" style={{ marginTop: '16px' }}>
+                      <label className="form-label">Description</label>
+                      <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', maxHeight: '180px', overflowY: 'auto' }}>
+                        {editItem.description}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB: AI JOB INTELLIGENCE */}
+              {jobNetworkSubTab === 'ai' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>AI Job Understanding &amp; Enrichment</h3>
+                    {editItem?.aiEnrichment && (
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                        onClick={async () => {
+                          if (confirm('Re-run AI extraction? This takes a few seconds.')) {
+                            try {
+                              const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
+                              setEditItem(data.data);
+                              alert('AI enrichment re-run completed!');
+                            } catch (e) {
+                              alert(e.message);
+                            }
+                          }
+                        }}
+                      >
+                        Force Re-Enrich Job
+                      </button>
+                    )}
+                  </div>
+
+                  {!editItem?.aiEnrichment ? (
+                    <div className="empty-state" style={{ padding: '24px', textAlign: 'center' }}>
+                      <p>AI Enrichment has not run or is disabled.</p>
+                      <button
+                        className="btn btn-primary"
+                        onClick={async () => {
+                          try {
+                            const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
+                            setEditItem(data.data);
+                            alert('AI Enrichment initiated!');
+                          } catch (e) {
+                            alert(e.message);
+                          }
+                        }}
+                      >
+                        Run AI Enrichment Now
+                      </button>
+                    </div>
+                  ) : editItem.aiEnrichment.status === 'pending' || editItem.aiEnrichment.status === 'processing' ? (
+                    <div className="empty-state" style={{ padding: '24px', textAlign: 'center' }}>
+                      <p>AI Ingestion Monitor: Enrichment status is <strong>{editItem.aiEnrichment.status}</strong>...</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Refreshing in a few seconds.</p>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={async () => {
+                          const data = await api.request(`/jobs/${editItem.id}`);
+                          setEditItem(data.data);
+                        }}
+                      >
+                        Refresh Status
+                      </button>
+                    </div>
+                  ) : editItem.aiEnrichment.status === 'failed' ? (
+                    <div className="empty-state" style={{ padding: '24px', border: '1px solid var(--danger)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                      <p style={{ color: 'var(--danger)', fontWeight: 600 }}>⚠️ AI Enrichment Failed</p>
+                      <p style={{ fontSize: '0.85rem' }}>Error Code: <code>{editItem.aiEnrichment.errorCode}</code></p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{editItem.aiEnrichment.rawResponse}</p>
+                      <button
+                        className="btn btn-primary"
+                        style={{ marginTop: '12px' }}
+                        onClick={async () => {
+                          try {
+                            const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
+                            setEditItem(data.data);
+                          } catch (e) {
+                            alert(e.message);
+                          }
+                        }}
+                      >
+                        Retry Enrichment
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Display Mode or Edit Mode */}
+                      {!editingAiEnrichment ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                          {/* Header Status Bar */}
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            padding: '12px 16px',
+                            borderRadius: '8px',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{
+                                display: 'inline-block',
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background: 'var(--success)',
+                                boxShadow: '0 0 8px var(--success)'
+                              }}></span>
+                              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Enrichment Complete</span>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                              Model: <code style={{ color: 'var(--primary)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{editItem.aiEnrichment.model}</code>
+                              <span style={{ margin: '0 8px' }}>&bull;</span>
+                              Latency: <strong style={{ color: '#fff' }}>{editItem.aiEnrichment.latencyMs}ms</strong>
+                            </div>
+                          </div>
+
+                          {/* 2x2 Info Matrix Cards */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+
+                            {/* Classification Card */}
+                            <div style={{
+                              background: 'var(--bg-secondary)',
+                              border: '1px solid rgba(255,255,255,0.05)',
+                              padding: '16px',
+                              borderRadius: '10px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '12px'
+                            }}>
+                              <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Job Classification</h4>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Role Category</div>
+                                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>
+                                    {editItem.aiEnrichment.userCorrectedRoleCategory || editItem.aiEnrichment.roleCategory || 'N/A'}
+                                    {editItem.aiEnrichment.userCorrectedRoleCategory && (
+                                      <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Seniority</div>
+                                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
+                                    {editItem.aiEnrichment.userCorrectedSeniority || editItem.aiEnrichment.seniority || 'N/A'}
+                                    {editItem.aiEnrichment.userCorrectedSeniority && (
+                                      <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Work Type Card */}
+                            <div style={{
+                              background: 'var(--bg-secondary)',
+                              border: '1px solid rgba(255,255,255,0.05)',
+                              padding: '16px',
+                              borderRadius: '10px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '12px'
+                            }}>
+                              <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Position Parameters</h4>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remote setup</div>
+                                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
+                                    {editItem.aiEnrichment.userCorrectedRemoteType || editItem.aiEnrichment.remoteType || 'N/A'}
+                                    {editItem.aiEnrichment.userCorrectedRemoteType && (
+                                      <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Employment Type</div>
+                                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
+                                    {editItem.aiEnrichment.userCorrectedEmploymentType || editItem.aiEnrichment.employmentType || 'N/A'}
+                                    {editItem.aiEnrichment.userCorrectedEmploymentType && (
+                                      <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Experience and Domains */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px' }}>
+                            <div style={{
+                              background: 'var(--bg-secondary)',
+                              border: '1px solid rgba(255,255,255,0.05)',
+                              padding: '16px',
+                              borderRadius: '10px'
+                            }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Required Experience</div>
+                              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)' }}>
+                                {(editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears) !== null ? (
+                                  `${editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears} to ${editItem.aiEnrichment.userCorrectedExperienceMaxYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMaxYears : (editItem.aiEnrichment.experienceMaxYears || 'unspecified')} yrs`
+                                ) : 'N/A'}
+                              </div>
+                            </div>
+
+                            <div style={{
+                              background: 'var(--bg-secondary)',
+                              border: '1px solid rgba(255,255,255,0.05)',
+                              padding: '16px',
+                              borderRadius: '10px'
+                            }}>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Target Domains</div>
+                              <div className="tags-list">
+                                {(editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).length === 0 ? (
+                                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None identified</span>
+                                ) : (
+                                  (editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).map(d => (
+                                    <span key={d} className="badge badge-info" style={{ textTransform: 'capitalize' }}>{d}</span>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Skills breakdown */}
+                          <div style={{
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                            padding: '16px',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '16px'
+                          }}>
+                            <div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Required Technical Skills</div>
+                              <div className="tags-list">
+                                {(editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).length === 0 ? (
+                                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None extracted</span>
+                                ) : (
+                                  (editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).map(s => (
+                                    <span key={s} className="badge badge-success" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>{s}</span>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Preferred / Desired Skills</div>
+                              <div className="tags-list">
+                                {(editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).length === 0 ? (
+                                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None extracted</span>
+                                ) : (
+                                  (editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).map(s => (
+                                    <span key={s} className="badge badge-secondary" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>{s}</span>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* AI Summary Block */}
+                          <div style={{
+                            borderLeft: '4px solid var(--primary)',
+                            background: 'rgba(255,255,255,0.02)',
+                            padding: '16px',
+                            borderRadius: '0 8px 8px 0'
+                          }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Role Intel Summary</div>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                              "{editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || 'No summary available.'}"
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--bg-secondary)', paddingTop: '16px' }}>
+                            <button className="btn btn-secondary" onClick={() => setEditingAiEnrichment(true)}>
+                              Correct AI Details
                             </button>
                           </div>
                         </div>
+                      ) : (
+                        <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          const formData = new FormData(e.target);
+                          const data = Object.fromEntries(formData.entries());
+
+                          const payload = {
+                            roleCategory: data.roleCategory,
+                            seniority: data.seniority,
+                            remoteType: data.remoteType,
+                            employmentType: data.employmentType,
+                            experienceMinYears: data.experienceMinYears ? parseInt(data.experienceMinYears) : null,
+                            experienceMaxYears: data.experienceMaxYears ? parseInt(data.experienceMaxYears) : null,
+                            requiredSkills: data.requiredSkills ? data.requiredSkills.split(',').map(s => s.trim()).filter(Boolean) : [],
+                            preferredSkills: data.preferredSkills ? data.preferredSkills.split(',').map(s => s.trim()).filter(Boolean) : [],
+                            domain: data.domain ? data.domain.split(',').map(s => s.trim()).filter(Boolean) : [],
+                            summary: data.summary
+                          };
+
+                          try {
+                            const refreshed = await api.request(`/jobs/${editItem.id}/ai-corrections`, {
+                              method: 'PUT',
+                              body: payload
+                            });
+                            setEditItem(refreshed.data);
+                            setEditingAiEnrichment(false);
+                            loadJobs();
+                          } catch (err) {
+                            alert(err.message);
+                          }
+                        }}>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label className="form-label">Role Category</label>
+                              <input type="text" name="roleCategory" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedRoleCategory || editItem.aiEnrichment.roleCategory || ''} />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Seniority</label>
+                              <input type="text" name="seniority" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedSeniority || editItem.aiEnrichment.seniority || ''} />
+                            </div>
+                          </div>
+
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label className="form-label">Remote Type</label>
+                              <select name="remoteType" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedRemoteType || editItem.aiEnrichment.remoteType || ''}>
+                                <option value="">Choose remote preference...</option>
+                                <option value="remote">Remote</option>
+                                <option value="hybrid">Hybrid</option>
+                                <option value="onsite">Onsite</option>
+                              </select>
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Employment Type</label>
+                              <select name="employmentType" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedEmploymentType || editItem.aiEnrichment.employmentType || ''}>
+                                <option value="">Choose employment...</option>
+                                <option value="full-time">Full-time</option>
+                                <option value="part-time">Part-time</option>
+                                <option value="contract">Contract</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label className="form-label">Required Skills (comma separated)</label>
+                              <input type="text" name="requiredSkills" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).join(', ')} />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Preferred Skills (comma separated)</label>
+                              <input type="text" name="preferredSkills" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).join(', ')} />
+                            </div>
+                          </div>
+
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label className="form-label">Min Experience (Years)</label>
+                              <input type="number" name="experienceMinYears" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears || ''} />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Max Experience (Years)</label>
+                              <input type="number" name="experienceMaxYears" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedExperienceMaxYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMaxYears : editItem.aiEnrichment.experienceMaxYears || ''} />
+                            </div>
+                          </div>
+
+                          <div className="form-group">
+                            <label className="form-label">Domains / Industry Keywords (comma separated)</label>
+                            <input type="text" name="domain" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).join(', ')} />
+                          </div>
+
+                          <div className="form-group">
+                            <label className="form-label">Summary</label>
+                            <textarea name="summary" className="form-input" rows="3" defaultValue={editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || ''}></textarea>
+                          </div>
+
+                          <div className="modal-actions">
+                            <button type="button" className="btn btn-secondary" onClick={() => setEditingAiEnrichment(false)}>Cancel</button>
+                            <button type="submit" className="btn btn-primary">Save Corrections</button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+
+              {jobNetworkSubTab === 'resume_analysis' && (
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '16px' }}>AI Resume ↔ Job Fit Analysis</h3>
+
+                  {loadingResumeAnalysis ? (
+                    <div className="empty-state" style={{ padding: '32px', textAlign: 'center' }}>
+                      <p>Generating alignment analysis...</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                      {/* Compatibility Rating Card */}
+                      <div style={{
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        padding: '20px',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Compatibility Assessment</div>
+                          <div style={{ fontSize: '1.8rem', fontWeight: 800, textTransform: 'capitalize', color: resumeAnalysis?.compatibilityAssessment === 'high' ? 'var(--success)' : resumeAnalysis?.compatibilityAssessment === 'medium' ? '#f59e0b' : 'var(--danger)' }}>
+                            {resumeAnalysis?.compatibilityAssessment || 'unknown'}
+                          </div>
+                        </div>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => loadResumeFitAnalysis(editItem.id)}
+                        >
+                          Re-Analyze Fit
+                        </button>
+                      </div>
+
+                      {/* Summary Bio */}
+                      <div style={{ borderLeft: '4px solid var(--primary)', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '0 8px 8px 0' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Analysis Summary</div>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                          {resumeAnalysis?.analysisSummary}
+                        </p>
+                      </div>
+
+                      {/* Matched vs Missing Skills */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Matched Skills</div>
+                          <div className="tags-list">
+                            {(resumeAnalysis?.matchedSkills || []).length === 0 ? (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No matching skills detected</span>
+                            ) : (
+                              (resumeAnalysis.matchedSkills || []).map(s => (
+                                <span key={s} className="badge badge-success">{s}</span>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Potential Gaps / Missing Skills</div>
+                          <div className="tags-list">
+                            {(resumeAnalysis?.missingSkills || []).length === 0 ? (
+                              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No gaps detected</span>
+                            ) : (
+                              (resumeAnalysis.missingSkills || []).map(s => (
+                                <span key={s} className="badge badge-danger">{s}</span>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Strengths List */}
+                      <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Core Alignment Strengths</div>
+                        {(resumeAnalysis?.strengths || []).length === 0 ? (
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No key strengths highlighted yet.</div>
+                        ) : (
+                          <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                            {(resumeAnalysis.strengths || []).map((str, idx) => (
+                              <li key={idx} style={{ marginBottom: '4px' }}>{str}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
+                      {/* Gaps List */}
+                      <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Areas of Improvement / Growth</div>
+                        {(resumeAnalysis?.potentialGaps || []).length === 0 ? (
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No potential gaps highlighted.</div>
+                        ) : (
+                          <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                            {(resumeAnalysis.potentialGaps || []).map((gap, idx) => (
+                              <li key={idx} style={{ marginBottom: '4px' }}>{gap}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: APPLICATION LIFE CYCLE TRACKER */}
+              {jobNetworkSubTab === 'application' && (
+                <div>
+                  {!editItem?.application ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Start Tracking Application</h3>
+                      <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.target);
+                        const data = Object.fromEntries(formData.entries());
+                        try {
+                          await api.createApplication(editItem.id, data.status, {
+                            resumeId: data.resumeId || null,
+                            coverLetter: data.coverLetter || '',
+                            referralConnectionId: data.referralConnectionId || null,
+                            notes: data.notes || '',
+                            nextFollowUpDate: data.nextFollowUpDate || null
+                          });
+                          const updated = await api.request(`/jobs/${editItem.id}`);
+                          setEditItem(updated.data);
+                          loadJobs();
+                          alert('Application tracker initialized!');
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                      }}>
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">Status</label>
+                            <select name="status" className="form-input" defaultValue="saved">
+                              <option value="saved">Saved</option>
+                              <option value="applying">Applying</option>
+                              <option value="applied">Applied</option>
+                              <option value="recruiter_contact">Recruiter Contact</option>
+                              <option value="screening">Screening</option>
+                              <option value="interview">Interview</option>
+                              <option value="offer">Offer</option>
+                              <option value="accepted">Accepted</option>
+                              <option value="rejected">Rejected</option>
+                              <option value="withdrawn">Withdrawn</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Resume Used</label>
+                            <select name="resumeId" className="form-input">
+                              <option value="">No Resume Linked</option>
+                              {resumes.map(r => <option key={r.id} value={r.id}>{r.fileName}</option>)}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label className="form-label">Referral Connection</label>
+                            <select name="referralConnectionId" className="form-input">
+                              <option value="">No Referral</option>
+                              {connections.filter(c => c.company?.toLowerCase().includes(editItem.companyName?.toLowerCase())).map(c => (
+                                <option key={c.id} value={c.id}>{c.name} ({c.title})</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Next Follow Up Date</label>
+                            <input type="date" name="nextFollowUpDate" className="form-input" />
+                          </div>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Cover Letter</label>
+                          <textarea name="coverLetter" className="form-input" rows="3" placeholder="Paste cover letter used..."></textarea>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Initial Notes</label>
+                          <textarea name="notes" className="form-input" rows="3" placeholder="Initial thoughts, referral requests, etc..."></textarea>
+                        </div>
+
+                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Initialize Application</button>
+                      </form>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+                      {/* Left Column: Update Form */}
+                      <div>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Application Details</h3>
+                        <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          const formData = new FormData(e.target);
+                          const data = Object.fromEntries(formData.entries());
+                          try {
+                            await api.updateApplication(editItem.application.id, {
+                              status: data.status,
+                              resumeId: data.resumeId || null,
+                              coverLetter: data.coverLetter || '',
+                              referralConnectionId: data.referralConnectionId || null,
+                              notes: data.notes || '',
+                              nextFollowUpDate: data.nextFollowUpDate || null
+                            });
+                            const updated = await api.request(`/jobs/${editItem.id}`);
+                            setEditItem(updated.data);
+                            loadJobs();
+                            alert('Application details updated!');
+                          } catch (err) {
+                            alert(err.message);
+                          }
+                        }}>
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label className="form-label">Status</label>
+                              <select name="status" className="form-input" defaultValue={editItem.application.status}>
+                                <option value="saved">Saved</option>
+                                <option value="applying">Applying</option>
+                                <option value="applied">Applied</option>
+                                <option value="recruiter_contact">Recruiter Contact</option>
+                                <option value="screening">Screening</option>
+                                <option value="interview">Interview</option>
+                                <option value="offer">Offer</option>
+                                <option value="accepted">Accepted</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="withdrawn">Withdrawn</option>
+                              </select>
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Resume Used</label>
+                              <select name="resumeId" className="form-input" defaultValue={editItem.application.resumeId || ''}>
+                                <option value="">No Resume Linked</option>
+                                {resumes.map(r => <option key={r.id} value={r.id}>{r.fileName}</option>)}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label className="form-label">Referral Connection</label>
+                              <select name="referralConnectionId" className="form-input" defaultValue={editItem.application.referralConnectionId || ''}>
+                                <option value="">No Referral</option>
+                                {connections.filter(c => c.company?.toLowerCase().includes(editItem.companyName?.toLowerCase())).map(c => (
+                                  <option key={c.id} value={c.id}>{c.name} ({c.title})</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Next Follow Up Date</label>
+                              <input type="date" name="nextFollowUpDate" className="form-input" defaultValue={editItem.application.nextFollowUpDate || ''} />
+                            </div>
+                          </div>
+
+                          <div className="form-group">
+                            <label className="form-label">Cover Letter</label>
+                            <textarea name="coverLetter" className="form-input" rows="3" defaultValue={editItem.application.coverLetter || ''}></textarea>
+                          </div>
+
+                          <div className="form-group">
+                            <label className="form-label">Notes</label>
+                            <textarea name="notes" className="form-input" rows="3" defaultValue={editItem.application.notes || ''}></textarea>
+                          </div>
+
+                          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Save Updates</button>
+                        </form>
+                      </div>
+
+                      {/* Right Column: Timeline & Add Event */}
+                      <div style={{ borderLeft: '1px solid var(--bg-secondary)', paddingLeft: '24px' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Application Timeline</h3>
+
+                        {/* Visual Timeline */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '180px', overflowY: 'auto', marginBottom: '24px', paddingRight: '8px' }}>
+                          {(!editItem.application.events || editItem.application.events.length === 0) ? (
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No timeline events recorded.</div>
+                          ) : (
+                            editItem.application.events.map((ev, index) => (
+                              <div key={ev.id || index} style={{ display: 'flex', gap: '12px', position: 'relative' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)', marginTop: '4px' }}></div>
+                                  {index < editItem.application.events.length - 1 && (
+                                    <div style={{ width: '2px', flexGrow: 1, background: 'var(--bg-secondary)', margin: '4px 0' }}></div>
+                                  )}
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                    {new Date(ev.occurredAt).toLocaleDateString()}
+                                  </div>
+                                  <div style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'capitalize' }}>
+                                    {ev.eventType.replace('_', ' ')}: <span className="badge badge-info">{ev.status}</span>
+                                  </div>
+                                  {ev.notes && (
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
+                                      "{ev.notes}"
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Add Custom Event Form */}
+                        <form onSubmit={async (e) => {
+                          e.preventDefault();
+                          const formData = new FormData(e.target);
+                          const data = Object.fromEntries(formData.entries());
+                          try {
+                            await api.createApplicationEvent(editItem.application.id, {
+                              eventType: data.eventType,
+                              status: data.status,
+                              notes: data.notes
+                            });
+                            const updated = await api.request(`/jobs/${editItem.id}`);
+                            setEditItem(updated.data);
+                            e.target.reset();
+                            alert('Timeline event added!');
+                          } catch (err) {
+                            alert(err.message);
+                          }
+                        }} style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px' }}>
+                          <h4 style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>Add Timeline Event</h4>
+                          <div className="form-group" style={{ marginBottom: '8px' }}>
+                            <label className="form-label" style={{ fontSize: '0.75rem' }}>Event Type</label>
+                            <select name="eventType" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} defaultValue="interview_scheduled">
+                              <option value="application_submitted">Application Submitted</option>
+                              <option value="recruiter_contacted">Recruiter Contacted</option>
+                              <option value="referral_requested">Referral Requested</option>
+                              <option value="referral_received">Referral Received</option>
+                              <option value="interview_scheduled">Interview Scheduled</option>
+                              <option value="interview_completed">Interview Completed</option>
+                              <option value="offer_received">Offer Received</option>
+                              <option value="rejected">Rejected</option>
+                              <option value="withdrawn">Withdrawn</option>
+                              <option value="follow_up">Follow Up</option>
+                              <option value="note">Note / Event</option>
+                            </select>
+                          </div>
+                          <div className="form-group" style={{ marginBottom: '8px' }}>
+                            <label className="form-label" style={{ fontSize: '0.75rem' }}>Associated Stage</label>
+                            <select name="status" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} defaultValue={editItem.application.status}>
+                              <option value="saved">Saved</option>
+                              <option value="applying">Applying</option>
+                              <option value="applied">Applied</option>
+                              <option value="recruiter_contact">Recruiter Contact</option>
+                              <option value="screening">Screening</option>
+                              <option value="interview">Interview</option>
+                              <option value="offer">Offer</option>
+                              <option value="accepted">Accepted</option>
+                              <option value="rejected">Rejected</option>
+                              <option value="withdrawn">Withdrawn</option>
+                            </select>
+                          </div>
+                          <div className="form-group" style={{ marginBottom: '8px' }}>
+                            <label className="form-label" style={{ fontSize: '0.75rem' }}>Event Notes</label>
+                            <input type="text" name="notes" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} placeholder="e.g. Round 1 Technical round" />
+                          </div>
+                          <button type="submit" className="btn btn-secondary" style={{ width: '100%', padding: '6px', fontSize: '0.8rem' }}>Log Event</button>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: REFERRAL NETWORK WORKSPACE */}
+              {jobNetworkSubTab === 'network' && (
+                <div>
+                  {jobNetworkLoading ? (
+                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading referral candidates...</div>
+                  ) : (
+                    <div>
+                      {/* Summary Metrics */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
+                        <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)' }}>
+                            {jobNetworkDetails?.summary?.totalConnections || 0}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Connections</div>
+                        </div>
+                        <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--success)' }}>
+                            {jobNetworkDetails?.summary?.relevantConnections || 0}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Relevant</div>
+                        </div>
+                        <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--warning)' }}>
+                            {jobNetworkDetails?.summary?.highPotential || 0}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>High Potential</div>
+                        </div>
+                        <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>
+                            {jobNetworkDetails?.summary?.recruiters || 0}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Recruiters</div>
+                        </div>
+                      </div>
+
+                      {/* Filters Bar */}
+                      <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', marginBottom: '16px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flexGrow: 1 }}>
+                          <select
+                            className="form-input"
+                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
+                            value={jobNetworkFilters.roleCategory}
+                            onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, roleCategory: e.target.value, page: 1 })}
+                          >
+                            <option value="">All Roles</option>
+                            <option value="engineering">Engineering Only</option>
+                            <option value="other">Other Roles</option>
+                          </select>
+
+                          <select
+                            className="form-input"
+                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
+                            value={jobNetworkFilters.seniority}
+                            onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, seniority: e.target.value, page: 1 })}
+                          >
+                            <option value="">All Seniorities</option>
+                            <option value="senior">Senior</option>
+                            <option value="lead">Lead</option>
+                            <option value="manager">Manager</option>
+                            <option value="director">Director</option>
+                            <option value="executive">Executive</option>
+                            <option value="founder">Founder</option>
+                          </select>
+
+                          <select
+                            className="form-input"
+                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
+                            value={jobNetworkFilters.relationshipStatus}
+                            onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, relationshipStatus: e.target.value, page: 1 })}
+                          >
+                            <option value="">All Statuses</option>
+                            <option value="not_contacted">Not Contacted</option>
+                            <option value="researching">Researching</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="replied">Replied</option>
+                            <option value="conversation">Conversation</option>
+                            <option value="referral_requested">Referral Requested</option>
+                            <option value="referral_received">Referral Received</option>
+                          </select>
+
+                          <select
+                            className="form-input"
+                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
+                            value={jobNetworkFilters.priority}
+                            onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, priority: e.target.value, page: 1 })}
+                          >
+                            <option value="">All Priorities</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                          </select>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Sort:</span>
+                          <select
+                            className="form-input"
+                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '130px' }}
+                            value={jobNetworkFilters.sortBy}
+                            onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, sortBy: e.target.value, page: 1 })}
+                          >
+                            <option value="referralScore">Referral Score</option>
+                            <option value="connectionScore">Connection Score</option>
+                            <option value="seniority">Seniority</option>
+                            <option value="relationshipStrength">Strength</option>
+                            <option value="lastContactedDate">Last Contacted</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Recommended Actions */}
+                      {jobNetworkDetails?.candidates?.length > 0 && (
+                        <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--primary)', marginBottom: '6px' }}>⭐ Recommended Workspace Actions</div>
+                          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.8rem', color: '#fff' }}>
+                            {jobNetworkDetails.candidates.slice(0, 3).map((candidate, idx) => {
+                              let action = 'Research relationship details';
+                              if (candidate.relationshipStatus === 'not_contacted') {
+                                action = `Initiate outreach to request a referral for this ${editItem?.title} role`;
+                              } else if (candidate.relationshipStatus === 'contacted') {
+                                action = 'Follow up to see if they received your request';
+                              } else if (candidate.relationshipStatus === 'referral_received') {
+                                action = 'Proceed with submitting application on company portal';
+                              }
+                              return (
+                                <li key={idx} style={{ marginBottom: '4px' }}>
+                                  <strong>Contact {candidate.connection.name}</strong>: {action}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Candidates List */}
+                      {jobNetworkDetails?.candidates?.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '24px', background: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                          No referral candidates match your filter criteria at {editItem?.companyName}.
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {jobNetworkDetails?.candidates?.map((candidate) => (
+                            <div
+                              key={candidate.connection.id}
+                              style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '4px solid var(--primary)' }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>{candidate.connection.name}</span>
+                                  <span className={`badge ${candidate.relationshipStatus === 'not_contacted' ? 'badge-info' : 'badge-success'}`} style={{ fontSize: '0.75rem' }}>
+                                    {candidate.relationshipStatus.replace('_', ' ')}
+                                  </span>
+                                  {candidate.priority && candidate.priority !== 'none' && (
+                                    <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>{candidate.priority} priority</span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                  {candidate.connection.title} &bull; {candidate.connection.company}
+                                </div>
+                                {/* Explainable scoring reasons */}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                                  {candidate.reasons?.map((reason, ridx) => (
+                                    <span key={ridx} style={{ fontSize: '0.75rem', background: 'var(--bg-tertiary)', padding: '4px 8px', borderRadius: '4px', color: 'var(--primary)' }}>
+                                      ✓ {reason}
+                                    </span>
+                                  ))}
+                                </div>
+                                {/* AI Matching Evidence */}
+                                {candidate.aiEvidence && (
+                                  <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    {candidate.aiEvidence.skillAlignment.length > 0 && (
+                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                        💡 <strong style={{ color: 'var(--success)' }}>AI Skill Match:</strong> {candidate.aiEvidence.skillAlignment.join(', ')}
+                                      </div>
+                                    )}
+                                    {candidate.aiEvidence.domainAlignment.length > 0 && (
+                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                        🌐 <strong style={{ color: 'var(--primary)' }}>AI Domain Match:</strong> {candidate.aiEvidence.domainAlignment.join(', ')}
+                                      </div>
+                                    )}
+                                    {candidate.aiEvidence.roleAlignment !== 'neutral' && (
+                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                        👔 <strong>AI Role Alignment:</strong> <span style={{ textTransform: 'capitalize', color: candidate.aiEvidence.roleAlignment === 'strong' ? 'var(--success)' : '#f59e0b' }}>{candidate.aiEvidence.roleAlignment}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Score:</span>
+                                  <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)' }}>
+                                    {candidate.referralScore}
+                                  </span>
+                                </div>
+                                {candidate.semanticSimilarity !== undefined && (
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'bold' }}>
+                                    Relevance: {Math.round(candidate.semanticSimilarity * 100)}%
+                                  </div>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button
+                                    className="btn btn-secondary"
+                                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                                    onClick={async () => {
+                                      try {
+                                        const res = await api.request(`/connections/${candidate.connection.id}`);
+                                        setEditItem(res.data);
+                                        setModal('connection_detail');
+                                      } catch (err) {
+                                        alert(err.message);
+                                      }
+                                    }}
+                                  >
+                                    View CRM
+                                  </button>
+                                  <button
+                                    className="btn btn-primary"
+                                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+                                    onClick={() => {
+                                      setEditItem({
+                                        ...candidate.connection,
+                                        job_id: editItem.id // pass selected job_id context
+                                      });
+                                      setModal('outreach');
+                                    }}
+                                  >
+                                    Log Outreach
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="modal-actions">
+                <button className="btn btn-secondary" onClick={() => { setModal(null); setJobNetworkSubTab('overview'); }}>Close Intel</button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Connection Detail CRM Modal */}
+      {
+        modal === 'connection_detail' && (
+          <div className="modal-overlay">
+            <div className="modal-content" style={{ maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
+              <h2 className="card-title">🤝 Connection Intel: {editItem?.name}</h2>
+              <div style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{editItem?.title || 'No Title'} at {editItem?.company || 'Unknown Company'}</div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">Relationship Details</label>
+                  <div style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', fontSize: '0.9rem' }}>
+                    <div>Strength: <strong style={{ color: 'var(--warning)' }}>{editItem?.relationshipStrength || 'Not Rated'}</strong></div>
+                    <div style={{ marginTop: '4px' }}>Status: <strong>{editItem?.relationshipStatus || 'Not Contacted'}</strong></div>
+                    <div style={{ marginTop: '4px' }}>Follow-up Date: <strong>{editItem?.followUpDate || 'None scheduled'}</strong></div>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">CRM Notes</label>
+                  <div style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', fontSize: '0.9rem', minHeight: '80px', maxHeight: '120px', overflowY: 'auto' }}>
+                    {editItem?.notes || 'No relationship notes logged.'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label className="form-label">Referral Opportunities at {editItem?.company || 'their company'}</label>
+                {editItem?.referralOpportunities?.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No active tracked jobs found at {editItem?.company}.</div>
+                ) : (
+                  <div className="activity-list">
+                    {editItem?.referralOpportunities?.map(opp => (
+                      <div className="activity-item" key={opp.jobId} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{opp.jobTitle}</div>
+                        </div>
+                        <span className="badge badge-success">Referral Match: {opp.referralScore}%</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        )}
 
-        <div className="modal-actions">
-          <button className="btn btn-secondary" onClick={() => { setModal(null); setJobNetworkSubTab('overview'); }}>Close Intel</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-{/* Connection Detail CRM Modal */ }
-{
-  modal === 'connection_detail' && (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h2 className="card-title">🤝 Connection Intel: {editItem?.name}</h2>
-        <div style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{editItem?.title || 'No Title'} at {editItem?.company || 'Unknown Company'}</div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Relationship Details</label>
-            <div style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', fontSize: '0.9rem' }}>
-              <div>Strength: <strong style={{ color: 'var(--warning)' }}>{editItem?.relationshipStrength || 'Not Rated'}</strong></div>
-              <div style={{ marginTop: '4px' }}>Status: <strong>{editItem?.relationshipStatus || 'Not Contacted'}</strong></div>
-              <div style={{ marginTop: '4px' }}>Follow-up Date: <strong>{editItem?.followUpDate || 'None scheduled'}</strong></div>
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">CRM Notes</label>
-            <div style={{ background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '8px', fontSize: '0.9rem', minHeight: '80px', maxHeight: '120px', overflowY: 'auto' }}>
-              {editItem?.notes || 'No relationship notes logged.'}
-            </div>
-          </div>
-        </div>
-
-        <div className="form-group" style={{ marginTop: '16px' }}>
-          <label className="form-label">Referral Opportunities at {editItem?.company || 'their company'}</label>
-          {editItem?.referralOpportunities?.length === 0 ? (
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No active tracked jobs found at {editItem?.company}.</div>
-          ) : (
-            <div className="activity-list">
-              {editItem?.referralOpportunities?.map(opp => (
-                <div className="activity-item" key={opp.jobId} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{opp.jobTitle}</div>
+              <div className="form-group" style={{ marginTop: '16px' }}>
+                <label className="form-label">Outreach & Communications History</label>
+                {editItem?.outreachHistory?.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No outreach history logged yet.</div>
+                ) : (
+                  <div className="timeline" style={{ paddingLeft: '10px', marginTop: '10px' }}>
+                    {editItem?.outreachHistory?.map(event => (
+                      <div className="timeline-event" key={event.id} style={{ fontSize: '0.85rem' }}>
+                        <strong>{event.status}</strong> &bull; {new Date(event.occurredAt).toLocaleDateString()}
+                        <p style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>{event.notes || 'No description'}</p>
+                      </div>
+                    ))}
                   </div>
-                  <span className="badge badge-success">Referral Match: {opp.referralScore}%</span>
+                )}
+              </div>
+
+              {/* AI Professional Profile Panel */}
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <label className="form-label" style={{ fontWeight: 600, margin: 0 }}>  AI Professional Profile</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {editItem?.aiEnrichment && (
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                        onClick={() => setEditingConnectionAi(!editingConnectionAi)}
+                      >
+                        {editingConnectionAi ? 'Cancel Edit' : 'Correct AI Output'}
+                      </button>
+                    )}
+                    <button
+                      className="btn btn-primary"
+                      style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                      disabled={loadingConnectionAi}
+                      onClick={() => handleEnrichConnectionAi(editItem.id)}
+                    >
+                      {loadingConnectionAi ? 'Analyzing...' : editItem?.aiEnrichment ? 'Re-Run AI' : 'Run AI Enrichment'}
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        <div className="form-group" style={{ marginTop: '16px' }}>
-          <label className="form-label">Outreach & Communications History</label>
-          {editItem?.outreachHistory?.length === 0 ? (
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No outreach history logged yet.</div>
-          ) : (
-            <div className="timeline" style={{ paddingLeft: '10px', marginTop: '10px' }}>
-              {editItem?.outreachHistory?.map(event => (
-                <div className="timeline-event" key={event.id} style={{ fontSize: '0.85rem' }}>
-                  <strong>{event.status}</strong> &bull; {new Date(event.occurredAt).toLocaleDateString()}
-                  <p style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>{event.notes || 'No description'}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                {!editItem?.aiEnrichment ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                    No AI profile generated for this connection yet. Click "Run AI Enrichment" to analyze their profile.
+                  </div>
+                ) : editingConnectionAi ? (
+                  /* Human corrections form */
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const fd = new FormData(e.target);
+                      const parsedTech = fd.get('technologies').split(',').map(t => t.trim()).filter(Boolean);
+                      const parsedTechDomains = fd.get('technicalDomains').split(',').map(d => d.trim()).filter(Boolean);
+                      const parsedIndDomains = fd.get('industryDomains').split(',').map(d => d.trim()).filter(Boolean);
+                      const parsedExpertise = fd.get('expertiseAreas').split(',').map(d => d.trim()).filter(Boolean);
 
-        {/* AI Professional Profile Panel */}
-        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <label className="form-label" style={{ fontWeight: 600, margin: 0 }}>🤖 AI Professional Profile</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {editItem?.aiEnrichment && (
-                <button
-                  className="btn btn-secondary"
-                  style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                  onClick={() => setEditingConnectionAi(!editingConnectionAi)}
-                >
-                  {editingConnectionAi ? 'Cancel Edit' : 'Correct AI Output'}
-                </button>
-              )}
-              <button
-                className="btn btn-primary"
-                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                disabled={loadingConnectionAi}
-                onClick={() => handleEnrichConnectionAi(editItem.id)}
-              >
-                {loadingConnectionAi ? 'Analyzing...' : editItem?.aiEnrichment ? 'Re-Run AI' : 'Run AI Enrichment'}
-              </button>
-            </div>
-          </div>
+                      await handleSaveConnectionAiCorrections(editItem.id, {
+                        professionalRole: fd.get('professionalRole'),
+                        roleFamily: fd.get('roleFamily'),
+                        careerLevel: fd.get('careerLevel'),
+                        leadershipLevel: fd.get('leadershipLevel'),
+                        technologies: parsedTech,
+                        technicalDomains: parsedTechDomains,
+                        industryDomains: parsedIndDomains,
+                        expertiseAreas: parsedExpertise,
+                        summary: fd.get('summary')
+                      });
+                    }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}
+                  >
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.8rem' }}>Professional Role</label>
+                        <input type="text" name="professionalRole" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedProfessionalRole || editItem.aiEnrichment.professionalRole || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.8rem' }}>Role Family</label>
+                        <input type="text" name="roleFamily" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedRoleFamily || editItem.aiEnrichment.roleFamily || ''} />
+                      </div>
+                    </div>
 
-          {!editItem?.aiEnrichment ? (
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
-              No AI profile generated for this connection yet. Click "Run AI Enrichment" to analyze their profile.
-            </div>
-          ) : editingConnectionAi ? (
-            /* Human corrections form */
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const fd = new FormData(e.target);
-                const parsedTech = fd.get('technologies').split(',').map(t => t.trim()).filter(Boolean);
-                const parsedTechDomains = fd.get('technicalDomains').split(',').map(d => d.trim()).filter(Boolean);
-                const parsedIndDomains = fd.get('industryDomains').split(',').map(d => d.trim()).filter(Boolean);
-                const parsedExpertise = fd.get('expertiseAreas').split(',').map(d => d.trim()).filter(Boolean);
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.8rem' }}>Career Level</label>
+                        <input type="text" name="careerLevel" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedCareerLevel || editItem.aiEnrichment.careerLevel || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '0.8rem' }}>Leadership Level</label>
+                        <input type="text" name="leadershipLevel" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedLeadershipLevel || editItem.aiEnrichment.leadershipLevel || ''} />
+                      </div>
+                    </div>
 
-                await handleSaveConnectionAiCorrections(editItem.id, {
-                  professionalRole: fd.get('professionalRole'),
-                  roleFamily: fd.get('roleFamily'),
-                  careerLevel: fd.get('careerLevel'),
-                  leadershipLevel: fd.get('leadershipLevel'),
-                  technologies: parsedTech,
-                  technicalDomains: parsedTechDomains,
-                  industryDomains: parsedIndDomains,
-                  expertiseAreas: parsedExpertise,
-                  summary: fd.get('summary')
-                });
-              }}
-              style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}
-            >
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.8rem' }}>Professional Role</label>
-                  <input type="text" name="professionalRole" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedProfessionalRole || editItem.aiEnrichment.professionalRole || ''} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.8rem' }}>Role Family</label>
-                  <input type="text" name="roleFamily" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedRoleFamily || editItem.aiEnrichment.roleFamily || ''} />
-                </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.8rem' }}>Technologies (comma separated)</label>
+                      <input type="text" name="technologies" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedTechnologies || editItem.aiEnrichment.technologies || []).join(', ')} />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.8rem' }}>Technical Domains (comma separated)</label>
+                      <input type="text" name="technicalDomains" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedTechnicalDomains || editItem.aiEnrichment.technicalDomains || []).join(', ')} />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.8rem' }}>Industry Domains (comma separated)</label>
+                      <input type="text" name="industryDomains" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedIndustryDomains || editItem.aiEnrichment.industryDomains || []).join(', ')} />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.8rem' }}>Expertise Areas (comma separated)</label>
+                      <input type="text" name="expertiseAreas" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedExpertiseAreas || editItem.aiEnrichment.expertiseAreas || []).join(', ')} />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.8rem' }}>Summary</label>
+                      <textarea name="summary" className="form-input" rows="2" defaultValue={editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || ''}></textarea>
+                    </div>
+
+                    <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end', padding: '6px 12px', fontSize: '0.85rem' }}>Save Corrections</button>
+                  </form>
+                ) : (
+                  /* AI Display View */
+                  <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Professional Role</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{editItem.aiEnrichment.userCorrectedProfessionalRole || editItem.aiEnrichment.professionalRole || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Role Family</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{editItem.aiEnrichment.userCorrectedRoleFamily || editItem.aiEnrichment.roleFamily || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Career Level</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{editItem.aiEnrichment.userCorrectedCareerLevel || editItem.aiEnrichment.careerLevel || 'N/A'}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Leadership Level</div>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{editItem.aiEnrichment.userCorrectedLeadershipLevel || editItem.aiEnrichment.leadershipLevel || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>AI Confidence</div>
+                        <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{Math.round((editItem.aiEnrichment.confidence || 0) * 100)}%</div>
+                      </div>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Status</div>
+                        <div style={{ fontWeight: 600, textTransform: 'capitalize', color: editItem.aiEnrichment.status === 'completed' ? 'var(--success)' : editItem.aiEnrichment.status === 'failed' ? 'var(--danger)' : 'var(--warning)' }}>{editItem.aiEnrichment.status}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>Technologies</div>
+                      <div className="tags-list">
+                        {(editItem.aiEnrichment.userCorrectedTechnologies || editItem.aiEnrichment.technologies || []).length === 0 ? (
+                          <span style={{ color: 'var(--text-muted)' }}>None</span>
+                        ) : (
+                          (editItem.aiEnrichment.userCorrectedTechnologies || editItem.aiEnrichment.technologies || []).map(t => (
+                            <span key={t} className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>{t}</span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>Technical Domains</div>
+                      <div className="tags-list">
+                        {(editItem.aiEnrichment.userCorrectedTechnicalDomains || editItem.aiEnrichment.technicalDomains || []).length === 0 ? (
+                          <span style={{ color: 'var(--text-muted)' }}>None</span>
+                        ) : (
+                          (editItem.aiEnrichment.userCorrectedTechnicalDomains || editItem.aiEnrichment.technicalDomains || []).map(d => (
+                            <span key={d} className="badge" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa', fontSize: '0.75rem' }}>{d}</span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>Industry Domains</div>
+                      <div className="tags-list">
+                        {(editItem.aiEnrichment.userCorrectedIndustryDomains || editItem.aiEnrichment.industryDomains || []).length === 0 ? (
+                          <span style={{ color: 'var(--text-muted)' }}>None</span>
+                        ) : (
+                          (editItem.aiEnrichment.userCorrectedIndustryDomains || editItem.aiEnrichment.industryDomains || []).map(d => (
+                            <span key={d} className="badge" style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399', fontSize: '0.75rem' }}>{d}</span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>Expertise Areas</div>
+                      <ul style={{ margin: '4px 0 0 16px', padding: 0, color: 'var(--text-secondary)' }}>
+                        {(editItem.aiEnrichment.userCorrectedExpertiseAreas || editItem.aiEnrichment.expertiseAreas || []).map((exp, idx) => (
+                          <li key={idx} style={{ marginBottom: '2px' }}>{exp}</li>
+                        ))}
+                        {(editItem.aiEnrichment.userCorrectedExpertiseAreas || editItem.aiEnrichment.expertiseAreas || []).length === 0 && (
+                          <li style={{ listStyleType: 'none', marginLeft: '-16px', color: 'var(--text-muted)' }}>None logged</li>
+                        )}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>AI Career Summary</div>
+                      <p style={{ margin: 0, lineHeight: 1.4, color: 'var(--text-secondary)' }}>{editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || 'No summary available.'}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.8rem' }}>Career Level</label>
-                  <input type="text" name="careerLevel" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedCareerLevel || editItem.aiEnrichment.careerLevel || ''} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.8rem' }}>Leadership Level</label>
-                  <input type="text" name="leadershipLevel" className="form-input" defaultValue={editItem.aiEnrichment.userCorrectedLeadershipLevel || editItem.aiEnrichment.leadershipLevel || ''} />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>Technologies (comma separated)</label>
-                <input type="text" name="technologies" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedTechnologies || editItem.aiEnrichment.technologies || []).join(', ')} />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>Technical Domains (comma separated)</label>
-                <input type="text" name="technicalDomains" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedTechnicalDomains || editItem.aiEnrichment.technicalDomains || []).join(', ')} />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>Industry Domains (comma separated)</label>
-                <input type="text" name="industryDomains" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedIndustryDomains || editItem.aiEnrichment.industryDomains || []).join(', ')} />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>Expertise Areas (comma separated)</label>
-                <input type="text" name="expertiseAreas" className="form-input" defaultValue={(editItem.aiEnrichment.userCorrectedExpertiseAreas || editItem.aiEnrichment.expertiseAreas || []).join(', ')} />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.8rem' }}>Summary</label>
-                <textarea name="summary" className="form-input" rows="2" defaultValue={editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || ''}></textarea>
-              </div>
-
-              <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end', padding: '6px 12px', fontSize: '0.85rem' }}>Save Corrections</button>
-            </form>
-          ) : (
-            /* AI Display View */
-            <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', fontSize: '0.85rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '12px' }}>
-                <div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Professional Role</div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{editItem.aiEnrichment.userCorrectedProfessionalRole || editItem.aiEnrichment.professionalRole || 'N/A'}</div>
-                </div>
-                <div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Role Family</div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{editItem.aiEnrichment.userCorrectedRoleFamily || editItem.aiEnrichment.roleFamily || 'N/A'}</div>
-                </div>
-                <div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Career Level</div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{editItem.aiEnrichment.userCorrectedCareerLevel || editItem.aiEnrichment.careerLevel || 'N/A'}</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '12px' }}>
-                <div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Leadership Level</div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{editItem.aiEnrichment.userCorrectedLeadershipLevel || editItem.aiEnrichment.leadershipLevel || 'N/A'}</div>
-                </div>
-                <div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>AI Confidence</div>
-                  <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{Math.round((editItem.aiEnrichment.confidence || 0) * 100)}%</div>
-                </div>
-                <div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Status</div>
-                  <div style={{ fontWeight: 600, textTransform: 'capitalize', color: editItem.aiEnrichment.status === 'completed' ? 'var(--success)' : editItem.aiEnrichment.status === 'failed' ? 'var(--danger)' : 'var(--warning)' }}>{editItem.aiEnrichment.status}</div>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>Technologies</div>
-                <div className="tags-list">
-                  {(editItem.aiEnrichment.userCorrectedTechnologies || editItem.aiEnrichment.technologies || []).length === 0 ? (
-                    <span style={{ color: 'var(--text-muted)' }}>None</span>
-                  ) : (
-                    (editItem.aiEnrichment.userCorrectedTechnologies || editItem.aiEnrichment.technologies || []).map(t => (
-                      <span key={t} className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>{t}</span>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>Technical Domains</div>
-                <div className="tags-list">
-                  {(editItem.aiEnrichment.userCorrectedTechnicalDomains || editItem.aiEnrichment.technicalDomains || []).length === 0 ? (
-                    <span style={{ color: 'var(--text-muted)' }}>None</span>
-                  ) : (
-                    (editItem.aiEnrichment.userCorrectedTechnicalDomains || editItem.aiEnrichment.technicalDomains || []).map(d => (
-                      <span key={d} className="badge" style={{ background: 'rgba(59,130,246,0.1)', color: '#60a5fa', fontSize: '0.75rem' }}>{d}</span>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>Industry Domains</div>
-                <div className="tags-list">
-                  {(editItem.aiEnrichment.userCorrectedIndustryDomains || editItem.aiEnrichment.industryDomains || []).length === 0 ? (
-                    <span style={{ color: 'var(--text-muted)' }}>None</span>
-                  ) : (
-                    (editItem.aiEnrichment.userCorrectedIndustryDomains || editItem.aiEnrichment.industryDomains || []).map(d => (
-                      <span key={d} className="badge" style={{ background: 'rgba(16,185,129,0.1)', color: '#34d399', fontSize: '0.75rem' }}>{d}</span>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>Expertise Areas</div>
-                <ul style={{ margin: '4px 0 0 16px', padding: 0, color: 'var(--text-secondary)' }}>
-                  {(editItem.aiEnrichment.userCorrectedExpertiseAreas || editItem.aiEnrichment.expertiseAreas || []).map((exp, idx) => (
-                    <li key={idx} style={{ marginBottom: '2px' }}>{exp}</li>
-                  ))}
-                  {(editItem.aiEnrichment.userCorrectedExpertiseAreas || editItem.aiEnrichment.expertiseAreas || []).length === 0 && (
-                    <li style={{ listStyleType: 'none', marginLeft: '-16px', color: 'var(--text-muted)' }}>None logged</li>
-                  )}
-                </ul>
-              </div>
-
-              <div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px' }}>AI Career Summary</div>
-                <p style={{ margin: 0, lineHeight: 1.4, color: 'var(--text-secondary)' }}>{editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || 'No summary available.'}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
-          <label className="form-label" style={{ fontWeight: 600 }}>Enrich Profile via LinkedIn PDF</label>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '8px' }}>
-            <input
-              type="file"
-              accept=".pdf"
-              className="form-input"
-              style={{ maxWidth: '300px' }}
-              onChange={async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                setEnrichmentLoading(true);
-                setEnrichmentError(null);
-                setModal('linkedin_pdf');
-                try {
-                  const objectUrl = URL.createObjectURL(file);
-                  setPdfObjectURL(objectUrl);
-                  const res = await api.importLinkedInPdf(file);
-                  setEnrichmentPreview(res.data);
-                } catch (err) {
-                  setEnrichmentError(err.message || 'Failed to parse PDF profile.');
-                } finally {
-                  setEnrichmentLoading(false);
-                }
-              }}
-            />
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Upload PDF to update skills, headline, summary.</span>
-          </div>
-        </div>
-
-        <div className="modal-actions" style={{ marginTop: '24px' }}>
-          <button className="btn btn-secondary" onClick={() => setModal(null)}>Close Intel</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-{
-  modal === 'linkedin_pdf' && (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: pdfObjectURL ? '1100px' : '650px', width: '95%', transition: 'max-width 0.3s ease' }}>
-        <h2 className="modal-title">LinkedIn PDF Profile Enrichment</h2>
-
-        {enrichmentLoading && (
-          <div className="empty-state">
-            <p>Uploading and parsing LinkedIn PDF...</p>
-          </div>
-        )}
-
-        {enrichmentError && (
-          <div className="empty-state" style={{ color: 'var(--danger)' }}>
-            <p>Error: {enrichmentError}</p>
-            <button className="btn btn-secondary" style={{ marginTop: '12px' }} onClick={() => setEnrichmentError(null)}>
-              Try Again
-            </button>
-          </div>
-        )}
-
-        {!enrichmentLoading && !enrichmentError && !enrichmentPreview && (
-          <form onSubmit={async (e) => {
-            e.preventDefault();
-            const file = e.target.elements.pdfFile.files[0];
-            if (!file) return alert('Please select a file.');
-            setEnrichmentLoading(true);
-            setEnrichmentError(null);
-            try {
-              const objectUrl = URL.createObjectURL(file);
-              setPdfObjectURL(objectUrl);
-              const res = await api.importLinkedInPdf(file);
-              setEnrichmentPreview(res.data);
-            } catch (err) {
-              setEnrichmentError(err.message || 'Failed to parse PDF profile.');
-            } finally {
-              setEnrichmentLoading(false);
-            }
-          }}>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              Upload a LinkedIn profile PDF to match against existing network contacts and enrich their profile summary, headline, or skill arrays.
-            </p>
-            <div className="form-group">
-              <label className="form-label">Select LinkedIn PDF Export</label>
-              <input type="file" name="pdfFile" className="form-input" accept=".pdf" required />
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={closeEnrichmentModal}>Cancel</button>
-              <button type="submit" className="btn btn-primary">Parse PDF</button>
-            </div>
-          </form>
-        )}
-
-        {!enrichmentLoading && !enrichmentError && enrichmentPreview && (
-          <div style={{ display: 'flex', gap: '24px', flexDirection: pdfObjectURL ? 'row' : 'column', alignItems: 'stretch', marginTop: '16px' }}>
-            {pdfObjectURL && (
-              <div style={{ flex: 1.2, minWidth: '350px', background: 'var(--bg-tertiary)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '12px' }}>Uploaded Profile PDF</h3>
-                <iframe src={pdfObjectURL} width="100%" height="450px" style={{ border: 'none', borderRadius: '6px', background: '#fff' }}></iframe>
-              </div>
-            )}
-
-            <div style={{ flex: 1, minWidth: '300px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
-                Profile Extracted: <span style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.name}</span>
-              </h3>
-
-              <div style={{ background: 'var(--bg-tertiary)', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
-                {enrichmentPreview.parsed.headline && <div><strong>Headline:</strong> {enrichmentPreview.parsed.headline}</div>}
-                {enrichmentPreview.parsed.email && <div style={{ marginTop: '6px' }}><strong>Email:</strong> {enrichmentPreview.parsed.email}</div>}
-                {enrichmentPreview.parsed.profileUrl && <div style={{ marginTop: '6px' }}><strong>LinkedIn URL:</strong> <a href={enrichmentPreview.parsed.profileUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.profileUrl}</a></div>}
-                {enrichmentPreview.parsed.skills && <div style={{ marginTop: '6px' }}><strong>Skills Extracted:</strong> {enrichmentPreview.parsed.skills.join(', ')}</div>}
-              </div>
-
-              {enrichmentPreview.matched.length > 0 ? (
-                <div style={{ border: '1px solid var(--warning)', background: 'var(--warning-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
-                  <h4 style={{ color: 'var(--warning)', fontWeight: 700, marginBottom: '8px' }}>Existing Contact Matched</h4>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                    We found a matched profile in your CRM network: <strong>{enrichmentPreview.matched[0].name}</strong> at <strong>{enrichmentPreview.matched[0].company || 'No Company'}</strong> ({enrichmentPreview.matched[0].title || 'No Title'}).
-                  </p>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <button className="btn btn-primary" onClick={async () => {
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
+                <label className="form-label" style={{ fontWeight: 600 }}>Enrich Profile via LinkedIn PDF</label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '8px' }}>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    className="form-input"
+                    style={{ maxWidth: '300px' }}
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
                       setEnrichmentLoading(true);
+                      setEnrichmentError(null);
+                      setModal('linkedin_pdf');
                       try {
-                        await api.confirmEnrichment({
-                          action: 'enrich',
-                          parsed: enrichmentPreview.parsed,
-                          connectionId: enrichmentPreview.matched[0].id
-                        });
-                        alert('Connection enriched successfully!');
-                        closeEnrichmentModal();
-                        loadConnections();
+                        const objectUrl = URL.createObjectURL(file);
+                        setPdfObjectURL(objectUrl);
+                        const res = await api.importLinkedInPdf(file);
+                        setEnrichmentPreview(res.data);
                       } catch (err) {
-                        alert(err.message);
+                        setEnrichmentError(err.message || 'Failed to parse PDF profile.');
                       } finally {
                         setEnrichmentLoading(false);
                       }
-                    }}>
-                      Enrich Matched Contact
-                    </button>
-                    <button className="btn btn-secondary" onClick={async () => {
-                      if (confirm('Create a new duplicate connection anyway?')) {
-                        setEnrichmentLoading(true);
-                        try {
-                          await api.confirmEnrichment({
-                            action: 'create',
-                            parsed: enrichmentPreview.parsed
-                          });
-                          alert('New duplicate connection created!');
-                          closeEnrichmentModal();
-                          loadConnections();
-                        } catch (err) {
-                          alert(err.message);
-                        } finally {
-                          setEnrichmentLoading(false);
-                        }
-                      }
-                    }}>
-                      Import as New Instead
-                    </button>
-                  </div>
+                    }}
+                  />
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Upload PDF to update skills, headline, summary.</span>
                 </div>
-              ) : (
-                <div style={{ border: '1px solid var(--success)', background: 'var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
-                  <h4 style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '8px' }}>No matches found</h4>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                    This profile does not match any existing contacts in your CRM. Do you want to import them as a new connection?
-                  </p>
-                  <button className="btn btn-primary" onClick={async () => {
-                    setEnrichmentLoading(true);
-                    try {
-                      await api.confirmEnrichment({
-                        action: 'create',
-                        parsed: enrichmentPreview.parsed
-                      });
-                      alert('New contact imported successfully!');
-                      closeEnrichmentModal();
-                      loadConnections();
-                    } catch (err) {
-                      alert(err.message);
-                    } finally {
-                      setEnrichmentLoading(false);
-                    }
-                  }}>
-                    Create New Connection
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: '24px' }}>
+                <button className="btn btn-secondary" onClick={() => setModal(null)}>Close Intel</button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {
+        modal === 'linkedin_pdf' && (
+          <div className="modal-overlay">
+            <div className="modal-content" style={{ maxWidth: pdfObjectURL ? '1100px' : '650px', width: '95%', transition: 'max-width 0.3s ease' }}>
+              <h2 className="modal-title">LinkedIn PDF Profile Enrichment</h2>
+
+              {enrichmentLoading && (
+                <div className="empty-state">
+                  <p>Uploading and parsing LinkedIn PDF...</p>
+                </div>
+              )}
+
+              {enrichmentError && (
+                <div className="empty-state" style={{ color: 'var(--danger)' }}>
+                  <p>Error: {enrichmentError}</p>
+                  <button className="btn btn-secondary" style={{ marginTop: '12px' }} onClick={() => setEnrichmentError(null)}>
+                    Try Again
                   </button>
                 </div>
               )}
 
+              {!enrichmentLoading && !enrichmentError && !enrichmentPreview && (
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  const file = e.target.elements.pdfFile.files[0];
+                  if (!file) return alert('Please select a file.');
+                  setEnrichmentLoading(true);
+                  setEnrichmentError(null);
+                  try {
+                    const objectUrl = URL.createObjectURL(file);
+                    setPdfObjectURL(objectUrl);
+                    const res = await api.importLinkedInPdf(file);
+                    setEnrichmentPreview(res.data);
+                  } catch (err) {
+                    setEnrichmentError(err.message || 'Failed to parse PDF profile.');
+                  } finally {
+                    setEnrichmentLoading(false);
+                  }
+                }}>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                    Upload a LinkedIn profile PDF to match against existing network contacts and enrich their profile summary, headline, or skill arrays.
+                  </p>
+                  <div className="form-group">
+                    <label className="form-label">Select LinkedIn PDF Export</label>
+                    <input type="file" name="pdfFile" className="form-input" accept=".pdf" required />
+                  </div>
+                  <div className="modal-actions">
+                    <button type="button" className="btn btn-secondary" onClick={closeEnrichmentModal}>Cancel</button>
+                    <button type="submit" className="btn btn-primary">Parse PDF</button>
+                  </div>
+                </form>
+              )}
+
+              {!enrichmentLoading && !enrichmentError && enrichmentPreview && (
+                <div style={{ display: 'flex', gap: '24px', flexDirection: pdfObjectURL ? 'row' : 'column', alignItems: 'stretch', marginTop: '16px' }}>
+                  {pdfObjectURL && (
+                    <div style={{ flex: 1.2, minWidth: '350px', background: 'var(--bg-tertiary)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column' }}>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '12px' }}>Uploaded Profile PDF</h3>
+                      <iframe src={pdfObjectURL} width="100%" height="450px" style={{ border: 'none', borderRadius: '6px', background: '#fff' }}></iframe>
+                    </div>
+                  )}
+
+                  <div style={{ flex: 1, minWidth: '300px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
+                      Profile Extracted: <span style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.name}</span>
+                    </h3>
+
+                    <div style={{ background: 'var(--bg-tertiary)', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
+                      {enrichmentPreview.parsed.headline && <div><strong>Headline:</strong> {enrichmentPreview.parsed.headline}</div>}
+                      {enrichmentPreview.parsed.email && <div style={{ marginTop: '6px' }}><strong>Email:</strong> {enrichmentPreview.parsed.email}</div>}
+                      {enrichmentPreview.parsed.profileUrl && <div style={{ marginTop: '6px' }}><strong>LinkedIn URL:</strong> <a href={enrichmentPreview.parsed.profileUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.profileUrl}</a></div>}
+                      {enrichmentPreview.parsed.skills && <div style={{ marginTop: '6px' }}><strong>Skills Extracted:</strong> {enrichmentPreview.parsed.skills.join(', ')}</div>}
+                    </div>
+
+                    {enrichmentPreview.matched.length > 0 ? (
+                      <div style={{ border: '1px solid var(--warning)', background: 'var(--warning-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
+                        <h4 style={{ color: 'var(--warning)', fontWeight: 700, marginBottom: '8px' }}>Existing Contact Matched</h4>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                          We found a matched profile in your CRM network: <strong>{enrichmentPreview.matched[0].name}</strong> at <strong>{enrichmentPreview.matched[0].company || 'No Company'}</strong> ({enrichmentPreview.matched[0].title || 'No Title'}).
+                        </p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                          <button className="btn btn-primary" onClick={async () => {
+                            setEnrichmentLoading(true);
+                            try {
+                              await api.confirmEnrichment({
+                                action: 'enrich',
+                                parsed: enrichmentPreview.parsed,
+                                connectionId: enrichmentPreview.matched[0].id
+                              });
+                              alert('Connection enriched successfully!');
+                              closeEnrichmentModal();
+                              loadConnections();
+                            } catch (err) {
+                              alert(err.message);
+                            } finally {
+                              setEnrichmentLoading(false);
+                            }
+                          }}>
+                            Enrich Matched Contact
+                          </button>
+                          <button className="btn btn-secondary" onClick={async () => {
+                            if (confirm('Create a new duplicate connection anyway?')) {
+                              setEnrichmentLoading(true);
+                              try {
+                                await api.confirmEnrichment({
+                                  action: 'create',
+                                  parsed: enrichmentPreview.parsed
+                                });
+                                alert('New duplicate connection created!');
+                                closeEnrichmentModal();
+                                loadConnections();
+                              } catch (err) {
+                                alert(err.message);
+                              } finally {
+                                setEnrichmentLoading(false);
+                              }
+                            }
+                          }}>
+                            Import as New Instead
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ border: '1px solid var(--success)', background: 'var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
+                        <h4 style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '8px' }}>No matches found</h4>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                          This profile does not match any existing contacts in your CRM. Do you want to import them as a new connection?
+                        </p>
+                        <button className="btn btn-primary" onClick={async () => {
+                          setEnrichmentLoading(true);
+                          try {
+                            await api.confirmEnrichment({
+                              action: 'create',
+                              parsed: enrichmentPreview.parsed
+                            });
+                            alert('New contact imported successfully!');
+                            closeEnrichmentModal();
+                            loadConnections();
+                          } catch (err) {
+                            alert(err.message);
+                          } finally {
+                            setEnrichmentLoading(false);
+                          }
+                        }}>
+                          Create New Connection
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="modal-actions">
+                      <button className="btn btn-secondary" onClick={closeEnrichmentModal}>Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        )
+      }
+
+      {
+        showSaveViewModal && (
+          <div className="modal-overlay">
+            <div className="modal-content" style={{ maxWidth: '450px' }}>
+              <h2 className="modal-title">Save Connection Segment View</h2>
+              <div className="form-group">
+                <label className="form-label">View Name</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. Google Recruiters"
+                  value={newViewName}
+                  onChange={(e) => setNewViewName(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Description (Optional)</label>
+                <textarea
+                  className="form-input"
+                  rows="3"
+                  placeholder="Senior Engineering Recruiters in SF"
+                  value={newViewDesc}
+                  onChange={(e) => setNewViewDesc(e.target.value)}
+                />
+              </div>
               <div className="modal-actions">
-                <button className="btn btn-secondary" onClick={closeEnrichmentModal}>Cancel</button>
+                <button className="btn btn-secondary" onClick={() => setShowSaveViewModal(false)}>Cancel</button>
+                <button className="btn btn-primary" onClick={handleSaveView}>Save View</button>
               </div>
             </div>
           </div>
-        )}
-
-      </div>
-    </div>
-  )
-}
-
-{
-  showSaveViewModal && (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '450px' }}>
-        <h2 className="modal-title">Save Connection Segment View</h2>
-        <div className="form-group">
-          <label className="form-label">View Name</label>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="e.g. Google Recruiters"
-            value={newViewName}
-            onChange={(e) => setNewViewName(e.target.value)}
-          />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Description (Optional)</label>
-          <textarea
-            className="form-input"
-            rows="3"
-            placeholder="Senior Engineering Recruiters in SF"
-            value={newViewDesc}
-            onChange={(e) => setNewViewDesc(e.target.value)}
-          />
-        </div>
-        <div className="modal-actions">
-          <button className="btn btn-secondary" onClick={() => setShowSaveViewModal(false)}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSaveView}>Save View</button>
-        </div>
-      </div>
-    </div>
-  )
-}
+        )
+      }
 
     </div >
   );

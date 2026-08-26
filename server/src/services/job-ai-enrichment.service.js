@@ -3,6 +3,7 @@ import Joi from 'joi';
 import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
+import { aiObservability } from './ai/observability.service.js';
 
 // Define the structured schema matching database columns
 export const jobEnrichmentSchema = Joi.object({
@@ -47,6 +48,13 @@ Instructions:
 // In-Memory Background Processing Queue
 const enrichmentQueue = [];
 let queueProcessing = false;
+let queueFailures = 0;
+
+aiObservability.registerQueueProvider('job_enrichment', () => ({
+  pending: enrichmentQueue.length,
+  processing: queueProcessing,
+  failed: queueFailures
+}));
 
 async function processQueue() {
   if (queueProcessing) return;
@@ -188,6 +196,7 @@ export async function executeEnrichment(jobId) {
       errorCode: null
     });
   } catch (err) {
+    queueFailures++;
     const latency = Date.now() - start;
     let errorCode = 'UNKNOWN';
     const errMessage = err.message.toLowerCase();
