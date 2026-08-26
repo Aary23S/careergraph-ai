@@ -1,3 +1,6 @@
+import nodemailer from 'nodemailer';
+import { env } from '../config/env.js';
+
 export class EmailProvider {
   async sendEmail(to, subject, body) {
     throw new Error(`Method not implemented: sendEmail(${to}, ${subject}, ${body})`);
@@ -15,9 +18,40 @@ export class ConsoleEmailProvider extends EmailProvider {
   }
 }
 
+export class SmtpEmailProvider extends EmailProvider {
+  constructor() {
+    super();
+    this.transporter = nodemailer.createTransport({
+      host: env.smtpHost,
+      port: env.smtpPort,
+      secure: env.smtpPort === 465,
+      auth: env.smtpUser && env.smtpPass ? {
+        user: env.smtpUser,
+        pass: env.smtpPass
+      } : undefined
+    });
+  }
+
+  async sendEmail(to, subject, body) {
+    const info = await this.transporter.sendMail({
+      from: env.smtpFrom,
+      to,
+      subject,
+      text: body
+    });
+    return { success: true, messageId: info.messageId };
+  }
+}
+
 export class EmailService {
-  constructor(provider = new ConsoleEmailProvider()) {
-    this.provider = provider;
+  constructor(provider = null) {
+    if (provider) {
+      this.provider = provider;
+    } else if (env.smtpHost) {
+      this.provider = new SmtpEmailProvider();
+    } else {
+      this.provider = new ConsoleEmailProvider();
+    }
   }
 
   async sendDigest(to, username, digestData) {
@@ -67,7 +101,8 @@ export class EmailService {
     body += `The CareerGraph AI Team`;
 
     const subject = `CareerGraph Digest: ${topJobs?.length || 0} New Jobs & Referral Opportunities`;
-    return this.provider.sendEmail(to, subject, body);
+    const mailResult = await this.provider.sendEmail(to, subject, body);
+    return { ...mailResult, body };
   }
 }
 

@@ -172,7 +172,22 @@ router.post(
       pendingFollowUps
     });
 
-    ok(res, { sent: true, recipient: user.email, result });
+    let telegramSent = false;
+    try {
+      const telegramLink = await models.TelegramIntegration.findOne({ where: { user_id: userId } });
+      if (telegramLink && telegramLink.telegramUserId) {
+        const { sendMessage } = await import('../services/telegram.service.js');
+        let cleanBody = result.body || '';
+        cleanBody = cleanBody.replace(/={10,}/g, '───');
+        const telegramBody = `<b>📋 CareerGraph Daily Digest</b>\n\n` + cleanBody;
+        await sendMessage(telegramLink.telegramUserId, telegramBody, { parse_mode: 'HTML' });
+        telegramSent = true;
+      }
+    } catch (tErr) {
+      console.error('[DashboardRoutes] Failed to send digest via Telegram:', tErr);
+    }
+
+    ok(res, { sent: true, recipient: user.email, result, telegramSent });
   }),
 );
 
