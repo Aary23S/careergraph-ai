@@ -1,0 +1,17 @@
+[
+  {
+    "caseId": "resume-001",
+    "description": "Full Stack developer resume with experience in Node, React, and Python.",
+    "input": {
+      "fileName": "resume_dev.pdf",
+      "rawText": "Alex Dev - Full Stack Engineer. Experience: NodeJS, React, Redux, Express, Python. Education: BS Computer Science. Lead dev at InnovateCorp."
+    },
+    "expected": {
+      "roleCategory": "software_engineering",
+      "seniority": "mid",
+      "skills": ["NodeJS", "React", "Redux", "Express", "Python"],
+      "domains": ["fullstack"],
+      "experienceYears": 3
+    }
+  }
+]

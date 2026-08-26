@@ -610,6 +610,25 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'semantic_embeddings' }
   );
 
+  const AiAuditLog = sequelize.define(
+    'AiAuditLog',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      userId: { type: DataTypes.UUID, allowNull: false, field: 'user_id' },
+      operation: { type: DataTypes.STRING, allowNull: false },
+      entityType: { type: DataTypes.STRING, allowNull: true, field: 'entity_type' },
+      entityId: { type: DataTypes.UUID, allowNull: true, field: 'entity_id' },
+      provider: { type: DataTypes.STRING, allowNull: false },
+      model: { type: DataTypes.STRING, allowNull: false },
+      promptVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'prompt_version' },
+      schemaVersion: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'schema_version' },
+      latencyMs: { type: DataTypes.INTEGER, allowNull: false, field: 'latency_ms' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'success' },
+      evaluationScore: { type: DataTypes.FLOAT, allowNull: true, field: 'evaluation_score' },
+    },
+    { ...baseOptions, tableName: 'ai_audit_logs' }
+  );
+
 
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -712,6 +731,9 @@ export function initializeModels(sequelize) {
   User.hasMany(SemanticEmbedding, { foreignKey: 'user_id', as: 'embeddings' });
   SemanticEmbedding.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+  User.hasMany(AiAuditLog, { foreignKey: 'user_id', as: 'aiAuditLogs' });
+  AiAuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
   return {
     User,
     RefreshToken,
@@ -740,5 +762,6 @@ export function initializeModels(sequelize) {
     ConnectionAiEnrichment,
     OutreachAiDraft,
     SemanticEmbedding,
+    AiAuditLog,
   };
 }

@@ -1,0 +1,17 @@
+[
+  {
+    "caseId": "outreach-001",
+    "description": "Standard friendly referral request outreach draft.",
+    "input": {
+      "connectionName": "Sarah Architect",
+      "companyName": "CloudGroup",
+      "jobTitle": "DevOps Architect",
+      "relationshipHistory": "Met Sarah at AWS Re:invent. Spoke about Kubernetes clusters."
+    },
+    "expected": {
+      "tone": "professional",
+      "adheresToIntent": true,
+      "noFabrication": true
+    }
+  }
+]

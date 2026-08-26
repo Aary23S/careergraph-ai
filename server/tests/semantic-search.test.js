@@ -1,5 +1,4 @@
 import request from 'supertest';
-import { jest } from '@jest/globals';
 import { createApp } from '../src/app.js';
 import { sequelize, resetDatabase, models } from '../src/config/database.js';
 import { env } from '../src/config/env.js';
@@ -13,7 +12,6 @@ describe('Semantic Search & pgvector Fallback Test Suite', () => {
   let userIdA;
   let userIdB;
   let connectionA;
-  let connectionB;
 
   beforeAll(async () => {
     env.aiEnabled = true;
@@ -45,7 +43,7 @@ describe('Semantic Search & pgvector Fallback Test Suite', () => {
     });
 
     // Create Connection for User B (Tenant Isolation verification)
-    connectionB = await models.Connection.create({
+    await models.Connection.create({
       user_id: userIdB,
       name: 'Jane Cloud',
       company: 'AWS',

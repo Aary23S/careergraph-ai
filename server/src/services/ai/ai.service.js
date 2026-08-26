@@ -2,6 +2,8 @@ import { env } from '../../config/env.js';
 import { MockProvider } from './mock-provider.js';
 import { OllamaProvider } from './ollama-provider.js';
 import { GroqProvider } from './groq-provider.js';
+import { models } from '../../config/database.js';
+import { detectAndSanitizePromptInjection, validateClaims } from './guardrails.service.js';
 
 export class AIService {
   constructor() {
@@ -30,11 +32,26 @@ export class AIService {
       throw new Error('AI layer is currently disabled. Toggle AI_ENABLED to true.');
     }
 
+    const op = options.operation || 'generic';
+    if (op === 'job_enrichment' && env.aiJobEnrichmentEnabled === false) {
+      throw new Error('Job enrichment AI is disabled via feature flag.');
+    }
+    if (op === 'resume_enrichment' && env.aiResumeEnabled === false) {
+      throw new Error('Resume AI is disabled via feature flag.');
+    }
+    if (op === 'connection_enrichment' && env.aiConnectionEnabled === false) {
+      throw new Error('Connection AI is disabled via feature flag.');
+    }
+
+    // Shield against prompt injection (3H-12)
+    const sanitizedPrompt = detectAndSanitizePromptInjection(prompt);
+
     let attempt = 0;
     const maxRetries = env.aiMaxRetries || 0;
     const timeoutMs = options.timeoutMs || env.aiTimeoutMs || 15000;
 
     let lastError = null;
+    const start = Date.now();
 
     while (attempt <= maxRetries) {
       try {
@@ -48,7 +65,7 @@ export class AIService {
 
         // Execute generation
         const responseData = await Promise.race([
-          this.provider.generateStructured(prompt, schema),
+          this.provider.generateStructured(sanitizedPrompt, schema),
           timeoutPromise
         ]);
         
@@ -69,6 +86,38 @@ export class AIService {
           if (error) {
             throw new Error(`Structured output schema validation failed: ${error.message}`);
           }
+
+          // 3H-4: Hallucination Verification
+          if (options.evidenceText) {
+            const claimCheck = validateClaims(options.evidenceText, value);
+            if (!claimCheck.passed) {
+              value.confidence = 0.40; // review status marker
+              value.guardrailErrors = claimCheck.errors;
+            } else {
+              value.confidence = value.confidence || 0.95;
+            }
+          } else {
+            value.confidence = value.confidence || 0.95;
+          }
+
+          // 3H-14: Audit Logging on success
+          const latency = Date.now() - start;
+          if (models.AiAuditLog) {
+            await models.AiAuditLog.create({
+              userId: options.userId || '00000000-0000-0000-0000-000000000000',
+              operation: op,
+              entityType: options.entityType || null,
+              entityId: options.entityId || null,
+              provider: env.aiProvider,
+              model: this.provider.modelName || 'mock',
+              promptVersion: options.promptVersion || 1,
+              schemaVersion: options.schemaVersion || 1,
+              latencyMs: latency,
+              status: 'success',
+              evaluationScore: value.confidence
+            }).catch(() => {});
+          }
+
           return value;
         }
 
@@ -83,19 +132,46 @@ export class AIService {
       }
     }
 
+    // 3H-14: Audit Logging on failure
+    const latency = Date.now() - start;
+    if (models.AiAuditLog) {
+      await models.AiAuditLog.create({
+        userId: options.userId || '00000000-0000-0000-0000-000000000000',
+        operation: op,
+        entityType: options.entityType || null,
+        entityId: options.entityId || null,
+        provider: env.aiProvider,
+        model: this.provider.modelName || 'mock',
+        promptVersion: options.promptVersion || 1,
+        schemaVersion: options.schemaVersion || 1,
+        latencyMs: latency,
+        status: 'failed',
+        evaluationScore: 0.0
+      }).catch(() => {});
+    }
+
     throw new Error(`AI generation pipeline failed after ${attempt} attempts. Last error: ${lastError?.message}`);
   }
 
-  async generateText(prompt) {
+  async generateText(prompt, options = {}) {
     if (!env.aiEnabled) {
       throw new Error('AI layer is currently disabled. Toggle AI_ENABLED to true.');
     }
 
+    const op = options.operation || 'generic';
+    if (op === 'outreach' && env.aiOutreachEnabled === false) {
+      throw new Error('Outreach AI is disabled via feature flag.');
+    }
+
+    // Shield against prompt injection (3H-12)
+    const sanitizedPrompt = detectAndSanitizePromptInjection(prompt);
+
     let attempt = 0;
     const maxRetries = env.aiMaxRetries || 0;
-    const timeoutMs = env.aiTimeoutMs || 15000;
+    const timeoutMs = options.timeoutMs || env.aiTimeoutMs || 15000;
 
     let lastError = null;
+    const start = Date.now();
 
     while (attempt <= maxRetries) {
       try {
@@ -104,9 +180,27 @@ export class AIService {
         );
 
         const responseData = await Promise.race([
-          this.provider.generateText(prompt),
+          this.provider.generateText(sanitizedPrompt),
           timeoutPromise
         ]);
+
+        // 3H-14: Audit Logging on success
+        const latency = Date.now() - start;
+        if (models.AiAuditLog) {
+          await models.AiAuditLog.create({
+            userId: options.userId || '00000000-0000-0000-0000-000000000000',
+            operation: op,
+            entityType: options.entityType || null,
+            entityId: options.entityId || null,
+            provider: env.aiProvider,
+            model: this.provider.modelName || 'mock',
+            promptVersion: options.promptVersion || 1,
+            schemaVersion: options.schemaVersion || 1,
+            latencyMs: latency,
+            status: 'success',
+            evaluationScore: 1.0
+          }).catch(() => {});
+        }
 
         return responseData;
       } catch (err) {
@@ -117,6 +211,24 @@ export class AIService {
           break;
         }
       }
+    }
+
+    // 3H-14: Audit Logging on failure
+    const latency = Date.now() - start;
+    if (models.AiAuditLog) {
+      await models.AiAuditLog.create({
+        userId: options.userId || '00000000-0000-0000-0000-000000000000',
+        operation: op,
+        entityType: options.entityType || null,
+        entityId: options.entityId || null,
+        provider: env.aiProvider,
+        model: this.provider.modelName || 'mock',
+        promptVersion: options.promptVersion || 1,
+        schemaVersion: options.schemaVersion || 1,
+        latencyMs: latency,
+        status: 'failed',
+        evaluationScore: 0.0
+      }).catch(() => {});
     }
 
     throw new Error(`AI generation pipeline failed after ${attempt} attempts. Last error: ${lastError?.message}`);

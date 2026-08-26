@@ -37,7 +37,7 @@ export class GroqProvider extends AIProvider {
           }
         });
         schemaInstructions = `\n\nYou MUST return a JSON object with the following keys and structure:\n${JSON.stringify(template, null, 2)}`;
-      } catch (err) {
+      } catch {
         // Ignore
       }
     }

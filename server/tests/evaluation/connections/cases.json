@@ -1,0 +1,19 @@
+[
+  {
+    "caseId": "conn-001",
+    "description": "Connection profile of a DevOps Lead specializing in Kubernetes and Terraform.",
+    "input": {
+      "name": "Sarah Architect",
+      "title": "DevOps Architect",
+      "company": "CloudGroup",
+      "location": "San Francisco, CA",
+      "notes": "Met Sarah at AWS Re:invent. Spoke about Kubernetes clusters and Terraform provisioning."
+    },
+    "expected": {
+      "roleCategory": "devops_infrastructure",
+      "seniority": "lead",
+      "skills": ["Kubernetes", "Terraform"],
+      "domains": ["cloud", "devops"]
+    }
+  }
+]
