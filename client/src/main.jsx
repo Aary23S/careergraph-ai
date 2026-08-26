@@ -131,6 +131,13 @@ function App() {
   const [connMeta, setConnMeta] = useState({ total: 0, totalPages: 1 });
   const [jobFilters, setJobFilters] = useState({ page: 1, pageSize: 10, q: '', company: '', location: '', status: '', archived: false });
   const [jobMeta, setJobMeta] = useState({ total: 0, totalPages: 1 });
+  const [connSearchMode, setConnSearchMode] = useState('keyword');
+  const [semanticConnResults, setSemanticConnResults] = useState(null);
+  const [searchingSemantic, setSearchingSemantic] = useState(false);
+  const [jobSearchMode, setJobSearchMode] = useState('keyword');
+  const [semanticJobResults, setSemanticJobResults] = useState(null);
+  const [searchingJobSemantic, setSearchingJobSemantic] = useState(false);
+  const [syncingEmbeddings, setSyncingEmbeddings] = useState(false);
   const [jobSubTab, setJobSubTab] = useState('list'); // 'list', 'sources'
   const [searchProfiles, setSearchProfiles] = useState([]);
   const [gmailStatus, setGmailStatus] = useState(null);
@@ -768,6 +775,62 @@ function App() {
       setSearchProfiles(data);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const runSemanticConnSearch = async () => {
+    if (!connFilters.q) return;
+    setSearchingSemantic(true);
+    try {
+      const res = await api.request('/search/semantic', {
+        method: 'POST',
+        body: {
+          query: connFilters.q,
+          entityTypes: ['connection'],
+          limit: 20,
+          filters: {
+            company: connFilters.company || undefined,
+            title: connFilters.title || undefined
+          }
+        }
+      });
+      setSemanticConnResults(res.data || []);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSearchingSemantic(false);
+    }
+  };
+
+  const runSemanticJobSearch = async () => {
+    if (!jobFilters.q) return;
+    setSearchingJobSemantic(true);
+    try {
+      const res = await api.request('/search/jobs', {
+        method: 'POST',
+        body: {
+          query: jobFilters.q,
+          limit: 20
+        }
+      });
+      setSemanticJobResults(res.data || []);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSearchingJobSemantic(false);
+    }
+  };
+
+  const runBackfill = async () => {
+    setSyncingEmbeddings(true);
+    try {
+      const res = await api.request('/search/backfill', { method: 'POST' });
+      const stats = res.data;
+      alert(`AI Embeddings synced successfully!\n• Connections backfilled: ${stats.connections.processed}\n• Jobs backfilled: ${stats.jobs.processed}\n• Resumes backfilled: ${stats.resumes.processed}`);
+    } catch (err) {
+      alert(`Failed to sync embeddings: ${err.message}`);
+    } finally {
+      setSyncingEmbeddings(false);
     }
   };
 
@@ -2122,6 +2185,14 @@ function App() {
                       setNewViewName(activeViewId && activeViewId !== 'all' && activeViewId !== 'high_priority' && activeViewId !== 'never_contacted' && activeViewId !== 'follow_ups' ? `${activeViewName} Copy` : 'My Custom View');
                       setShowSaveViewModal(true);
                     }}>Save View As...</button>
+                    <button 
+                      className="btn btn-primary" 
+                      style={{ padding: '8px 14px', fontSize: '0.85rem', background: 'var(--accent)', borderColor: 'var(--accent)' }} 
+                      onClick={runBackfill} 
+                      disabled={syncingEmbeddings}
+                    >
+                      {syncingEmbeddings ? 'Syncing...' : '🔄 Sync AI Embeddings'}
+                    </button>
                   </div>
                 </div>
 
@@ -2201,15 +2272,42 @@ function App() {
 
                 {/* Filter Bar */}
                 <div className="filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <div className="form-group" style={{ margin: 0, minWidth: '150px' }}>
-                    <label className="form-label">Search Query</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder="Name, title, company..."
-                      value={connFilters.q || ''}
-                      onChange={(e) => setConnFilters({ ...connFilters, q: e.target.value, page: 1 })}
-                    />
+                  <div className="form-group" style={{ margin: 0, minWidth: '240px' }}>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Search Query</span>
+                      <div style={{ display: 'flex', gap: '8px', fontSize: '0.8rem' }}>
+                        <span 
+                          style={{ cursor: 'pointer', fontWeight: connSearchMode === 'keyword' ? 'bold' : 'normal', color: connSearchMode === 'keyword' ? 'var(--primary)' : 'var(--text-secondary)' }}
+                          onClick={() => { setConnSearchMode('keyword'); setSemanticConnResults(null); }}
+                        >Keyword</span>
+                        <span 
+                          style={{ cursor: 'pointer', fontWeight: connSearchMode === 'semantic' ? 'bold' : 'normal', color: connSearchMode === 'semantic' ? 'var(--primary)' : 'var(--text-secondary)' }}
+                          onClick={() => { setConnSearchMode('semantic'); }}
+                        >Semantic</span>
+                      </div>
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder={connSearchMode === 'semantic' ? "Find people with experience in..." : "Name, title, company..."}
+                        value={connFilters.q || ''}
+                        onChange={(e) => {
+                          setConnFilters({ ...connFilters, q: e.target.value, page: 1 });
+                          if (connSearchMode === 'keyword') setSemanticConnResults(null);
+                        }}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter' && connSearchMode === 'semantic') {
+                            await runSemanticConnSearch();
+                          }
+                        }}
+                      />
+                      {connSearchMode === 'semantic' && (
+                        <button className="btn btn-primary" onClick={runSemanticConnSearch} disabled={searchingSemantic}>
+                          {searchingSemantic ? '...' : 'Search'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="form-group" style={{ margin: 0, minWidth: '120px' }}>
                     <label className="form-label">Filter Company</label>
@@ -2389,7 +2487,7 @@ function App() {
                 </details>
 
                 <div className="card-panel">
-                  {connections.length === 0 ? (
+                  {(semanticConnResults !== null ? semanticConnResults : connections).length === 0 ? (
                     <div className="empty-state">No connection CRM records matching query.</div>
                   ) : (
                     <div className="data-table-container">
@@ -2404,9 +2502,19 @@ function App() {
                           </tr>
                         </thead>
                         <tbody>
-                          {connections.map((c) => (
+                          {(semanticConnResults !== null
+                            ? semanticConnResults.map(r => ({ ...r.connection, similarity: r.similarity, matchedConcepts: r.matchedConcepts }))
+                            : connections
+                          ).map((c) => (
                             <tr key={c.id}>
-                              <td style={{ fontWeight: 600 }}>{c.name}</td>
+                              <td style={{ fontWeight: 600 }}>
+                                <div>{c.name}</div>
+                                {c.similarity !== undefined && (
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'normal', marginTop: '4px' }}>
+                                    Similarity: {Math.round(c.similarity * 100)}% {c.matchedConcepts?.length > 0 && `(${c.matchedConcepts.join(', ')})`}
+                                  </div>
+                                )}
+                              </td>
                               <td>
                                 <div>{c.title || 'No Title'}</div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{c.company || 'Unknown'}</div>
@@ -2530,14 +2638,37 @@ function App() {
             {jobSubTab === 'list' && (
               <div>
                 <div className="filter-bar">
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Job Title / keyword</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={jobFilters.q}
-                      onChange={(e) => setJobFilters({ ...jobFilters, q: e.target.value, page: 1 })}
-                    />
+                  <div className="form-group" style={{ margin: 0, minWidth: '240px' }}>
+                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Job Title / keyword</span>
+                      <div style={{ display: 'flex', gap: '8px', fontSize: '0.8rem' }}>
+                        <span 
+                          style={{ cursor: 'pointer', fontWeight: jobSearchMode === 'keyword' ? 'bold' : 'normal', color: jobSearchMode === 'keyword' ? 'var(--primary)' : 'var(--text-secondary)' }}
+                          onClick={() => { setJobSearchMode('keyword'); setSemanticJobResults(null); }}
+                        >Keyword</span>
+                        <span 
+                          style={{ cursor: 'pointer', fontWeight: jobSearchMode === 'semantic' ? 'bold' : 'normal', color: jobSearchMode === 'semantic' ? 'var(--primary)' : 'var(--text-secondary)' }}
+                          onClick={() => { setJobSearchMode('semantic'); }}
+                        >Semantic</span>
+                      </div>
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder={jobSearchMode === 'semantic' ? "Find backend roles focused on..." : "Job title..."}
+                        value={jobFilters.q}
+                        onChange={(e) => {
+                          setJobFilters({ ...jobFilters, q: e.target.value, page: 1 });
+                          if (jobSearchMode === 'keyword') setSemanticJobResults(null);
+                        }}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter' && jobSearchMode === 'semantic') {
+                            await runSemanticJobSearch();
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label">Location</label>
@@ -2561,11 +2692,13 @@ function App() {
                       <option value="applied">Applied</option>
                     </select>
                   </div>
-                  <button className="btn btn-secondary" onClick={loadJobs}>Search</button>
+                  <button className="btn btn-secondary" onClick={jobSearchMode === 'semantic' ? runSemanticJobSearch : loadJobs}>
+                    {searchingJobSemantic ? '...' : 'Search'}
+                  </button>
                 </div>
 
                 <div className="card-panel">
-                  {jobs.length === 0 ? (
+                  {(semanticJobResults !== null ? semanticJobResults : jobs).length === 0 ? (
                     <div className="empty-state">No jobs found matching conditions.</div>
                   ) : (
                     <div className="data-table-container">
@@ -2580,9 +2713,19 @@ function App() {
                           </tr>
                         </thead>
                         <tbody>
-                          {jobs.map((job) => (
+                          {(semanticJobResults !== null
+                            ? semanticJobResults.map(r => ({ ...r.job, similarity: r.similarity, matchedConcepts: r.matchedConcepts }))
+                            : jobs
+                          ).map((job) => (
                             <tr key={job.id}>
-                              <td style={{ fontWeight: 600 }}>{job.title}</td>
+                              <td style={{ fontWeight: 600 }}>
+                                <div>{job.title}</div>
+                                {job.similarity !== undefined && (
+                                  <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'normal', marginTop: '4px' }}>
+                                    Similarity: {Math.round(job.similarity * 100)}% {job.matchedConcepts?.length > 0 && `(${job.matchedConcepts.join(', ')})`}
+                                  </div>
+                                )}
+                              </td>
                               <td>
                                 {job.companyName}
                                 <span className="badge badge-secondary" style={{ marginLeft: '8px', textTransform: 'capitalize', fontSize: '0.75rem' }}>
@@ -5692,10 +5835,20 @@ function App() {
                             </div>
                           )}
                         </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Score:</span>
+                             <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)' }}>
+                               {candidate.referralScore}
+                             </span>
+                           </div>
+                           {candidate.semanticSimilarity !== undefined && (
+                             <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'bold' }}>
+                               Relevance: {Math.round(candidate.semanticSimilarity * 100)}%
+                             </div>
+                           )}
+                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
-                          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)' }}>
-                            {candidate.referralScore}
-                          </div>
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button
                               className="btn btn-secondary"
@@ -5748,7 +5901,7 @@ function App() {
 {
   modal === 'connection_detail' && (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '700px' }}>
+      <div className="modal-content" style={{ maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
         <h2 className="card-title">🤝 Connection Intel: {editItem?.name}</h2>
         <div style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{editItem?.title || 'No Title'} at {editItem?.company || 'Unknown Company'}</div>
 

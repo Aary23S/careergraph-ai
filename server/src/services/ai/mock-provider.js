@@ -49,6 +49,19 @@ export class MockProvider extends AIProvider {
     return `Simulated mock text response for prompt: ${prompt.substring(0, 30)}...`;
   }
 
+  async generateEmbedding(text, model) {
+    if (this.delayMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, this.delayMs));
+    }
+    const dimension = 384;
+    const embedding = [];
+    for (let i = 0; i < dimension; i++) {
+      const charVal = text ? (text.charCodeAt(i % text.length) || 0) : 0;
+      embedding.push(Math.sin(i + charVal) * 0.1);
+    }
+    return embedding;
+  }
+
   async healthCheck() {
     return true;
   }
