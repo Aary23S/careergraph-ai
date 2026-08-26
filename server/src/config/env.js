@@ -62,6 +62,11 @@ const schema = Joi.object({
   OLLAMA_EMBEDDING_MODEL: Joi.string().default('qwen2.5-coder:7b'),
   AI_TIMEOUT_MS: Joi.number().integer().default(300000),
   AI_MAX_RETRIES: Joi.number().integer().default(2),
+  SMTP_HOST: Joi.string().allow('', null).default(''),
+  SMTP_PORT: Joi.number().integer().default(587),
+  SMTP_USER: Joi.string().allow('', null).default(''),
+  SMTP_PASS: Joi.string().allow('', null).default(''),
+  SMTP_FROM: Joi.string().default('CareerGraph AI <noreply@example.com>')
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -112,4 +117,9 @@ export const env = {
   ollamaEmbeddingModel: value.OLLAMA_EMBEDDING_MODEL,
   aiTimeoutMs: value.AI_TIMEOUT_MS,
   aiMaxRetries: value.AI_MAX_RETRIES,
+  smtpHost: value.SMTP_HOST,
+  smtpPort: value.SMTP_PORT,
+  smtpUser: value.SMTP_USER,
+  smtpPass: value.SMTP_PASS,
+  smtpFrom: value.SMTP_FROM,
 };
