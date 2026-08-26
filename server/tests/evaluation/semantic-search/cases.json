@@ -1,0 +1,14 @@
+[
+  {
+    "caseId": "search-001",
+    "description": "Evaluate semantic search matches for DevOps engineers.",
+    "input": {
+      "query": "DevOps Kubernetes experts",
+      "entityTypes": ["connection"]
+    },
+    "expected": {
+      "matchingEntityNames": ["Sarah Architect"],
+      "minimumPrecisionAt5": 0.5
+    }
+  }
+]

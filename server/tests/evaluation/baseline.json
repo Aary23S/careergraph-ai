@@ -1,0 +1,251 @@
+[
+  {
+    "caseId": "job-001",
+    "operation": "job_enrichment",
+    "input": {
+      "title": "Senior Backend Engineer",
+      "description": "We are seeking a Backend Developer with extensive skills in NodeJS, Postgres, and deploying applications on AWS ECS.",
+      "companyName": "TechSolutions",
+      "location": "Boston, MA"
+    },
+    "expected": {
+      "roleCategory": "software_engineering",
+      "seniority": "senior",
+      "requiredSkills": [
+        "NodeJS",
+        "Postgres",
+        "AWS ECS"
+      ],
+      "preferredSkills": [],
+      "domain": [
+        "backend"
+      ],
+      "remoteType": "onsite"
+    },
+    "actual": {
+      "roleCategory": "Backend Engineer",
+      "seniority": "Senior",
+      "requiredSkills": [
+        "NodeJS",
+        "PostgreSQL",
+        "AWS ECS"
+      ],
+      "preferredSkills": [],
+      "domain": [
+        "Software Development"
+      ],
+      "remoteType": "On-site",
+      "confidence": 0.95
+    },
+    "metrics": {
+      "jsonValidity": 1,
+      "schemaValidity": 1,
+      "fieldAccuracy": 0.5,
+      "precision": 1,
+      "recall": 1
+    },
+    "passed": true,
+    "latency": 873
+  },
+  {
+    "caseId": "job-002",
+    "operation": "job_enrichment",
+    "input": {
+      "title": "Junior Frontend Engineer",
+      "description": "We need a junior frontend developer. Must know React, CSS layout, HTML5, and basic JavaScript. High opportunity to learn.",
+      "companyName": "WebStart",
+      "location": "Remote"
+    },
+    "expected": {
+      "roleCategory": "frontend_engineering",
+      "seniority": "junior",
+      "requiredSkills": [
+        "React",
+        "CSS",
+        "HTML5",
+        "JavaScript"
+      ],
+      "preferredSkills": [],
+      "domain": [
+        "frontend"
+      ],
+      "remoteType": "remote"
+    },
+    "actual": {
+      "roleCategory": "Frontend Engineering",
+      "seniority": "Junior",
+      "requiredSkills": [
+        "React",
+        "CSS",
+        "HTML5",
+        "JavaScript"
+      ],
+      "preferredSkills": [],
+      "domain": [
+        "Web Development"
+      ],
+      "remoteType": "Remote",
+      "confidence": 0.95
+    },
+    "metrics": {
+      "jsonValidity": 1,
+      "schemaValidity": 1,
+      "fieldAccuracy": 0.5,
+      "precision": 1,
+      "recall": 1
+    },
+    "passed": true,
+    "latency": 763
+  },
+  {
+    "caseId": "resume-001",
+    "operation": "resume_enrichment",
+    "input": {
+      "fileName": "resume_dev.pdf",
+      "rawText": "Alex Dev - Full Stack Engineer. Experience: NodeJS, React, Redux, Express, Python. Education: BS Computer Science. Lead dev at InnovateCorp."
+    },
+    "expected": {
+      "roleCategory": "software_engineering",
+      "seniority": "mid",
+      "skills": [
+        "NodeJS",
+        "React",
+        "Redux",
+        "Express",
+        "Python"
+      ],
+      "domains": [
+        "fullstack"
+      ],
+      "experienceYears": 3
+    },
+    "actual": {
+      "roleCategory": "Software Engineering",
+      "seniority": "Senior",
+      "skills": [
+        "NodeJS",
+        "React",
+        "Redux",
+        "Express",
+        "Python"
+      ],
+      "domains": [
+        "Web Development",
+        "Full Stack"
+      ],
+      "experienceYears": 5,
+      "confidence": 0.95
+    },
+    "metrics": {
+      "jsonValidity": 1,
+      "schemaValidity": 1,
+      "fieldAccuracy": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    "passed": false,
+    "latency": 1080
+  },
+  {
+    "caseId": "conn-001",
+    "operation": "connection_enrichment",
+    "input": {
+      "name": "Sarah Architect",
+      "title": "DevOps Architect",
+      "company": "CloudGroup",
+      "location": "San Francisco, CA",
+      "notes": "Met Sarah at AWS Re:invent. Spoke about Kubernetes clusters and Terraform provisioning."
+    },
+    "expected": {
+      "roleCategory": "devops_infrastructure",
+      "seniority": "lead",
+      "skills": [
+        "Kubernetes",
+        "Terraform"
+      ],
+      "domains": [
+        "cloud",
+        "devops"
+      ]
+    },
+    "actual": {
+      "roleCategory": "DevOps",
+      "seniority": "Architect",
+      "skills": [
+        "Kubernetes",
+        "Terraform",
+        "AWS"
+      ],
+      "domains": [
+        "Cloud Computing",
+        "Infrastructure as Code",
+        "Container Orchestration"
+      ],
+      "confidence": 0.95
+    },
+    "metrics": {
+      "jsonValidity": 1,
+      "schemaValidity": 1,
+      "fieldAccuracy": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1
+    },
+    "passed": false,
+    "latency": 887
+  },
+  {
+    "caseId": "outreach-001",
+    "operation": "outreach",
+    "input": {
+      "connectionName": "Sarah Architect",
+      "companyName": "CloudGroup",
+      "jobTitle": "DevOps Architect",
+      "relationshipHistory": "Met Sarah at AWS Re:invent. Spoke about Kubernetes clusters."
+    },
+    "expected": {
+      "tone": "professional",
+      "adheresToIntent": true,
+      "noFabrication": true
+    },
+    "actual": {
+      "draft": "**Subject:** Great meeting you at re:Invent – Exploring the DevOps Architect role at CloudGroup  \n\nHi Sarah,\n\nI hope you’re doing well and that you’ve had a chance to unwind after the whirlwind of re:Invent! I really enjoyed our conversation in the Kubernetes lounge about scaling multi‑region clusters and the challenges of managing stateful workloads at scale. Your insights on CloudGroup’s “Zero‑Downtime Deployments” initiative were especially inspiring.\n\nI’m reaching out because the DevOps Architect position you’re hiring for aligns perfectly with both my background and the topics we discussed:\n\n- **Kubernetes at scale:** Over the past 5 years I’ve designed and operated production‑grade EKS and self‑managed clusters for a SaaS platform serving >2 M daily users, implementing automated node‑pools, custom CNI plugins, and multi‑AZ failover strategies.\n- **GitOps & CI/CD pipelines:** I built a GitOps workflow using ArgoCD and Tekton that reduced release lead time from 2 days to under 30 minutes while maintaining strict compliance controls.\n- **Observability & reliability:** Leveraging Prometheus, Grafana, and OpenTelemetry, I instituted SLO‑driven alerting that cut mean‑time‑to‑recovery by 40 % across all services.\n- **Cross‑functional collaboration:** I’ve partnered closely with security, networking, and product teams to embed DevSecOps practices early in the development lifecycle—something I know is a priority for CloudGroup’s next‑gen platform.\n\nGiven CloudGroup’s focus on building resilient, cloud‑native infrastructure, I’m excited about the opportunity to help shape the architecture, mentor the engineering org, and drive the automation roadmap you outlined.\n\nWould you have 20‑30 minutes next week for a quick call? I’d love to dive deeper into the role, share a few concrete ideas on how we could accelerate your Kubernetes migration, and learn more about the team’s current priorities.\n\nThanks again for the great chat at re:Invent, and I look forward to the possibility of working together.\n\nBest regards,  \n[Your Full Name]  \nDevOps Engineer / Cloud Architect  \nPhone: [Your Phone]  \nEmail: [Your Email]  \nLinkedIn: [LinkedIn URL]  \nGitHub: [GitHub URL] (optional – showcase relevant repos)  "
+    },
+    "metrics": {
+      "factualCorrectness": 1,
+      "intentAdherence": 1,
+      "personalization": 1,
+      "hallucinationRate": 0,
+      "toneQuality": 1
+    },
+    "passed": true,
+    "latency": 1365
+  },
+  {
+    "caseId": "search-001",
+    "operation": "semantic_search",
+    "input": {
+      "query": "DevOps Kubernetes experts",
+      "entityTypes": [
+        "connection"
+      ]
+    },
+    "expected": {
+      "matchingEntityNames": [
+        "Sarah Architect"
+      ],
+      "minimumPrecisionAt5": 0.5
+    },
+    "actual": [
+      {
+        "title": "Sarah Architect"
+      }
+    ],
+    "metrics": {
+      "precisionAt5": 1,
+      "precisionAt10": 1,
+      "recall": 1
+    },
+    "passed": true,
+    "latency": 3998
+  }
+]

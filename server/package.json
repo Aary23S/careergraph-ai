@@ -16,7 +16,8 @@
     "connections:backfill": "node scripts/backfill-connection-intelligence.js",
     "connections:validate": "node scripts/validate-connection-intelligence.js",
     "ai:benchmark": "node scripts/ai-benchmark.js",
-    "ai:embedding:benchmark": "node scripts/ai-embedding-benchmark.js"
+    "ai:embedding:benchmark": "node scripts/ai-embedding-benchmark.js",
+    "ai:evaluate": "node scripts/ai-evaluate.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

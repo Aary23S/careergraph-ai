@@ -49,7 +49,7 @@ export class MockProvider extends AIProvider {
     return `Simulated mock text response for prompt: ${prompt.substring(0, 30)}...`;
   }
 
-  async generateEmbedding(text, model) {
+  async generateEmbedding(text) {
     if (this.delayMs > 0) {
       await new Promise(resolve => setTimeout(resolve, this.delayMs));
     }

@@ -1,0 +1,38 @@
+[
+  {
+    "caseId": "job-001",
+    "description": "Senior Backend Engineer position requiring Node.js, PostgreSQL and AWS Cloud deployment experience.",
+    "input": {
+      "title": "Senior Backend Engineer",
+      "description": "We are seeking a Backend Developer with extensive skills in NodeJS, Postgres, and deploying applications on AWS ECS.",
+      "companyName": "TechSolutions",
+      "location": "Boston, MA"
+    },
+    "expected": {
+      "roleCategory": "software_engineering",
+      "seniority": "senior",
+      "requiredSkills": ["NodeJS", "Postgres", "AWS ECS"],
+      "preferredSkills": [],
+      "domain": ["backend"],
+      "remoteType": "onsite"
+    }
+  },
+  {
+    "caseId": "job-002",
+    "description": "Junior Frontend Engineer position requiring React, HTML/CSS, and Javascript.",
+    "input": {
+      "title": "Junior Frontend Engineer",
+      "description": "We need a junior frontend developer. Must know React, CSS layout, HTML5, and basic JavaScript. High opportunity to learn.",
+      "companyName": "WebStart",
+      "location": "Remote"
+    },
+    "expected": {
+      "roleCategory": "frontend_engineering",
+      "seniority": "junior",
+      "requiredSkills": ["React", "CSS", "HTML5", "JavaScript"],
+      "preferredSkills": [],
+      "domain": ["frontend"],
+      "remoteType": "remote"
+    }
+  }
+]

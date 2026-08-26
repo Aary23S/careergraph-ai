@@ -16,7 +16,7 @@ async function checkVectorExtension() {
   try {
     const [res] = await sequelize.query("SELECT 1 FROM pg_extension WHERE extname = 'vector'");
     isVectorExtensionEnabled = res.length > 0;
-  } catch (err) {
+  } catch {
     isVectorExtensionEnabled = false;
   }
   return isVectorExtensionEnabled;
@@ -43,7 +43,7 @@ export function cosineSimilarity(vecA, vecB) {
  * Executes semantic similarity candidate retrieval.
  */
 export async function querySemanticMatches({ userId, queryText, entityTypes, limit = 20 }) {
-  if (!env.aiEnabled) {
+  if (!env.aiEnabled || env.semanticSearchEnabled === false) {
     return [];
   }
 

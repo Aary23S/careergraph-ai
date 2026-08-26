@@ -157,7 +157,15 @@ export async function executeEnrichment(jobId) {
 
   try {
     const prompt = buildEnrichmentPrompt(enrichment.job);
-    const parsed = await aiService.generateStructured(prompt, jobEnrichmentSchema);
+    const parsed = await aiService.generateStructured(prompt, jobEnrichmentSchema, {
+      operation: 'job_enrichment',
+      evidenceText: enrichment.job.description,
+      userId: enrichment.job.user_id,
+      entityType: 'job',
+      entityId: enrichment.job.id,
+      promptVersion: PROMPT_VERSION,
+      schemaVersion: SCHEMA_VERSION
+    });
     const latency = Date.now() - start;
 
     await enrichment.update({
