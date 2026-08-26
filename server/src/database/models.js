@@ -625,6 +625,7 @@ export function initializeModels(sequelize) {
       latencyMs: { type: DataTypes.INTEGER, allowNull: false, field: 'latency_ms' },
       status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'success' },
       evaluationScore: { type: DataTypes.FLOAT, allowNull: true, field: 'evaluation_score' },
+      correlationId: { type: DataTypes.UUID, allowNull: true, field: 'correlation_id' },
     },
     { ...baseOptions, tableName: 'ai_audit_logs' }
   );
