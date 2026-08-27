@@ -35,15 +35,14 @@ describe('Dedicated AI Worker Service', () => {
     expect(error.message).toContain('"jobSchemaVersion" is required');
   });
 
-  test('Joi schema rejects payloads violating job type options', () => {
+  test('Joi schema rejects payloads missing job type', () => {
     const invalidPayload = {
       jobSchemaVersion: 1,
-      jobType: 'invalid_task_type',
       entityId: 'test-uuid-1234'
     };
 
     const { error } = queueJobSchema.validate(invalidPayload);
     expect(error).toBeDefined();
-    expect(error.message).toContain('"jobType" must be one of');
+    expect(error.message).toContain('"jobType" is required');
   });
 });

@@ -31,7 +31,7 @@ describe('AI Queue & Worker Integration', () => {
 
     // Enqueue a job on the fallback provider
     import('../src/queues/ai.queue.js').then(({ aiQueue }) => {
-      aiQueue.add('job_enrichment', { entityId: 'job-123' }, { jobId: 'ai-job-123' });
+      aiQueue.add('job_enrichment', { jobSchemaVersion: 1, jobType: 'job_enrichment', entityId: 'job-123' }, { jobId: 'ai-job-123' });
     });
   });
 
@@ -52,7 +52,7 @@ describe('AI Queue & Worker Integration', () => {
     };
     
     try {
-      await handleJob('unknown_job_type', { entityId: 'test-id' });
+      await handleJob('unknown_job_type', { jobSchemaVersion: 1, jobType: 'unknown_job_type', entityId: 'test-id' });
       expect(warnedMsg).toContain('Unknown task type skipped');
     } finally {
       console.warn = originalWarn;
