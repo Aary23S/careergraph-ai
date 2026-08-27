@@ -40,13 +40,13 @@ if (env.aiQueueDriver === 'redis' && isRedisAvailable()) {
     activeQueue = new Queue('ai-tasks', {
       connection: getRedisClient(),
       defaultJobOptions: {
-        attempts: env.aiMaxRetries || 3,
+        attempts: env.aiJobAttempts,
         backoff: {
           type: 'exponential',
-          delay: 2000
+          delay: env.aiJobBackoffMs
         },
-        removeOnComplete: { count: 100 },
-        removeOnFail: { count: 1000 }
+        removeOnComplete: { count: env.aiJobRemoveOnComplete },
+        removeOnFail: { count: env.aiJobRemoveOnFail }
       }
     });
   } catch (err) {

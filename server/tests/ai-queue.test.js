@@ -14,13 +14,15 @@ describe('AI Queue & Worker Integration', () => {
   });
 
   test('Memory fallback queue routes jobs correctly to worker handlers', (done) => {
-    const mockHandler = jest.fn().mockImplementation(({ name, data }) => {
-      expect(name).toBe('job_enrichment');
-      expect(data.entityId).toBe('job-123');
-      done();
-    });
-
-    registerMemoryWorker(mockHandler);
+    const mockHandler = ({ name, data }) => {
+      try {
+        expect(name).toBe('job_enrichment');
+        expect(data.entityId).toBe('job-123');
+        done();
+      } catch (err) {
+        done(err);
+      }
+    };
 
     // Trigger local simulation directly
     registerMemoryWorker(async (job) => {
@@ -43,9 +45,17 @@ describe('AI Queue & Worker Integration', () => {
   });
 
   test('Worker handleJob fails gracefully for unknown jobs', async () => {
-    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    await handleJob('unknown_job_type', { entityId: 'test-id' });
-    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown task type skipped'));
-    consoleWarnSpy.mockRestore();
+    const originalWarn = console.warn;
+    let warnedMsg = '';
+    console.warn = (msg) => {
+      warnedMsg = msg;
+    };
+    
+    try {
+      await handleJob('unknown_job_type', { entityId: 'test-id' });
+      expect(warnedMsg).toContain('Unknown task type skipped');
+    } finally {
+      console.warn = originalWarn;
+    }
   });
 });

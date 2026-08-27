@@ -182,6 +182,7 @@ function App() {
   const [overviewError, setOverviewError] = useState(null);
   const [aiOpsData, setAiOpsData] = useState(null);
   const [loadingAiOps, setLoadingAiOps] = useState(false);
+  const [adminQueueData, setAdminQueueData] = useState(null);
 
   // Company directory states
   const [companies, setCompanies] = useState([]);
@@ -842,10 +843,31 @@ function App() {
     try {
       const res = await api.request('/ai/health');
       setAiOpsData(res.data);
+
+      try {
+        const queueRes = await api.request('/admin/ai-queue/status');
+        setAdminQueueData(queueRes.data);
+      } catch (err) {
+        setAdminQueueData(null);
+      }
     } catch (err) {
       console.warn('Failed to load AI Operations health data:', err.message);
     } finally {
       setLoadingAiOps(false);
+    }
+  };
+
+  const handleQueueAction = async (action, jobId = '') => {
+    try {
+      let url = `/admin/ai-queue/${action}`;
+      if (action === 'retry' && jobId) {
+        url = `/admin/ai-queue/${jobId}/retry`;
+      }
+      await api.request(url, { method: 'POST' });
+      alert(`Queue action '${action}' completed successfully.`);
+      await loadAiOps();
+    } catch (err) {
+      alert(`Queue action failed: ${err.message}`);
     }
   };
 
@@ -3663,7 +3685,96 @@ function App() {
                   </div>
                 </div>
 
-                {/* 3. In-Memory Job Queues */}
+                {/* 3. Operational Queue Analytics & Operator Control Console */}
+                <div className="page-header" style={{ marginTop: '32px' }}>
+                  <h2 className="page-title" style={{ fontSize: '1.25rem' }}>🔄 Hardened Production Queue Controller</h2>
+                </div>
+
+                {aiOpsData.queueLatency && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                    <div className="stat-card" style={{ background: 'var(--bg-card)', borderLeft: '4px solid var(--primary)' }}>
+                      <span className="stat-label">Avg Queue Wait</span>
+                      <span className="stat-value" style={{ fontSize: '1.3rem', marginTop: '8px', display: 'block' }}>
+                        {aiOpsData.queueLatency.averageQueueWait ? `${(aiOpsData.queueLatency.averageQueueWait / 1000).toFixed(2)}s` : '0.00s'}
+                      </span>
+                    </div>
+                    <div className="stat-card" style={{ background: 'var(--bg-card)', borderLeft: '4px solid var(--accent)' }}>
+                      <span className="stat-label">Avg AI Compute (Ollama)</span>
+                      <span className="stat-value" style={{ fontSize: '1.3rem', marginTop: '8px', display: 'block' }}>
+                        {aiOpsData.queueLatency.averageQueueProcessing ? `${(aiOpsData.queueLatency.averageQueueProcessing / 1000).toFixed(2)}s` : '0.00s'}
+                      </span>
+                    </div>
+                    <div className="stat-card" style={{ background: 'var(--bg-card)', borderLeft: '4px solid var(--text-primary)' }}>
+                      <span className="stat-label">Avg Total Job Latency</span>
+                      <span className="stat-value" style={{ fontSize: '1.3rem', marginTop: '8px', display: 'block' }}>
+                        {aiOpsData.queueLatency.averageQueueTotal ? `${(aiOpsData.queueLatency.averageQueueTotal / 1000).toFixed(2)}s` : '0.00s'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {adminQueueData ? (
+                  <div className="card-panel" style={{ marginBottom: '24px', padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                    <h3 style={{ marginTop: 0 }}>🎛️ Operator Control Console</h3>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Manage Redis/BullMQ background execution limits, pause queue processors, or trigger failure recoveries.
+                    </p>
+                    
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
+                      {adminQueueData.isPaused ? (
+                        <button className="btn btn-success" onClick={() => handleQueueAction('resume')} style={{ padding: '8px 16px' }}>
+                          ▶️ Resume Queue
+                        </button>
+                      ) : (
+                        <button className="btn btn-warning" onClick={() => handleQueueAction('pause')} style={{ padding: '8px 16px' }}>
+                          ⏸️ Pause Queue
+                        </button>
+                      )}
+                      
+                      <button className="btn btn-primary" onClick={() => handleQueueAction('retry-all')} style={{ padding: '8px 16px' }}>
+                        🔁 Retry Failed Jobs
+                      </button>
+                      
+                      <button className="btn btn-danger" onClick={() => handleQueueAction('clean')} style={{ padding: '8px 16px' }}>
+                        🧹 Clean History
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: '20px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                      <h4 style={{ margin: '0 0 12px 0' }}>Job Processing Counts</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
+                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Waiting</span>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px' }}>{adminQueueData.counts?.waiting || 0}</div>
+                        </div>
+                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Active</span>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px', color: 'var(--warning)' }}>{adminQueueData.counts?.active || 0}</div>
+                        </div>
+                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Delayed</span>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px' }}>{adminQueueData.counts?.delayed || 0}</div>
+                        </div>
+                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Completed</span>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px', color: 'var(--success)' }}>{adminQueueData.counts?.completed || 0}</div>
+                        </div>
+                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Failed</span>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px', color: 'var(--danger)' }}>{adminQueueData.counts?.failed || 0}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="card-panel" style={{ marginBottom: '24px', padding: '16px', background: 'var(--bg-card)' }}>
+                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      🔒 Operator Control Console requires elevated permissions. Log in with an operator-whitelisted email.
+                    </p>
+                  </div>
+                )}
+
+                {/* 4. Background Job Queue Monitors */}
                 <div className="page-header" style={{ marginTop: '32px' }}>
                   <h2 className="page-title" style={{ fontSize: '1.25rem' }}>🔄 Background Job Queue Monitors</h2>
                 </div>
@@ -3695,7 +3806,7 @@ function App() {
                   ))}
                 </div>
 
-                {/* 4. Quality SLO Indicators */}
+                {/* 5. Quality SLO Indicators */}
                 <div className="page-header" style={{ marginTop: '32px' }}>
                   <h2 className="page-title" style={{ fontSize: '1.25rem' }}>📊 Quality SLO Baselines & Runtime State</h2>
                 </div>

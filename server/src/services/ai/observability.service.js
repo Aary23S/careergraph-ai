@@ -28,6 +28,10 @@ class AIObservabilityService {
     this.latencies = []; // Rolling window of recent latencies (max 100)
     this.qualityScores = []; // Rolling window of recent quality scores (max 100)
     this.queueProviders = new Map(); // Dynamic registry for queue stats to avoid circular imports
+
+    this.queueWaitTimes = [];
+    this.queueProcessingTimes = [];
+    this.queueTotalTimes = [];
   }
 
   registerQueueProvider(name, getStatsFn) {
@@ -68,6 +72,21 @@ class AIObservabilityService {
 
   recordQualityRegression() {
     this.metrics.quality_regression_count++;
+  }
+
+  recordQueueJobLatency(waitMs, processingMs, totalMs) {
+    if (typeof waitMs === 'number' && !isNaN(waitMs)) {
+      this.queueWaitTimes.push(waitMs);
+      if (this.queueWaitTimes.length > 100) this.queueWaitTimes.shift();
+    }
+    if (typeof processingMs === 'number' && !isNaN(processingMs)) {
+      this.queueProcessingTimes.push(processingMs);
+      if (this.queueProcessingTimes.length > 100) this.queueProcessingTimes.shift();
+    }
+    if (typeof totalMs === 'number' && !isNaN(totalMs)) {
+      this.queueTotalTimes.push(totalMs);
+      if (this.queueTotalTimes.length > 100) this.queueTotalTimes.shift();
+    }
   }
 
   getLatencyPercentile(p) {
@@ -178,13 +197,28 @@ class AIObservabilityService {
     const queue = this.getQueueSummary();
     const anomalies = this.detectAnomalies();
 
+    const averageQueueWait = this.queueWaitTimes.length > 0
+      ? this.queueWaitTimes.reduce((acc, v) => acc + v, 0) / this.queueWaitTimes.length
+      : 0;
+    const averageQueueProcessing = this.queueProcessingTimes.length > 0
+      ? this.queueProcessingTimes.reduce((acc, v) => acc + v, 0) / this.queueProcessingTimes.length
+      : 0;
+    const averageQueueTotal = this.queueTotalTimes.length > 0
+      ? this.queueTotalTimes.reduce((acc, v) => acc + v, 0) / this.queueTotalTimes.length
+      : 0;
+
     return {
       state,
       metrics: { ...this.metrics },
       latency: { p50, p95 },
       averageQuality: this.getAverageQuality(),
       queue,
-      anomalies
+      anomalies,
+      queueLatency: {
+        averageQueueWait,
+        averageQueueProcessing,
+        averageQueueTotal
+      }
     };
   }
 }

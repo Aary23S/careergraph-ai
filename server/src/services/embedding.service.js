@@ -102,55 +102,65 @@ export async function getOrGenerateEmbedding({ userId, entityType, entityId, tex
 /**
  * Backfill embeddings for connections.
  */
-export async function backfillConnectionsEmbedding({ userId, limit = 50, onlyMissing = true }) {
+export async function backfillConnectionsEmbedding({ userId, limit = 50, batchSize = 100, onlyMissing = true, priority = 30 }) {
   const modelName = env.ollamaEmbeddingModel || 'mock';
-  const connections = await models.Connection.findAll({
-    where: { user_id: userId },
-    include: [{ model: models.ConnectionAiEnrichment, as: 'aiEnrichment' }]
-  });
-
   let processed = 0;
   let skipped = 0;
   let failed = 0;
+  let offset = 0;
 
-  for (const conn of connections) {
-    if (processed >= limit) break;
+  while (processed < limit) {
+    const currentBatchSize = Math.min(batchSize, limit - processed);
+    if (currentBatchSize <= 0) break;
 
-    try {
-      const text = buildConnectionSemanticText(conn, conn.aiEnrichment);
-      const textHash = computeSha256(text);
+    const connections = await models.Connection.findAll({
+      where: { user_id: userId },
+      include: [{ model: models.ConnectionAiEnrichment, as: 'aiEnrichment' }],
+      limit: currentBatchSize,
+      offset: offset
+    });
 
-      if (onlyMissing) {
-        const existing = await models.SemanticEmbedding.findOne({
-          where: {
-            userId,
-            entityType: 'connection',
-            entityId: conn.id,
-            embeddingModel: modelName,
-            contentHash: textHash
+    if (connections.length === 0) break;
+
+    for (const conn of connections) {
+      try {
+        const text = buildConnectionSemanticText(conn, conn.aiEnrichment);
+        const textHash = computeSha256(text);
+
+        if (onlyMissing) {
+          const existing = await models.SemanticEmbedding.findOne({
+            where: {
+              userId,
+              entityType: 'connection',
+              entityId: conn.id,
+              embeddingModel: modelName,
+              contentHash: textHash
+            }
+          });
+          if (existing) {
+            skipped++;
+            continue;
           }
-        });
-        if (existing) {
-          skipped++;
-          continue;
         }
-      }
 
-      const stableJobId = generateJobId('embedding_generation', conn.id, textHash);
-      await aiQueue.add('embedding_generation', {
-        userId,
-        entityType: 'connection',
-        entityId: conn.id,
-        text
-      }, {
-        jobId: stableJobId,
-        priority: 30
-      });
-      processed++;
-    } catch (err) {
-      console.error(`[EmbeddingBackfill] Connection ${conn.id} failed:`, err.message);
-      failed++;
+        const stableJobId = generateJobId('embedding_generation', conn.id, textHash);
+        await aiQueue.add('embedding_generation', {
+          userId,
+          entityType: 'connection',
+          entityId: conn.id,
+          text
+        }, {
+          jobId: stableJobId,
+          priority: priority
+        });
+        processed++;
+      } catch (err) {
+        console.error(`[EmbeddingBackfill] Connection ${conn.id} failed:`, err.message);
+        failed++;
+      }
     }
+
+    offset += connections.length;
   }
 
   return { processed, skipped, failed };
@@ -159,55 +169,65 @@ export async function backfillConnectionsEmbedding({ userId, limit = 50, onlyMis
 /**
  * Backfill embeddings for jobs.
  */
-export async function backfillJobsEmbedding({ userId, limit = 50, onlyMissing = true }) {
+export async function backfillJobsEmbedding({ userId, limit = 50, batchSize = 100, onlyMissing = true, priority = 30 }) {
   const modelName = env.ollamaEmbeddingModel || 'mock';
-  const jobs = await models.Job.findAll({
-    where: { user_id: userId },
-    include: [{ model: models.JobAiEnrichment, as: 'aiEnrichment' }]
-  });
-
   let processed = 0;
   let skipped = 0;
   let failed = 0;
+  let offset = 0;
 
-  for (const job of jobs) {
-    if (processed >= limit) break;
+  while (processed < limit) {
+    const currentBatchSize = Math.min(batchSize, limit - processed);
+    if (currentBatchSize <= 0) break;
 
-    try {
-      const text = buildJobSemanticText(job, job.aiEnrichment);
-      const textHash = computeSha256(text);
+    const jobs = await models.Job.findAll({
+      where: { user_id: userId },
+      include: [{ model: models.JobAiEnrichment, as: 'aiEnrichment' }],
+      limit: currentBatchSize,
+      offset: offset
+    });
 
-      if (onlyMissing) {
-        const existing = await models.SemanticEmbedding.findOne({
-          where: {
-            userId,
-            entityType: 'job',
-            entityId: job.id,
-            embeddingModel: modelName,
-            contentHash: textHash
+    if (jobs.length === 0) break;
+
+    for (const job of jobs) {
+      try {
+        const text = buildJobSemanticText(job, job.aiEnrichment);
+        const textHash = computeSha256(text);
+
+        if (onlyMissing) {
+          const existing = await models.SemanticEmbedding.findOne({
+            where: {
+              userId,
+              entityType: 'job',
+              entityId: job.id,
+              embeddingModel: modelName,
+              contentHash: textHash
+            }
+          });
+          if (existing) {
+            skipped++;
+            continue;
           }
-        });
-        if (existing) {
-          skipped++;
-          continue;
         }
-      }
 
-      const stableJobId = generateJobId('embedding_generation', job.id, textHash);
-      await aiQueue.add('embedding_generation', {
-        userId,
-        entityType: 'job',
-        entityId: job.id,
-        text
-      }, {
-        jobId: stableJobId,
-        priority: 30
-      });
-      processed++;
-    } catch (err) {
-      console.error(`[EmbeddingBackfill] Job ${job.id} failed:`, err.message);
-      failed++;
+        const stableJobId = generateJobId('embedding_generation', job.id, textHash);
+        await aiQueue.add('embedding_generation', {
+          userId,
+          entityType: 'job',
+          entityId: job.id,
+          text
+        }, {
+          jobId: stableJobId,
+          priority: priority
+        });
+        processed++;
+      } catch (err) {
+        console.error(`[EmbeddingBackfill] Job ${job.id} failed:`, err.message);
+        failed++;
+      }
     }
+
+    offset += jobs.length;
   }
 
   return { processed, skipped, failed };
@@ -216,55 +236,65 @@ export async function backfillJobsEmbedding({ userId, limit = 50, onlyMissing = 
 /**
  * Backfill embeddings for resumes.
  */
-export async function backfillResumesEmbedding({ userId, limit = 50, onlyMissing = true }) {
+export async function backfillResumesEmbedding({ userId, limit = 50, batchSize = 100, onlyMissing = true, priority = 30 }) {
   const modelName = env.ollamaEmbeddingModel || 'mock';
-  const resumes = await models.Resume.findAll({
-    where: { user_id: userId },
-    include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }]
-  });
-
   let processed = 0;
   let skipped = 0;
   let failed = 0;
+  let offset = 0;
 
-  for (const resume of resumes) {
-    if (processed >= limit) break;
+  while (processed < limit) {
+    const currentBatchSize = Math.min(batchSize, limit - processed);
+    if (currentBatchSize <= 0) break;
 
-    try {
-      const text = buildResumeSemanticText(resume, resume.aiEnrichment);
-      const textHash = computeSha256(text);
+    const resumes = await models.Resume.findAll({
+      where: { user_id: userId },
+      include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }],
+      limit: currentBatchSize,
+      offset: offset
+    });
 
-      if (onlyMissing) {
-        const existing = await models.SemanticEmbedding.findOne({
-          where: {
-            userId,
-            entityType: 'resume',
-            entityId: resume.id,
-            embeddingModel: modelName,
-            contentHash: textHash
+    if (resumes.length === 0) break;
+
+    for (const resume of resumes) {
+      try {
+        const text = buildResumeSemanticText(resume, resume.aiEnrichment);
+        const textHash = computeSha256(text);
+
+        if (onlyMissing) {
+          const existing = await models.SemanticEmbedding.findOne({
+            where: {
+              userId,
+              entityType: 'resume',
+              entityId: resume.id,
+              embeddingModel: modelName,
+              contentHash: textHash
+            }
+          });
+          if (existing) {
+            skipped++;
+            continue;
           }
-        });
-        if (existing) {
-          skipped++;
-          continue;
         }
-      }
 
-      const stableJobId = generateJobId('embedding_generation', resume.id, textHash);
-      await aiQueue.add('embedding_generation', {
-        userId,
-        entityType: 'resume',
-        entityId: resume.id,
-        text
-      }, {
-        jobId: stableJobId,
-        priority: 30
-      });
-      processed++;
-    } catch (err) {
-      console.error(`[EmbeddingBackfill] Resume ${resume.id} failed:`, err.message);
-      failed++;
+        const stableJobId = generateJobId('embedding_generation', resume.id, textHash);
+        await aiQueue.add('embedding_generation', {
+          userId,
+          entityType: 'resume',
+          entityId: resume.id,
+          text
+        }, {
+          jobId: stableJobId,
+          priority: priority
+        });
+        processed++;
+      } catch (err) {
+        console.error(`[EmbeddingBackfill] Resume ${resume.id} failed:`, err.message);
+        failed++;
+      }
     }
+
+    offset += resumes.length;
   }
 
   return { processed, skipped, failed };

@@ -69,7 +69,15 @@ const schema = Joi.object({
   SMTP_FROM: Joi.string().default('CareerGraph AI <noreply@example.com>'),
   REDIS_ENABLED: Joi.boolean().default(false),
   REDIS_URL: Joi.string().uri({ scheme: ['redis', 'rediss'] }).allow('', null).default('redis://localhost:6379'),
-  AI_QUEUE_DRIVER: Joi.string().valid('memory', 'redis').default('memory')
+  AI_QUEUE_DRIVER: Joi.string().valid('memory', 'redis').default('memory'),
+  AI_WORKER_CONCURRENCY: Joi.number().integer().min(1).default(1),
+  AI_JOB_ATTEMPTS: Joi.number().integer().min(1).default(3),
+  AI_JOB_BACKOFF_MS: Joi.number().integer().min(0).default(5000),
+  AI_JOB_REMOVE_ON_COMPLETE: Joi.number().integer().min(0).default(1000),
+  AI_JOB_REMOVE_ON_FAIL: Joi.number().integer().min(0).default(5000),
+  AI_QUEUE_RATE_LIMIT_MAX: Joi.number().integer().min(1).default(10),
+  AI_QUEUE_RATE_LIMIT_DURATION: Joi.number().integer().min(1).default(60000),
+  AI_OPERATOR_EMAILS: Joi.string().default('satardekaraary@gmail.com')
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -128,4 +136,12 @@ export const env = {
   redisEnabled: value.REDIS_ENABLED,
   redisUrl: value.REDIS_URL,
   aiQueueDriver: value.AI_QUEUE_DRIVER,
+  aiWorkerConcurrency: value.AI_WORKER_CONCURRENCY,
+  aiJobAttempts: value.AI_JOB_ATTEMPTS,
+  aiJobBackoffMs: value.AI_JOB_BACKOFF_MS,
+  aiJobRemoveOnComplete: value.AI_JOB_REMOVE_ON_COMPLETE,
+  aiJobRemoveOnFail: value.AI_JOB_REMOVE_ON_FAIL,
+  aiQueueRateLimitMax: value.AI_QUEUE_RATE_LIMIT_MAX,
+  aiQueueRateLimitDuration: value.AI_QUEUE_RATE_LIMIT_DURATION,
+  aiOperatorEmails: value.AI_OPERATOR_EMAILS,
 };
