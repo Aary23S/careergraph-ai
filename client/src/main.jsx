@@ -303,6 +303,34 @@ const IconPlug = () => (
   </svg>
 );
 
+const IconTarget = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.4" />
+    <circle cx="10" cy="10" r="4" stroke="currentColor" strokeWidth="1.4" />
+    <circle cx="10" cy="10" r="1" fill="currentColor" />
+  </svg>
+);
+
+const IconDollarSign = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 2.5v15M13.5 5.8c-.5-.9-1.7-1.5-3.2-1.5-2 0-3.5 1.1-3.5 2.7 0 3.4 6.9 1.7 6.9 5 0 1.6-1.6 2.7-3.6 2.7-1.6 0-2.9-.6-3.5-1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconDownload = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 3v9.5M6.5 9.2 10 12.7l3.5-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3.5 13.5v2a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconPause = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="4" width="3.2" height="12" rx="1" stroke="currentColor" strokeWidth="1.4" />
+    <rect x="11.8" y="4" width="3.2" height="12" rx="1" stroke="currentColor" strokeWidth="1.4" />
+  </svg>
+);
+
 const IconTelegram = () => (
   <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M17.3 3.3 2.8 8.9c-.8.3-.8 1.5.1 1.8l3.5 1.1 1.4 4.4c.2.6.9.7 1.3.2l1.9-2.1 3.7 2.7c.6.4 1.4.1 1.6-.6l2.4-11.4c.2-.9-.7-1.6-1.4-1.3ZM7.2 11.4l7-4.7c.3-.2.6.2.3.4l-5.8 5.5-.2 2.6-1-3.3Z" fill="currentColor" />
@@ -353,6 +381,32 @@ const CONN_ROLE_PALETTE = [
 // Values not listed here (unexpected/legacy data) sort after all known levels.
 const CONN_SENIORITY_ORDER = ['founder', 'executive', 'director', 'manager', 'lead', 'senior', 'mid', 'junior', 'intern', 'unknown'];
 
+// Maps an Application's status value to a badge color variant — display only.
+const APPLICATION_STATUS_VARIANT = {
+  saved: 'badge-secondary',
+  applying: 'badge-info',
+  applied: 'badge-info',
+  recruiter_contact: 'badge-primary',
+  screening: 'badge-primary',
+  interview: 'badge-warning',
+  offer: 'badge-success',
+  accepted: 'badge-success',
+  rejected: 'badge-danger',
+  withdrawn: 'badge-secondary'
+};
+
+// Maps an Outreach record's status value to a badge color variant — display only.
+const OUTREACH_STATUS_VARIANT = {
+  not_contacted: 'badge-secondary',
+  researching: 'badge-info',
+  contacted: 'badge-info',
+  replied: 'badge-primary',
+  conversation: 'badge-primary',
+  referral_requested: 'badge-warning',
+  referral_received: 'badge-success',
+  closed: 'badge-success'
+};
+
 // Maps a Job's status value to a badge color variant — display only.
 const JOB_STATUS_VARIANT = {
   new: 'badge-info',
@@ -402,7 +456,6 @@ function App() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [aiWarnings, setAiWarnings] = useState([]);
-  const [aiForceGenerate, setAiForceGenerate] = useState(false);
 
   const handleEnrichConnectionAi = async (connectionId) => {
     setLoadingConnectionAi(true);
@@ -481,7 +534,6 @@ function App() {
     }
     setAiDraft(null);
     setAiWarnings([]);
-    setAiForceGenerate(false);
     const notesTextarea = document.querySelector('textarea[name="notes"]');
     if (notesTextarea) {
       notesTextarea.value = '';
@@ -649,7 +701,6 @@ function App() {
       setAiLoading(false);
       setAiError(null);
       setAiWarnings([]);
-      setAiForceGenerate(false);
     }
   }, [modal]);
 
@@ -1869,170 +1920,191 @@ function App() {
 
         {/* PROFILE TAB */}
         {activeTab === 'profile' && (
-          <div className="card-panel">
-            <h1 className="page-title" style={{ marginBottom: '24px' }}>My Career Profile</h1>
-            <form onSubmit={handleProfileSave}>
-              <div className="form-row">
+          <div className="profile-page">
+            <div className="profile-header">
+              <span className="profile-avatar">{getInitials(profile.name)}</span>
+              <div>
+                <h1 className="profile-title">My Career Profile</h1>
+                <p className="profile-subtitle">Used to calculate job match scores and personalize AI recommendations</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleProfileSave} className="profile-form">
+              <div className="profile-section">
+                <div className="profile-section-head">
+                  <span className="profile-section-icon"><IconUser /></span>
+                  <h2 className="profile-section-title">Personal Details</h2>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={profile.name}
+                      onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Phone Number</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={profile.phone || ''}
+                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Location</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={profile.location || ''}
+                      onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Remote Preference</label>
+                    <select
+                      className="form-input"
+                      value={profile.remotePreference || ''}
+                      onChange={(e) => setProfile({ ...profile, remotePreference: e.target.value })}
+                    >
+                      <option value="">Choose preference...</option>
+                      <option value="remote">Remote Only</option>
+                      <option value="hybrid">Hybrid</option>
+                      <option value="onsite">On-Site</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="profile-section">
+                <div className="profile-section-head">
+                  <span className="profile-section-icon"><IconTarget /></span>
+                  <h2 className="profile-section-title">Career Targets</h2>
+                </div>
                 <div className="form-group">
-                  <label className="form-label">Full Name</label>
+                  <label className="form-label">Target Roles (Comma-separated)</label>
                   <input
                     type="text"
                     className="form-input"
-                    value={profile.name}
-                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    value={profile.targetRoles}
+                    onChange={(e) => setProfile({ ...profile, targetRoles: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Phone Number</label>
+                  <label className="form-label">Target Companies (Comma-separated)</label>
                   <input
                     type="text"
                     className="form-input"
-                    value={profile.phone || ''}
-                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Location</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={profile.location || ''}
-                    onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                    value={profile.targetCompanies}
+                    onChange={(e) => setProfile({ ...profile, targetCompanies: e.target.value })}
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Remote Preference</label>
-                  <select
-                    className="form-input"
-                    value={profile.remotePreference || ''}
-                    onChange={(e) => setProfile({ ...profile, remotePreference: e.target.value })}
-                  >
-                    <option value="">Choose preference...</option>
-                    <option value="remote">Remote Only</option>
-                    <option value="hybrid">Hybrid</option>
-                    <option value="onsite">On-Site</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Target Roles (Comma-separated)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={profile.targetRoles}
-                  onChange={(e) => setProfile({ ...profile, targetRoles: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Target Companies (Comma-separated)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={profile.targetCompanies}
-                  onChange={(e) => setProfile({ ...profile, targetCompanies: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Skills (Comma-separated)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={profile.skills}
-                  onChange={(e) => setProfile({ ...profile, skills: e.target.value })}
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Years of Experience</label>
+                  <label className="form-label">Skills (Comma-separated)</label>
                   <input
                     type="text"
                     className="form-input"
-                    value={profile.experience || ''}
-                    onChange={(e) => setProfile({ ...profile, experience: e.target.value })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Salary Expectation</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g. $120k/yr"
-                    value={profile.salaryPreference || ''}
-                    onChange={(e) => setProfile({ ...profile, salaryPreference: e.target.value })}
+                    value={profile.skills}
+                    onChange={(e) => setProfile({ ...profile, skills: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Short Bio / Pitch</label>
-                <textarea
-                  className="form-input"
-                  rows="4"
-                  value={profile.bio || ''}
-                  onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                />
+              <div className="profile-section">
+                <div className="profile-section-head">
+                  <span className="profile-section-icon"><IconDollarSign /></span>
+                  <h2 className="profile-section-title">Experience &amp; Compensation</h2>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Years of Experience</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={profile.experience || ''}
+                      onChange={(e) => setProfile({ ...profile, experience: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Salary Expectation</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. $120k/yr"
+                      value={profile.salaryPreference || ''}
+                      onChange={(e) => setProfile({ ...profile, salaryPreference: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <button type="submit" className="btn btn-primary">Save Profile Changes</button>
+              <div className="profile-section">
+                <div className="profile-section-head">
+                  <span className="profile-section-icon"><IconEdit /></span>
+                  <h2 className="profile-section-title">Short Bio / Pitch</h2>
+                </div>
+                <div className="form-group">
+                  <textarea
+                    className="form-input"
+                    rows="4"
+                    value={profile.bio || ''}
+                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="profile-btn profile-btn--primary">Save Profile Changes</button>
             </form>
           </div>
         )}
 
         {/* RESUME FILES TAB */}
         {activeTab === 'resumes' && (
-          <div>
-            <div className="page-header">
-              <h1 className="page-title">Resume Manager</h1>
-              <button className="btn btn-primary" onClick={() => setModal('resume')}>
+          <div className="resume-page">
+            <div className="resume-header">
+              <div>
+                <h1 className="resume-title">Resume Manager</h1>
+                <p className="resume-subtitle">Keep your resume versions organized and pick which one AI matching uses</p>
+              </div>
+              <button className="resume-btn resume-btn--primary" onClick={() => setModal('resume')}>
+                <IconUpload />
                 Upload New Resume
               </button>
             </div>
 
-            <div style={{ marginTop: '20px' }}>
-              {/* Resumes list */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {resumes.length === 0 ? (
-                  <div className="card-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    No resumes uploaded yet. Click upload to get started.
-                  </div>
-                ) : (
-                  resumes.map((res) => {
-                    const isSelected = selectedResumeId === res.id;
-                    return (
-                      <div
-                        key={res.id}
-                        className={`card-panel ${isSelected ? 'active-card' : ''}`}
-                        onClick={() => { setSelectedResumeId(res.id); setEditingAiEnrichment(false); }}
-                        style={{
-                          padding: '16px',
-                          cursor: 'pointer',
-                          border: isSelected ? '2px solid var(--primary)' : '1px solid rgba(255,255,255,0.08)',
-                          background: isSelected ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-secondary)',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '8px'
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#fff' }}>{res.fileName}</span>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>v{res.version}</span>
+            {resumes.length === 0 ? (
+              <div className="resume-empty">
+                <span className="resume-empty-icon"><IconFile /></span>
+                No resumes uploaded yet. Click upload to get started.
+              </div>
+            ) : (
+              <div className="resume-list">
+                {resumes.map((res) => {
+                  const isSelected = selectedResumeId === res.id;
+                  return (
+                    <div
+                      key={res.id}
+                      className={`resume-card ${isSelected ? 'resume-card--selected' : ''}`}
+                      onClick={() => { setSelectedResumeId(res.id); setEditingAiEnrichment(false); }}
+                    >
+                      <span className="resume-card-icon"><IconFile /></span>
+                      <div className="resume-card-body">
+                        <div className="resume-card-top">
+                          <span className="resume-card-name">{res.fileName}</span>
+                          <span className="resume-card-version">v{res.version}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+                        <div className="resume-card-meta">
                           <span>{new Date(res.createdAt).toLocaleDateString()}</span>
                           {res.isActive ? (
                             <span className="badge badge-success">Active</span>
                           ) : (
                             <button
-                              className="btn-link"
-                              style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--primary)' }}
+                              className="resume-set-active-btn"
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 await api.setActiveResume(res.id);
@@ -2043,39 +2115,40 @@ function App() {
                             </button>
                           )}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
-                          <a
-                            href={api.getResumeDownloadUrl(res.id)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="btn btn-secondary"
-                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Download
-                          </a>
-                          <button
-                            className="btn btn-danger"
-                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (confirm('Delete this resume?')) {
-                                await api.deleteResume(res.id);
-                                if (selectedResumeId === res.id) setSelectedResumeId(null);
-                                loadResumes();
-                              }
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
                       </div>
-                    );
-                  })
-                )}
+                      <div className="resume-card-actions">
+                        <a
+                          href={api.getResumeDownloadUrl(res.id)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="resume-icon-btn"
+                          aria-label="Download resume"
+                          title="Download"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <IconDownload />
+                        </a>
+                        <button
+                          className="resume-icon-btn resume-icon-btn--danger"
+                          aria-label="Delete resume"
+                          title="Delete"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (confirm('Delete this resume?')) {
+                              await api.deleteResume(res.id);
+                              if (selectedResumeId === res.id) setSelectedResumeId(null);
+                              loadResumes();
+                            }
+                          }}
+                        >
+                          <IconTrash />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-
-            </div>
+            )}
           </div>
         )}
 
@@ -4164,46 +4237,54 @@ function App() {
 
         {/* APPLICATIONS TAB */}
         {activeTab === 'applications' && (
-          <div>
-            <div className="page-header">
-              <h1 className="page-title">Active Job Applications</h1>
+          <div className="app-page">
+            <div className="app-header">
+              <div>
+                <h1 className="app-title">Active Job Applications</h1>
+                <p className="app-subtitle">Track every application&apos;s pipeline stage in one place</p>
+              </div>
             </div>
 
-            <div className="card-panel">
+            <div className="app-panel app-panel--flush">
               {applications.length === 0 ? (
-                <div className="empty-state">No active applications currently tracked. Save a job to start.</div>
+                <div className="app-empty">No active applications currently tracked. Save a job to start.</div>
               ) : (
                 <div className="data-table-container">
-                  <table className="data-table">
+                  <table className="data-table app-table">
                     <thead>
                       <tr>
                         <th>Job Role</th>
                         <th>Company</th>
                         <th>Status</th>
                         <th>Applied On</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
+                        <th className="app-table-actions-head">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {applications.map((app) => (
                         <tr key={app.id}>
-                          <td style={{ fontWeight: 600 }}>{app.job?.title}</td>
+                          <td className="app-cell-strong">{app.job?.title}</td>
                           <td>{app.job?.companyName}</td>
                           <td>
-                            <span className="badge badge-success">{app.status}</span>
+                            <span className={`badge ${APPLICATION_STATUS_VARIANT[app.status] || 'badge-secondary'}`}>
+                              {(app.status || '').replace('_', ' ')}
+                            </span>
                           </td>
-                          <td>{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'Not applied yet'}</td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={() => {
-                                setEditItem(app);
-                                setModal('application');
-                              }}
-                            >
-                              Update Status
-                            </button>
+                          <td className="app-cell-sub">{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : 'Not applied yet'}</td>
+                          <td>
+                            <div className="app-row-actions">
+                              <button
+                                className="app-icon-btn"
+                                aria-label="Update application status"
+                                title="Update Status"
+                                onClick={() => {
+                                  setEditItem(app);
+                                  setModal('application');
+                                }}
+                              >
+                                <IconEdit />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -4217,46 +4298,54 @@ function App() {
 
         {/* OUTREACH CRM TAB */}
         {activeTab === 'outreach' && (
-          <div>
-            <div className="page-header">
-              <h1 className="page-title">Outreach Tracking Logs</h1>
+          <div className="outreach-page">
+            <div className="outreach-header">
+              <div>
+                <h1 className="outreach-title">Outreach Tracking Logs</h1>
+                <p className="outreach-subtitle">Every logged touchpoint with your network, in one timeline</p>
+              </div>
             </div>
 
-            <div className="card-panel">
+            <div className="outreach-panel outreach-panel--flush">
               {outreachList.length === 0 ? (
-                <div className="empty-state">No outreach campaigns logged. Go to Connections CRM to initiate.</div>
+                <div className="outreach-empty">No outreach campaigns logged. Go to Connections CRM to initiate.</div>
               ) : (
                 <div className="data-table-container">
-                  <table className="data-table">
+                  <table className="data-table outreach-table">
                     <thead>
                       <tr>
                         <th>Connection Name</th>
                         <th>Latest Status</th>
                         <th>Follow Up Date</th>
                         <th>Notes Summary</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
+                        <th className="outreach-table-actions-head">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {outreachList.map((o) => (
                         <tr key={o.id}>
-                          <td style={{ fontWeight: 600 }}>{o.connection?.name || 'Contact'}</td>
+                          <td className="outreach-cell-strong">{o.connection?.name || 'Contact'}</td>
                           <td>
-                            <span className="badge badge-warning">{o.status}</span>
+                            <span className={`badge ${OUTREACH_STATUS_VARIANT[o.status] || 'badge-secondary'}`}>
+                              {(o.status || '').replace('_', ' ')}
+                            </span>
                           </td>
-                          <td>{o.followUpDate || 'None set'}</td>
-                          <td>{o.notes || 'No outreach comments'}</td>
-                          <td style={{ textAlign: 'right' }}>
-                            <button
-                              className="btn btn-secondary"
-                              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={() => {
-                                setEditItem(o);
-                                setModal('outreach_update');
-                              }}
-                            >
-                              Update Outreach
-                            </button>
+                          <td className="outreach-cell-sub">{o.followUpDate || 'None set'}</td>
+                          <td className="outreach-cell-sub">{o.notes || 'No outreach comments'}</td>
+                          <td>
+                            <div className="outreach-row-actions">
+                              <button
+                                className="outreach-icon-btn"
+                                aria-label="Update outreach"
+                                title="Update Outreach"
+                                onClick={() => {
+                                  setEditItem(o);
+                                  setModal('outreach_update');
+                                }}
+                              >
+                                <IconEdit />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -4270,87 +4359,92 @@ function App() {
 
         {/* AI OBSERVABILITY & OPERATIONS TAB */}
         {activeTab === 'ai-ops' && (
-          <div>
-            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h1 className="page-title">  AI Observability & Operations</h1>
-              <button className="btn btn-primary" onClick={loadAiOps} disabled={loadingAiOps} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
-                {loadingAiOps ? 'Refreshing...' : '🔄 Refresh Health'}
+          <div className="aiops-page">
+            <div className="aiops-header">
+              <div>
+                <h1 className="aiops-title">AI Observability &amp; Operations</h1>
+                <p className="aiops-subtitle">Live provider health, queue throughput, and operator controls</p>
+              </div>
+              <button className="aiops-btn aiops-btn--primary" onClick={loadAiOps} disabled={loadingAiOps}>
+                <IconRefresh />
+                {loadingAiOps ? 'Refreshing...' : 'Refresh Health'}
               </button>
             </div>
 
             {loadingAiOps && !aiOpsData ? (
-              <div className="empty-state">Loading real-time operational telemetry...</div>
+              <div className="aiops-empty">Loading real-time operational telemetry...</div>
             ) : !aiOpsData ? (
-              <div className="empty-state">No telemetry data returned. Ensure server is active.</div>
+              <div className="aiops-empty">No telemetry data returned. Ensure server is active.</div>
             ) : (
               <div>
                 {/* 1. Global System Status Alerts */}
                 {aiOpsData.anomalies && aiOpsData.anomalies.length > 0 && (
-                  <div style={{ background: '#fdeded', border: '1px solid var(--danger)', padding: '16px', borderRadius: '8px', marginBottom: '24px', color: '#5f2120' }}>
-                    <h3 style={{ marginTop: 0, fontWeight: 'bold' }}>⚠️ Active Operational Anomalies Detected</h3>
-                    <ul style={{ margin: '8px 0 0 16px', padding: 0 }}>
+                  <div className="aiops-anomaly-box">
+                    <h3 className="aiops-anomaly-title"><IconAlertTriangle /> Active Operational Anomalies Detected</h3>
+                    <ul className="aiops-anomaly-list">
                       {aiOpsData.anomalies.map((anom, idx) => (
-                        <li key={idx} style={{ marginBottom: '4px' }}>{anom.message}</li>
+                        <li key={idx}>{anom.message}</li>
                       ))}
                     </ul>
                   </div>
                 )}
 
                 {/* 2. Overview Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                  <div className="stat-card" style={{ borderLeft: '4px solid var(--primary)' }}>
-                    <span className="stat-label">AI Health Status</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                      <span className={`badge badge-${aiOpsData.state === 'HEALTHY' ? 'success' : aiOpsData.state === 'DEGRADED' ? 'warning' : 'danger'}`} style={{ fontSize: '1.1rem', padding: '6px 12px' }}>
+                <div className="aiops-stat-grid">
+                  <div className="aiops-stat-card aiops-stat-card--accent">
+                    <span className="aiops-stat-label">AI Health Status</span>
+                    <div className="aiops-stat-badge-row">
+                      <span className={`badge badge-${aiOpsData.state === 'HEALTHY' ? 'success' : aiOpsData.state === 'DEGRADED' ? 'warning' : 'danger'} aiops-state-badge`}>
                         {aiOpsData.state}
                       </span>
                     </div>
                   </div>
-                  <div className="stat-card">
-                    <span className="stat-label">Active Provider / Model</span>
-                    <span className="stat-value" style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginTop: '8px', display: 'block' }}>
-                      {aiOpsData.provider.toUpperCase()} <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>({aiOpsData.model})</span>
+                  <div className="aiops-stat-card">
+                    <span className="aiops-stat-label">Active Provider / Model</span>
+                    <span className="aiops-stat-value aiops-stat-value--md">
+                      {aiOpsData.provider.toUpperCase()} <span className="aiops-stat-value-sub">({aiOpsData.model})</span>
                     </span>
                   </div>
-                  <div className="stat-card">
-                    <span className="stat-label">Latency (P50 / P95)</span>
-                    <span className="stat-value" style={{ fontSize: '1.5rem', marginTop: '4px' }}>
+                  <div className="aiops-stat-card">
+                    <span className="aiops-stat-label">Latency (P50 / P95)</span>
+                    <span className="aiops-stat-value">
                       {aiOpsData.latency?.p50 ? `${(aiOpsData.latency.p50 / 1000).toFixed(2)}s` : '0s'}
-                      <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginLeft: '6px' }}>
+                      <span className="aiops-stat-value-sub">
                         / {aiOpsData.latency?.p95 ? `${(aiOpsData.latency.p95 / 1000).toFixed(2)}s` : '0s'}
                       </span>
                     </span>
                   </div>
-                  <div className="stat-card">
-                    <span className="stat-label">AI Response Quality</span>
-                    <span className="stat-value" style={{ fontSize: '1.5rem', color: 'var(--accent)', marginTop: '4px' }}>
+                  <div className="aiops-stat-card">
+                    <span className="aiops-stat-label">AI Response Quality</span>
+                    <span className="aiops-stat-value aiops-stat-value--accent">
                       {aiOpsData.averageQuality ? `${Math.round(aiOpsData.averageQuality * 100)}%` : '100%'}
                     </span>
                   </div>
                 </div>
 
                 {/* 3. Operational Queue Analytics & Operator Control Console */}
-                <div className="page-header" style={{ marginTop: '32px' }}>
-                  <h2 className="page-title" style={{ fontSize: '1.25rem' }}>🔄 Hardened Production Queue Controller</h2>
+                <div className="aiops-section-head">
+                  <span className="aiops-section-icon"><IconGauge /></span>
+                  <h2 className="aiops-section-title">Hardened Production Queue Controller</h2>
                 </div>
 
                 {aiOpsData.queueLatency && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                    <div className="stat-card" style={{ background: 'var(--bg-card)', borderLeft: '4px solid var(--primary)' }}>
-                      <span className="stat-label">Avg Queue Wait</span>
-                      <span className="stat-value" style={{ fontSize: '1.3rem', marginTop: '8px', display: 'block' }}>
+                  <div className="aiops-stat-grid">
+                    <div className="aiops-stat-card aiops-stat-card--accent">
+                      <span className="aiops-stat-label">Avg Queue Wait</span>
+                      <span className="aiops-stat-value aiops-stat-value--md">
                         {aiOpsData.queueLatency.averageQueueWait ? `${(aiOpsData.queueLatency.averageQueueWait / 1000).toFixed(2)}s` : '0.00s'}
                       </span>
                     </div>
-                    <div className="stat-card" style={{ background: 'var(--bg-card)', borderLeft: '4px solid var(--accent)' }}>
-                      <span className="stat-label">Avg AI Compute (Ollama)</span>
-                      <span className="stat-value" style={{ fontSize: '1.3rem', marginTop: '8px', display: 'block' }}>
+                    <div className="aiops-stat-card aiops-stat-card--teal">
+                      <span className="aiops-stat-label">Avg AI Compute (Ollama)</span>
+                      <span className="aiops-stat-value aiops-stat-value--md">
                         {aiOpsData.queueLatency.averageQueueProcessing ? `${(aiOpsData.queueLatency.averageQueueProcessing / 1000).toFixed(2)}s` : '0.00s'}
                       </span>
                     </div>
-                    <div className="stat-card" style={{ background: 'var(--bg-card)', borderLeft: '4px solid var(--text-primary)' }}>
-                      <span className="stat-label">Avg Total Job Latency</span>
-                      <span className="stat-value" style={{ fontSize: '1.3rem', marginTop: '8px', display: 'block' }}>
+                    <div className="aiops-stat-card aiops-stat-card--neutral">
+                      <span className="aiops-stat-label">Avg Total Job Latency</span>
+                      <span className="aiops-stat-value aiops-stat-value--md">
                         {aiOpsData.queueLatency.averageQueueTotal ? `${(aiOpsData.queueLatency.averageQueueTotal / 1000).toFixed(2)}s` : '0.00s'}
                       </span>
                     </div>
@@ -4358,63 +4452,70 @@ function App() {
                 )}
 
                 {adminQueueData ? (
-                  <div className="card-panel" style={{ marginBottom: '24px', padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-                    <h3 style={{ marginTop: 0 }}>🎛️ Operator Control Console</h3>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  <div className="aiops-console-panel">
+                    <div className="aiops-console-head">
+                      <span className="aiops-section-icon"><IconSliders /></span>
+                      <h3>Operator Control Console</h3>
+                    </div>
+                    <p className="aiops-console-desc">
                       Manage Redis/BullMQ background execution limits, pause queue processors, or trigger failure recoveries.
                     </p>
-                    
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
+
+                    <div className="aiops-console-actions">
                       {adminQueueData.isPaused ? (
-                        <button className="btn btn-success" onClick={() => handleQueueAction('resume')} style={{ padding: '8px 16px' }}>
-                          ▶️ Resume Queue
+                        <button className="aiops-btn aiops-btn--success" onClick={() => handleQueueAction('resume')}>
+                          <IconPlay />
+                          Resume Queue
                         </button>
                       ) : (
-                        <button className="btn btn-warning" onClick={() => handleQueueAction('pause')} style={{ padding: '8px 16px' }}>
-                          ⏸️ Pause Queue
+                        <button className="aiops-btn aiops-btn--warning" onClick={() => handleQueueAction('pause')}>
+                          <IconPause />
+                          Pause Queue
                         </button>
                       )}
-                      
-                      <button className="btn btn-primary" onClick={() => handleQueueAction('retry-all')} style={{ padding: '8px 16px' }}>
-                        🔁 Retry Failed Jobs
+
+                      <button className="aiops-btn aiops-btn--primary" onClick={() => handleQueueAction('retry-all')}>
+                        <IconRefresh />
+                        Retry Failed Jobs
                       </button>
-                      
-                      <button className="btn btn-danger" onClick={() => handleQueueAction('clean')} style={{ padding: '8px 16px' }}>
-                        🧹 Clean History
+
+                      <button className="aiops-btn aiops-btn--danger" onClick={() => handleQueueAction('clean')}>
+                        <IconTrash />
+                        Clean History
                       </button>
                     </div>
 
-                    <div style={{ marginTop: '20px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-                      <h4 style={{ margin: '0 0 12px 0' }}>Job Processing Counts</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
-                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Waiting</span>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px' }}>{adminQueueData.counts?.waiting || 0}</div>
+                    <div className="aiops-console-block">
+                      <h4>Job Processing Counts</h4>
+                      <div className="aiops-count-grid">
+                        <div className="aiops-count-tile">
+                          <span className="aiops-count-label">Waiting</span>
+                          <div className="aiops-count-value">{adminQueueData.counts?.waiting || 0}</div>
                         </div>
-                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Active</span>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px', color: 'var(--warning)' }}>{adminQueueData.counts?.active || 0}</div>
+                        <div className="aiops-count-tile">
+                          <span className="aiops-count-label">Active</span>
+                          <div className="aiops-count-value aiops-count-value--warning">{adminQueueData.counts?.active || 0}</div>
                         </div>
-                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Delayed</span>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px' }}>{adminQueueData.counts?.delayed || 0}</div>
+                        <div className="aiops-count-tile">
+                          <span className="aiops-count-label">Delayed</span>
+                          <div className="aiops-count-value">{adminQueueData.counts?.delayed || 0}</div>
                         </div>
-                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Completed</span>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px', color: 'var(--success)' }}>{adminQueueData.counts?.completed || 0}</div>
+                        <div className="aiops-count-tile">
+                          <span className="aiops-count-label">Completed</span>
+                          <div className="aiops-count-value aiops-count-value--success">{adminQueueData.counts?.completed || 0}</div>
                         </div>
-                        <div style={{ padding: '10px', background: 'var(--bg-body)', borderRadius: '6px', textAlign: 'center' }}>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Failed</span>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '4px', color: 'var(--danger)' }}>{adminQueueData.counts?.failed || 0}</div>
+                        <div className="aiops-count-tile">
+                          <span className="aiops-count-label">Failed</span>
+                          <div className="aiops-count-value aiops-count-value--danger">{adminQueueData.counts?.failed || 0}</div>
                         </div>
                       </div>
                     </div>
 
                     {adminQueueData.activeWorkers && adminQueueData.activeWorkers.length > 0 && (
-                      <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
-                        <h4 style={{ margin: '0 0 12px 0' }}>Active Worker Node Registry ({adminQueueData.activeWorkers.length})</h4>
-                        <div className="data-table-container" style={{ margin: 0 }}>
-                          <table className="data-table" style={{ fontSize: '0.85rem' }}>
+                      <div className="aiops-console-block">
+                        <h4>Active Worker Node Registry ({adminQueueData.activeWorkers.length})</h4>
+                        <div className="data-table-container">
+                          <table className="data-table aiops-table">
                             <thead>
                               <tr>
                                 <th>Worker Node ID</th>
@@ -4428,7 +4529,7 @@ function App() {
                             <tbody>
                               {adminQueueData.activeWorkers.map((wrk) => (
                                 <tr key={wrk.workerId}>
-                                  <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{wrk.workerId}</td>
+                                  <td className="aiops-cell-mono">{wrk.workerId}</td>
                                   <td>
                                     <span className={`badge badge-${wrk.status === 'active' ? 'success' : 'warning'}`}>
                                       {wrk.status}
@@ -4436,8 +4537,8 @@ function App() {
                                   </td>
                                   <td>{wrk.activeJobs}</td>
                                   <td>{wrk.processedJobs}</td>
-                                  <td style={{ color: wrk.failedJobs > 0 ? 'var(--danger)' : 'inherit' }}>{wrk.failedJobs}</td>
-                                  <td style={{ color: 'var(--text-secondary)' }}>
+                                  <td className={wrk.failedJobs > 0 ? 'aiops-cell-danger' : ''}>{wrk.failedJobs}</td>
+                                  <td className="aiops-cell-sub">
                                     {new Date(wrk.lastHeartbeat).toLocaleTimeString()}
                                   </td>
                                 </tr>
@@ -4449,37 +4550,39 @@ function App() {
                     )}
                   </div>
                 ) : (
-                  <div className="card-panel" style={{ marginBottom: '24px', padding: '16px', background: 'var(--bg-card)' }}>
-                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      🔒 Operator Control Console requires elevated permissions. Log in with an operator-whitelisted email.
+                  <div className="aiops-locked-panel">
+                    <span className="aiops-locked-icon"><IconLock /></span>
+                    <p>
+                      Operator Control Console requires elevated permissions. Log in with an operator-whitelisted email.
                     </p>
                   </div>
                 )}
 
                 {/* 4. Background Job Queue Monitors */}
-                <div className="page-header" style={{ marginTop: '32px' }}>
-                  <h2 className="page-title" style={{ fontSize: '1.25rem' }}>🔄 Background Job Queue Monitors</h2>
+                <div className="aiops-section-head">
+                  <span className="aiops-section-icon"><IconRefresh /></span>
+                  <h2 className="aiops-section-title">Background Job Queue Monitors</h2>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+                <div className="aiops-queue-grid">
                   {Object.entries(aiOpsData.queue?.details || {}).map(([qName, qDetails]) => (
-                    <div key={qName} className="stat-card" style={{ background: 'var(--bg-card)' }}>
-                      <h4 style={{ textTransform: 'capitalize', marginTop: 0, borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                    <div key={qName} className="aiops-queue-card">
+                      <h4 className="aiops-queue-card-title">
                         {qName.replace('_', ' ')} Queue
                       </h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>Pending Items:</span>
-                          <span style={{ fontWeight: 'bold' }}>{qDetails.pending || 0}</span>
+                      <div className="aiops-queue-rows">
+                        <div className="aiops-queue-row">
+                          <span>Pending Items:</span>
+                          <span className="aiops-queue-row-value">{qDetails.pending || 0}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>Status:</span>
+                        <div className="aiops-queue-row">
+                          <span>Status:</span>
                           <span className={`badge badge-${qDetails.processing ? 'warning' : 'success'}`}>
                             {qDetails.processing ? 'Processing' : 'Idle'}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>Accumulated Failures:</span>
-                          <span style={{ color: qDetails.failed > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
+                        <div className="aiops-queue-row">
+                          <span>Accumulated Failures:</span>
+                          <span className={qDetails.failed > 0 ? 'aiops-cell-danger' : 'aiops-queue-row-value'}>
                             {qDetails.failed || 0}
                           </span>
                         </div>
@@ -4489,12 +4592,13 @@ function App() {
                 </div>
 
                 {/* 5. Quality SLO Indicators */}
-                <div className="page-header" style={{ marginTop: '32px' }}>
-                  <h2 className="page-title" style={{ fontSize: '1.25rem' }}>📊 Quality SLO Baselines & Runtime State</h2>
+                <div className="aiops-section-head">
+                  <span className="aiops-section-icon"><IconBarChart /></span>
+                  <h2 className="aiops-section-title">Quality SLO Baselines &amp; Runtime State</h2>
                 </div>
-                <div className="card-panel">
+                <div className="aiops-panel aiops-panel--flush">
                   <div className="data-table-container">
-                    <table className="data-table">
+                    <table className="data-table aiops-table">
                       <thead>
                         <tr>
                           <th>SLO Target Metric</th>
@@ -4505,19 +4609,19 @@ function App() {
                       </thead>
                       <tbody>
                         <tr>
-                          <td style={{ fontWeight: 600 }}>System Availability Rate</td>
+                          <td className="aiops-cell-strong">System Availability Rate</td>
                           <td>&gt; 99.0%</td>
                           <td>{aiOpsData.available ? '100%' : '0%'}</td>
                           <td><span className={`badge badge-${aiOpsData.available ? 'success' : 'danger'}`}>{aiOpsData.available ? 'PASSING' : 'FAILING'}</span></td>
                         </tr>
                         <tr>
-                          <td style={{ fontWeight: 600 }}>Success rate thresholds</td>
+                          <td className="aiops-cell-strong">Success rate thresholds</td>
                           <td>&gt; 90.0%</td>
                           <td>{aiOpsData.metrics?.requests_total > 0 ? `${Math.round((aiOpsData.metrics.requests_success / aiOpsData.metrics.requests_total) * 100)}%` : '100%'}</td>
-                          <td><span className={`badge badge-success`}>PASSING</span></td>
+                          <td><span className="badge badge-success">PASSING</span></td>
                         </tr>
                         <tr>
-                          <td style={{ fontWeight: 600 }}>P95 Generation Latency</td>
+                          <td className="aiops-cell-strong">P95 Generation Latency</td>
                           <td>&lt; 10s</td>
                           <td>{aiOpsData.latency?.p95 ? `${(aiOpsData.latency.p95 / 1000).toFixed(2)}s` : '0s'}</td>
                           <td><span className={`badge badge-${(aiOpsData.latency?.p95 || 0) < 10000 ? 'success' : 'warning'}`}>{(aiOpsData.latency?.p95 || 0) < 10000 ? 'PASSING' : 'WARNING'}</span></td>
@@ -5174,13 +5278,16 @@ function App() {
       {
         modal === 'resume' && (
           <div className="modal-overlay">
-            <div className="modal-content">
-              <h2 className="card-title">Upload Resume File</h2>
-              <div className="form-group">
-                <label className="form-label">Select Document (PDF/DOCX)</label>
+            <div className="modal-content resume-modal">
+              <div className="resume-modal-head">
+                <span className="resume-modal-icon"><IconFile /></span>
+                <h2 className="modal-title">Upload Resume File</h2>
+              </div>
+              <label className="resume-upload-box">
+                <IconUpload />
+                <span>Click to choose a PDF or DOCX file</span>
                 <input
                   type="file"
-                  className="form-input"
                   onChange={async (e) => {
                     const file = e.target.files[0];
                     if (file) {
@@ -5195,9 +5302,9 @@ function App() {
                     }
                   }}
                 />
-              </div>
+              </label>
               <div className="modal-actions">
-                <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                <button className="resume-btn resume-btn--ghost" onClick={() => setModal(null)}>Cancel</button>
               </div>
             </div>
           </div>
@@ -5455,8 +5562,11 @@ function App() {
       {
         modal === 'application' && (
           <div className="modal-overlay">
-            <div className="modal-content">
-              <h2 className="card-title">Update Application Pipeline</h2>
+            <div className="modal-content app-modal">
+              <div className="app-modal-head">
+                <span className="app-modal-icon"><IconBriefcase /></span>
+                <h2 className="modal-title">Update Application Pipeline</h2>
+              </div>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -5487,8 +5597,8 @@ function App() {
                   <textarea name="notes" className="form-input" rows="3" placeholder="Add status notes/logs..."></textarea>
                 </div>
                 <div className="modal-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary">Update Status</button>
+                  <button type="button" className="app-btn app-btn--ghost" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="app-btn app-btn--primary">Update Status</button>
                 </div>
               </form>
             </div>
@@ -5500,8 +5610,11 @@ function App() {
       {
         modal === 'outreach' && (
           <div className="modal-overlay">
-            <div className="modal-content">
-              <h2 className="card-title">Log Outreach for {editItem?.name}</h2>
+            <div className="modal-content outreach-modal outreach-modal--wide">
+              <div className="outreach-modal-head">
+                <span className="outreach-modal-icon"><IconSend /></span>
+                <h2 className="modal-title">Log Outreach for {editItem?.name}</h2>
+              </div>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -5554,27 +5667,26 @@ function App() {
                 </div>
 
                 {/* AI OUTREACH ASSISTANT PANEL */}
-                <div className="card-panel" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
-                  <h3 style={{ fontSize: '1.05rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff' }}>
-                    <span>  AI Outreach Assistant</span>
+                <div className="outreach-ai-panel">
+                  <h3 className="outreach-ai-heading">
+                    <IconZap /> AI Outreach Assistant
                   </h3>
 
                   {aiError && (
-                    <div className="alert alert-danger" style={{ marginBottom: '12px', padding: '10px 14px', borderRadius: '6px', fontSize: '0.9rem' }}>
+                    <div className="outreach-alert outreach-alert--danger">
                       {aiError}
                     </div>
                   )}
 
                   {!aiDraft && (
                     <div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label className="form-label" style={{ fontSize: '0.8rem' }}>Intent</label>
+                      <div className="outreach-ai-controls">
+                        <div className="form-group outreach-ai-field">
+                          <label className="form-label">Intent</label>
                           <select
                             className="form-input"
                             value={aiIntent}
                             onChange={(e) => setAiIntent(e.target.value)}
-                            style={{ padding: '6px 8px', fontSize: '0.85rem' }}
                           >
                             <option value="referral_request">Referral Request</option>
                             <option value="guidance_request">Guidance Request</option>
@@ -5584,26 +5696,24 @@ function App() {
                             <option value="thank_you">Thank You</option>
                           </select>
                         </div>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label className="form-label" style={{ fontSize: '0.8rem' }}>Tone</label>
+                        <div className="form-group outreach-ai-field">
+                          <label className="form-label">Tone</label>
                           <select
                             className="form-input"
                             value={aiTone}
                             onChange={(e) => setAiTone(e.target.value)}
-                            style={{ padding: '6px 8px', fontSize: '0.85rem' }}
                           >
                             <option value="professional">Professional</option>
                             <option value="friendly">Friendly</option>
                             <option value="concise">Concise</option>
                           </select>
                         </div>
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label className="form-label" style={{ fontSize: '0.8rem' }}>Length</label>
+                        <div className="form-group outreach-ai-field">
+                          <label className="form-label">Length</label>
                           <select
                             className="form-input"
                             value={aiLength}
                             onChange={(e) => setAiLength(e.target.value)}
-                            style={{ padding: '6px 8px', fontSize: '0.85rem' }}
                           >
                             <option value="short">Short</option>
                             <option value="medium">Medium</option>
@@ -5612,17 +5722,16 @@ function App() {
                       </div>
 
                       {aiWarnings.length > 0 && (
-                        <div className="alert alert-warning" style={{ marginBottom: '12px', padding: '12px', borderRadius: '6px', fontSize: '0.85rem' }}>
-                          <strong style={{ display: 'block', marginBottom: '4px' }}>⚠ Outreach Warning:</strong>
-                          <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                        <div className="outreach-alert outreach-alert--warning">
+                          <strong className="outreach-alert-title"><IconAlertTriangle /> Outreach Warning</strong>
+                          <ul className="outreach-alert-list">
                             {aiWarnings.map((w, idx) => (
-                              <li key={idx} style={{ marginBottom: '4px' }}>{w.message}</li>
+                              <li key={idx}>{w.message}</li>
                             ))}
                           </ul>
                           <button
                             type="button"
-                            className="btn btn-warning"
-                            style={{ marginTop: '8px', padding: '4px 10px', fontSize: '0.8rem', width: '100%' }}
+                            className="outreach-btn outreach-btn--warning outreach-btn--block"
                             onClick={() => handleGenerateAiDraft(true)}
                             disabled={aiLoading}
                           >
@@ -5634,12 +5743,12 @@ function App() {
                       {aiWarnings.length === 0 && (
                         <button
                           type="button"
-                          className="btn btn-primary"
-                          style={{ width: '100%', padding: '8px' }}
+                          className="outreach-btn outreach-btn--primary outreach-btn--block"
                           onClick={() => handleGenerateAiDraft(false)}
                           disabled={aiLoading}
                         >
-                          {aiLoading ? 'Generating Draft...' : '✨ Generate AI Outreach Draft'}
+                          <IconZap />
+                          {aiLoading ? 'Generating Draft...' : 'Generate AI Outreach Draft'}
                         </button>
                       )}
                     </div>
@@ -5647,37 +5756,36 @@ function App() {
 
                   {aiDraft && (
                     <div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                      <div className="outreach-ai-summary">
                         <strong>Selected Intent:</strong> {aiIntent.replace('_', ' ')} &bull; <strong>Tone:</strong> {aiDraft.tone}
                       </div>
 
                       {aiDraft.personalizationPoints && aiDraft.personalizationPoints.length > 0 && (
-                        <div style={{ marginBottom: '12px' }}>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Personalization factors applied:</div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        <div className="outreach-ai-personalization">
+                          <div className="outreach-ai-personalization-label">Personalization factors applied:</div>
+                          <div className="outreach-ai-personalization-list">
                             {aiDraft.personalizationPoints.map((p, idx) => (
-                              <span key={idx} className="badge badge-success" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>
-                                ✓ {p}
+                              <span key={idx} className="badge badge-success outreach-personalization-chip">
+                                <IconCheck /> {p}
                               </span>
                             ))}
                           </div>
                         </div>
                       )}
 
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div className="outreach-ai-draft-actions">
                         <button
                           type="button"
-                          className="btn btn-secondary"
-                          style={{ flex: 1, padding: '6px' }}
+                          className="outreach-btn outreach-btn--ghost"
                           onClick={() => handleGenerateAiDraft(true)}
                           disabled={aiLoading}
                         >
-                          {aiLoading ? 'Regenerating...' : '🔄 Regenerate'}
+                          <IconRefresh />
+                          {aiLoading ? 'Regenerating...' : 'Regenerate'}
                         </button>
                         <button
                           type="button"
-                          className="btn btn-secondary"
-                          style={{ flex: 1, padding: '6px', color: 'var(--danger)' }}
+                          className="outreach-btn outreach-btn--ghost outreach-btn--danger-text"
                           onClick={handleDiscardDraft}
                         >
                           Discard Draft
@@ -5692,8 +5800,8 @@ function App() {
                   <textarea name="notes" className="form-input" rows="3" placeholder="Message content goes here..."></textarea>
                 </div>
                 <div className="modal-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary">Log Outreach</button>
+                  <button type="button" className="outreach-btn outreach-btn--ghost" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="outreach-btn outreach-btn--primary">Log Outreach</button>
                 </div>
               </form>
             </div>
@@ -5705,8 +5813,11 @@ function App() {
       {
         modal === 'outreach_update' && (
           <div className="modal-overlay">
-            <div className="modal-content">
-              <h2 className="card-title">Update Outreach Logs</h2>
+            <div className="modal-content outreach-modal">
+              <div className="outreach-modal-head">
+                <span className="outreach-modal-icon"><IconEdit /></span>
+                <h2 className="modal-title">Update Outreach Logs</h2>
+              </div>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -5741,8 +5852,8 @@ function App() {
                   <textarea name="notes" className="form-input" rows="3"></textarea>
                 </div>
                 <div className="modal-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary">Update Outreach</button>
+                  <button type="button" className="outreach-btn outreach-btn--ghost" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="outreach-btn outreach-btn--primary">Update Outreach</button>
                 </div>
               </form>
             </div>
