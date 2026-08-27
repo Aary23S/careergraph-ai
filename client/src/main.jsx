@@ -219,6 +219,96 @@ const IconInbox = () => (
   </svg>
 );
 
+const IconCheckCircle = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M6.8 10.2 9 12.4l4.2-4.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconAlertTriangle = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 3.2 18 16.8H2L10 3.2Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M10 8.3v3.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <circle cx="10" cy="14.2" r="0.9" fill="currentColor" />
+  </svg>
+);
+
+const IconXCircle = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M7.5 7.5l5 5M12.5 7.5l-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
+const IconClock = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M10 6v4.3l2.8 1.7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconLightbulb = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.3 8.3a3.7 3.7 0 1 1 6.4 2.5c-.6.6-1 1.1-1 2v.2H8.3v-.2c0-.9-.4-1.4-1-2a3.7 3.7 0 0 1-1-2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M8.4 15.5h3.2M8.8 17.2h2.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconGlobe = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M2.75 10h14.5M10 2.75c1.9 2 2.9 4.6 2.9 7.25S11.9 15.25 10 17.25c-1.9-2-2.9-4.6-2.9-7.25S8.1 4.75 10 2.75Z" stroke="currentColor" strokeWidth="1.4" />
+  </svg>
+);
+
+const IconTie = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.5 3.5h7L12.3 6h-4.6L6.5 3.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M8 6l-2 8 4 3.5 4-3.5-2-8" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconZap = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M11 2.5 4.5 11.5h4.2L8.3 17.5l7.2-9.8h-4.3L11 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconPlay = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.5 4.2v11.6l9-5.8-9-5.8Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconExternalLink = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8.5 4.5h-3A1.5 1.5 0 0 0 4 6v9.5A1.5 1.5 0 0 0 5.5 17H15a1.5 1.5 0 0 0 1.5-1.5v-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M11 3.5H16.5V9M16.3 3.7 9.5 10.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconGauge = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 14.5a7 7 0 1 1 14 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M10 14.5 13 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <circle cx="10" cy="14.5" r="1.1" fill="currentColor" />
+  </svg>
+);
+
+const IconPlug = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7 2.5v4M13 2.5v4M5.5 6.5h9v3a4.5 4.5 0 0 1-9 0v-3Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M10 13.5V17.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconTelegram = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.3 3.3 2.8 8.9c-.8.3-.8 1.5.1 1.8l3.5 1.1 1.4 4.4c.2.6.9.7 1.3.2l1.9-2.1 3.7 2.7c.6.4 1.4.1 1.6-.6l2.4-11.4c.2-.9-.7-1.6-1.4-1.3ZM7.2 11.4l7-4.7c.3-.2.6.2.3.4l-5.8 5.5-.2 2.6-1-3.3Z" fill="currentColor" />
+  </svg>
+);
+
 // Pure presentational helper — formats a ISO date string as a short relative label.
 // Falls back to a locale date once the value is more than a week old.
 function formatRelativeTime(dateStr) {
@@ -262,6 +352,24 @@ const CONN_ROLE_PALETTE = [
 // Business-hierarchy display order for the Seniority Distribution chart — display only.
 // Values not listed here (unexpected/legacy data) sort after all known levels.
 const CONN_SENIORITY_ORDER = ['founder', 'executive', 'director', 'manager', 'lead', 'senior', 'mid', 'junior', 'intern', 'unknown'];
+
+// Maps a Job's status value to a badge color variant — display only.
+const JOB_STATUS_VARIANT = {
+  new: 'badge-info',
+  saved: 'badge-warning',
+  applied: 'badge-success'
+};
+
+// Maps an ingestion/integration health state to an icon + badge color variant — display only.
+const JOB_HEALTH_META = {
+  healthy: { icon: IconCheckCircle, variant: 'badge-success', label: 'Healthy' },
+  active: { icon: IconCheckCircle, variant: 'badge-success', label: 'Active' },
+  connected: { icon: IconCheckCircle, variant: 'badge-success', label: 'Connected' },
+  degraded: { icon: IconAlertTriangle, variant: 'badge-warning', label: 'Degraded' },
+  failed: { icon: IconXCircle, variant: 'badge-danger', label: 'Failed' },
+  disconnected: { icon: IconXCircle, variant: 'badge-secondary', label: 'Not Connected' },
+  unknown: { icon: IconClock, variant: 'badge-secondary', label: 'Unknown' }
+};
 
 // Maps a Connection's relationshipStatus value to a badge color variant — display only.
 const CONN_STATUS_VARIANT = {
@@ -3209,59 +3317,68 @@ function App() {
 
         {/* JOBS TRACKER TAB */}
         {activeTab === 'jobs' && (
-          <div>
-            <div className="page-header">
-              <h1 className="page-title">Job Postings</h1>
-              <button className="btn btn-primary" onClick={() => { setEditItem(null); setModal('job'); }}>
+          <div className="job-page">
+            <div className="job-header">
+              <div>
+                <h1 className="job-title">Jobs Tracker</h1>
+                <p className="job-subtitle">Track postings, sources, and the inbound review queue</p>
+              </div>
+              <button className="job-btn job-btn--primary" onClick={() => { setEditItem(null); setModal('job'); }}>
+                <IconBriefcase />
                 Track New Job
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--bg-secondary)', marginBottom: '16px', paddingBottom: '8px' }}>
+            <div className="job-subnav">
               <button
-                className={`btn ${jobSubTab === 'list' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                className={`job-subnav-btn ${jobSubTab === 'list' ? 'active' : ''}`}
                 onClick={() => setJobSubTab('list')}
               >
+                <IconBriefcase />
                 All Jobs
               </button>
               <button
-                className={`btn ${jobSubTab === 'sources' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                className={`job-subnav-btn ${jobSubTab === 'sources' ? 'active' : ''}`}
                 onClick={() => setJobSubTab('sources')}
               >
-                Settings ➔ Job Sources
+                <IconSliders />
+                Settings &amp; Job Sources
               </button>
               <button
-                className={`btn ${jobSubTab === 'review' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                className={`job-subnav-btn ${jobSubTab === 'review' ? 'active' : ''}`}
                 onClick={() => { setJobSubTab('review'); loadIncomingJobs(); }}
               >
-                Incoming Queue ({incomingJobs.filter(j => j.status === 'pending_review').length})
+                <IconInbox />
+                Incoming Queue
+                {incomingJobs.filter(j => j.status === 'pending_review').length > 0 && (
+                  <span className="job-subnav-badge">{incomingJobs.filter(j => j.status === 'pending_review').length}</span>
+                )}
               </button>
             </div>
 
             {jobSubTab === 'list' && (
               <div>
-                <div className="filter-bar">
-                  <div className="form-group" style={{ margin: 0, minWidth: '240px' }}>
-                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>Job Title / keyword</span>
-                      <div style={{ display: 'flex', gap: '8px', fontSize: '0.8rem' }}>
-                        <span
-                          style={{ cursor: 'pointer', fontWeight: jobSearchMode === 'keyword' ? 'bold' : 'normal', color: jobSearchMode === 'keyword' ? 'var(--primary)' : 'var(--text-secondary)' }}
+                <div className="job-filter-bar">
+                  <div className="job-filter-field job-filter-field--wide">
+                    <label className="job-filter-label-row">
+                      <span className="form-label">Job Title / Keyword</span>
+                      <span className="job-search-mode-toggle">
+                        <button
+                          type="button"
+                          className={jobSearchMode === 'keyword' ? 'active' : ''}
                           onClick={() => { setJobSearchMode('keyword'); setSemanticJobResults(null); }}
-                        >Keyword</span>
-                        <span
-                          style={{ cursor: 'pointer', fontWeight: jobSearchMode === 'semantic' ? 'bold' : 'normal', color: jobSearchMode === 'semantic' ? 'var(--primary)' : 'var(--text-secondary)' }}
+                        >Keyword</button>
+                        <button
+                          type="button"
+                          className={jobSearchMode === 'semantic' ? 'active' : ''}
                           onClick={() => { setJobSearchMode('semantic'); }}
-                        >Semantic</span>
-                      </div>
+                        >Semantic</button>
+                      </span>
                     </label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div className="job-search-field">
+                      <IconSearch />
                       <input
                         type="text"
-                        className="form-input"
                         placeholder={jobSearchMode === 'semantic' ? "Find backend roles focused on..." : "Job title..."}
                         value={jobFilters.q}
                         onChange={(e) => {
@@ -3276,7 +3393,7 @@ function App() {
                       />
                     </div>
                   </div>
-                  <div className="form-group" style={{ margin: 0 }}>
+                  <div className="job-filter-field">
                     <label className="form-label">Location</label>
                     <input
                       type="text"
@@ -3285,7 +3402,7 @@ function App() {
                       onChange={(e) => setJobFilters({ ...jobFilters, location: e.target.value, page: 1 })}
                     />
                   </div>
-                  <div className="form-group" style={{ margin: 0 }}>
+                  <div className="job-filter-field">
                     <label className="form-label">Status</label>
                     <select
                       className="form-input"
@@ -3298,24 +3415,26 @@ function App() {
                       <option value="applied">Applied</option>
                     </select>
                   </div>
-                  <button className="btn btn-secondary" onClick={jobSearchMode === 'semantic' ? runSemanticJobSearch : loadJobs}>
-                    {searchingJobSemantic ? '...' : 'Search'}
-                  </button>
+                  <div className="job-filter-actions">
+                    <button className="job-btn job-btn--primary" onClick={jobSearchMode === 'semantic' ? runSemanticJobSearch : loadJobs}>
+                      {searchingJobSemantic ? '...' : 'Search'}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="card-panel">
+                <div className="job-panel job-panel--flush">
                   {(semanticJobResults !== null ? semanticJobResults : jobs).length === 0 ? (
-                    <div className="empty-state">No jobs found matching conditions.</div>
+                    <div className="job-empty">No jobs found matching conditions.</div>
                   ) : (
                     <div className="data-table-container">
-                      <table className="data-table">
+                      <table className="data-table job-table">
                         <thead>
                           <tr>
                             <th>Job Title</th>
                             <th>Company Name</th>
                             <th>Location</th>
                             <th>Post Status</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
+                            <th className="job-table-actions-head">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -3324,72 +3443,78 @@ function App() {
                             : jobs
                           ).map((job) => (
                             <tr key={job.id}>
-                              <td style={{ fontWeight: 600 }}>
-                                <div>{job.title}</div>
+                              <td>
+                                <div className="job-cell-strong">{job.title}</div>
                                 {job.similarity !== undefined && (
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'normal', marginTop: '4px' }}>
+                                  <div className="job-similarity-note">
                                     Similarity: {Math.round(job.similarity * 100)}% {job.matchedConcepts?.length > 0 && `(${job.matchedConcepts.join(', ')})`}
                                   </div>
                                 )}
                               </td>
                               <td>
                                 {job.companyName}
-                                <span className="badge badge-secondary" style={{ marginLeft: '8px', textTransform: 'capitalize', fontSize: '0.75rem' }}>
+                                <span className="badge badge-secondary job-source-tag">
                                   {job.source || 'manual'}
                                 </span>
                               </td>
                               <td>{job.location || 'Remote'}</td>
                               <td>
-                                <span className="badge badge-info">{job.status}</span>
+                                <span className={`badge ${JOB_STATUS_VARIANT[job.status] || 'badge-info'}`}>{job.status}</span>
                               </td>
-                              <td style={{ textAlign: 'right' }}>
-                                <button
-                                  className="btn btn-primary"
-                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                                  onClick={async () => {
-                                    try {
-                                      const data = await api.request(`/jobs/${job.id}`);
-                                      setEditItem(data.data);
-                                      setModal('job_detail');
-                                    } catch (err) {
-                                      alert(err.message);
-                                    }
-                                  }}
-                                >
-                                  View
-                                </button>
-                                <button
-                                  className="btn btn-secondary"
-                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                                  onClick={async () => {
-                                    await api.createApplication(job.id, 'saved');
-                                    alert('Job saved to applications!');
-                                  }}
-                                >
-                                  Save / Apply
-                                </button>
-                                <button
-                                  className="btn btn-secondary"
-                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                                  onClick={() => {
-                                    setEditItem(job);
-                                    setModal('job');
-                                  }}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="btn btn-danger"
-                                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                                  onClick={async () => {
-                                    if (confirm('Delete this job?')) {
-                                      await api.deleteJob(job.id);
-                                      loadJobs();
-                                    }
-                                  }}
-                                >
-                                  Delete
-                                </button>
+                              <td>
+                                <div className="job-row-actions">
+                                  <button
+                                    className="job-icon-btn"
+                                    aria-label="View job"
+                                    title="View"
+                                    onClick={async () => {
+                                      try {
+                                        const data = await api.request(`/jobs/${job.id}`);
+                                        setEditItem(data.data);
+                                        setModal('job_detail');
+                                      } catch (err) {
+                                        alert(err.message);
+                                      }
+                                    }}
+                                  >
+                                    <IconEye />
+                                  </button>
+                                  <button
+                                    className="job-icon-btn"
+                                    aria-label="Save or apply"
+                                    title="Save / Apply"
+                                    onClick={async () => {
+                                      await api.createApplication(job.id, 'saved');
+                                      alert('Job saved to applications!');
+                                    }}
+                                  >
+                                    <IconSend />
+                                  </button>
+                                  <button
+                                    className="job-icon-btn"
+                                    aria-label="Edit job"
+                                    title="Edit"
+                                    onClick={() => {
+                                      setEditItem(job);
+                                      setModal('job');
+                                    }}
+                                  >
+                                    <IconEdit />
+                                  </button>
+                                  <button
+                                    className="job-icon-btn job-icon-btn--danger"
+                                    aria-label="Delete job"
+                                    title="Delete"
+                                    onClick={async () => {
+                                      if (confirm('Delete this job?')) {
+                                        await api.deleteJob(job.id);
+                                        loadJobs();
+                                      }
+                                    }}
+                                  >
+                                    <IconTrash />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -3397,17 +3522,17 @@ function App() {
                       </table>
 
                       {/* Pagination */}
-                      <div className="pagination">
+                      <div className="job-pagination">
                         <button
-                          className="btn btn-secondary"
+                          className="job-btn job-btn--ghost"
                           disabled={jobFilters.page <= 1}
                           onClick={() => setJobFilters({ ...jobFilters, page: jobFilters.page - 1 })}
                         >
                           Previous
                         </button>
-                        <span>Page {jobFilters.page} of {jobMeta.totalPages || 1}</span>
+                        <span className="job-pagination-status">Page {jobFilters.page} of {jobMeta.totalPages || 1}</span>
                         <button
-                          className="btn btn-secondary"
+                          className="job-btn job-btn--ghost"
                           disabled={jobFilters.page >= jobMeta.totalPages}
                           onClick={() => setJobFilters({ ...jobFilters, page: jobFilters.page + 1 })}
                         >
@@ -3423,103 +3548,105 @@ function App() {
             {jobSubTab === 'sources' && (
               <div>
                 {/* 2.7-A & 2.7-G: INGESTION MONITORING PANEL */}
-                <div className="card-panel" style={{ marginBottom: '24px' }}>
-                  <h2 className="card-title">Job Ingestion Monitor & Health</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                <div className="job-panel">
+                  <div className="job-panel-head">
+                    <span className="job-panel-icon"><IconGauge /></span>
+                    <h2 className="job-panel-title">Job Ingestion Monitor & Health</h2>
+                  </div>
+                  <p className="job-panel-desc">
                     Track status, synchronization timestamps, health, and throughput metrics across all automated connectors.
                   </p>
 
                   {ingestionMonitor ? (
                     <div>
                       {/* Health Matrix Table */}
-                      <table className="table" style={{ width: '100%', marginBottom: '24px', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>
-                            <th style={{ padding: '8px 12px' }}>Source</th>
-                            <th style={{ padding: '8px 12px' }}>Health Status</th>
-                            <th style={{ padding: '8px 12px' }}>Last Synced</th>
-                            <th style={{ padding: '8px 12px' }}>New Jobs (Today)</th>
-                            <th style={{ padding: '8px 12px' }}>Failures</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {ingestionMonitor.sources.map(s => (
-                            <tr key={s.name} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                              <td style={{ padding: '12px', fontWeight: 600 }}>{s.name}</td>
-                              <td style={{ padding: '12px' }}>
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '4px 8px',
-                                  borderRadius: '4px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 600,
-                                  background: s.status === 'healthy' ? 'rgba(76, 175, 80, 0.15)' : s.status === 'degraded' ? 'rgba(255, 152, 0, 0.15)' : 'rgba(244, 67, 54, 0.15)',
-                                  color: s.status === 'healthy' ? 'var(--success)' : s.status === 'degraded' ? '#ff9800' : 'var(--danger)'
-                                }}>
-                                  {s.status === 'healthy' ? '✅ Healthy' : s.status === 'degraded' ? '⚠️ Degraded' : '❌ Failed'}
-                                </span>
-                              </td>
-                              <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>
-                                {s.lastSync ? new Date(s.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
-                              </td>
-                              <td style={{ padding: '12px', fontWeight: 600 }}>{s.newJobs || '—'}</td>
-                              <td style={{ padding: '12px', color: s.failed > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>{s.failed || 0}</td>
+                      <div className="data-table-container job-health-table-wrap">
+                        <table className="data-table job-table">
+                          <thead>
+                            <tr>
+                              <th>Source</th>
+                              <th>Health Status</th>
+                              <th>Last Synced</th>
+                              <th>New Jobs (Today)</th>
+                              <th>Failures</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {ingestionMonitor.sources.map(s => {
+                              const meta = JOB_HEALTH_META[s.status] || JOB_HEALTH_META.unknown;
+                              const HealthIcon = meta.icon;
+                              return (
+                                <tr key={s.name}>
+                                  <td className="job-cell-strong">{s.name}</td>
+                                  <td>
+                                    <span className={`badge ${meta.variant} job-health-badge`}>
+                                      <HealthIcon /> {meta.label}
+                                    </span>
+                                  </td>
+                                  <td className="job-cell-sub">
+                                    {s.lastSync ? new Date(s.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                                  </td>
+                                  <td className="job-cell-strong">{s.newJobs || '—'}</td>
+                                  <td className={s.failed > 0 ? 'job-cell-danger' : 'job-cell-sub'}>{s.failed || 0}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
 
                       {/* Today's Ingestion Metrics Summary */}
-                      <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '12px' }}>Today's Ingestion</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', background: 'var(--bg-secondary)', padding: '20px', borderRadius: '8px', marginBottom: '24px' }}>
-                        <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Messages Received</div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{ingestionMonitor.stats.messagesReceived}</div>
+                      <h3 className="job-subheading">Today&apos;s Ingestion</h3>
+                      <div className="job-metric-strip">
+                        <div className="job-metric-tile">
+                          <div className="job-metric-label">Messages Received</div>
+                          <div className="job-metric-value">{ingestionMonitor.stats.messagesReceived}</div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Jobs Detected</div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{ingestionMonitor.stats.jobsDetected}</div>
+                        <div className="job-metric-tile">
+                          <div className="job-metric-label">Jobs Detected</div>
+                          <div className="job-metric-value">{ingestionMonitor.stats.jobsDetected}</div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Jobs Created</div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{ingestionMonitor.stats.jobsCreated}</div>
+                        <div className="job-metric-tile">
+                          <div className="job-metric-label">Jobs Created</div>
+                          <div className="job-metric-value">{ingestionMonitor.stats.jobsCreated}</div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Duplicates</div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{ingestionMonitor.stats.duplicates}</div>
+                        <div className="job-metric-tile">
+                          <div className="job-metric-label">Duplicates</div>
+                          <div className="job-metric-value">{ingestionMonitor.stats.duplicates}</div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Pending Review</div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>{ingestionMonitor.stats.pendingReview}</div>
+                        <div className="job-metric-tile">
+                          <div className="job-metric-label">Pending Review</div>
+                          <div className="job-metric-value job-metric-value--accent">{ingestionMonitor.stats.pendingReview}</div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Failed</div>
-                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: ingestionMonitor.stats.failed > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{ingestionMonitor.stats.failed}</div>
+                        <div className="job-metric-tile">
+                          <div className="job-metric-label">Failed</div>
+                          <div className={`job-metric-value ${ingestionMonitor.stats.failed > 0 ? 'job-metric-value--danger' : 'job-metric-value--muted'}`}>{ingestionMonitor.stats.failed}</div>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div style={{ color: 'var(--text-muted)' }}>Loading ingestion status metrics...</div>
+                    <div className="job-empty">Loading ingestion status metrics...</div>
                   )}
                 </div>
 
-                <div className="card-panel" style={{ marginBottom: '24px' }}>
-                  <h2 className="card-title">Job Sources: Adzuna API Integration</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                <div className="job-panel">
+                  <div className="job-panel-head">
+                    <span className="job-panel-icon"><IconGlobe /></span>
+                    <h2 className="job-panel-title">Job Sources: Adzuna API Integration</h2>
+                  </div>
+                  <p className="job-panel-desc">
                     Adzuna is connected in your backend configurations. Run manual sync below or let the scheduled background runner fetch jobs automatically every 4 hours.
                   </p>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Adzuna Status</div>
-                      <div style={{ fontWeight: 700, color: 'var(--success)' }}>
-                        🟢 Active / Configured
+                  <div className="job-integration-card">
+                    <div className="job-integration-info">
+                      <div className="job-integration-label">Adzuna Status</div>
+                      <div className="job-integration-status job-integration-status--connected">
+                        <IconCheckCircle /> Active / Configured
                       </div>
                     </div>
                     <button
-                      className="btn btn-primary"
+                      className="job-btn job-btn--primary"
                       onClick={async () => {
                         try {
                           const summary = await api.syncAdzunaJobs();
@@ -3531,147 +3658,159 @@ function App() {
                         }
                       }}
                     >
+                      <IconRefresh />
                       Sync Adzuna Jobs Now
                     </button>
                   </div>
                 </div>
 
-                <div className="card-panel" style={{ marginBottom: '24px' }}>
-                  <h2 className="card-title">LinkedIn Job Alerts</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                <div className="job-panel">
+                  <div className="job-panel-head">
+                    <span className="job-panel-icon"><IconMail /></span>
+                    <h2 className="job-panel-title">LinkedIn Job Alerts</h2>
+                  </div>
+                  <p className="job-panel-desc">
                     Connect Gmail to fetch and parse job listings from LinkedIn alert emails under the <strong>CareerGraph/LinkedInJobs</strong> label.
                   </p>
 
-                  <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+                  <div className="job-integration-card">
                     {gmailStatus?.connected ? (
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, color: 'var(--success)' }}>
-                              🟢 Connected: {gmailStatus.email}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                              Label: CareerGraph/LinkedInJobs &bull; Last Sync: {gmailStatus.lastSyncAt ? new Date(gmailStatus.lastSyncAt).toLocaleString() : 'Never'}
-                            </div>
+                      <>
+                        <div className="job-integration-info">
+                          <div className="job-integration-status job-integration-status--connected">
+                            <IconCheckCircle /> Connected: {gmailStatus.email}
                           </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              className="btn btn-primary"
-                              disabled={gmailSyncing}
-                              onClick={async () => {
-                                setGmailSyncing(true);
+                          <div className="job-integration-meta">
+                            Label: CareerGraph/LinkedInJobs &bull; Last Sync: {gmailStatus.lastSyncAt ? new Date(gmailStatus.lastSyncAt).toLocaleString() : 'Never'}
+                          </div>
+                        </div>
+                        <div className="job-integration-actions">
+                          <button
+                            className="job-btn job-btn--primary"
+                            disabled={gmailSyncing}
+                            onClick={async () => {
+                              setGmailSyncing(true);
+                              try {
+                                const res = await api.request('/integrations/gmail/jobs/sync', { method: 'POST' });
+                                alert(`Gmail Sync Complete!\nEmails Processed: ${res.data.emailsProcessed}\nJobs Found: ${res.data.jobsFound}\nCreated: ${res.data.created}\nUpdated: ${res.data.updated}\nDuplicates: ${res.data.duplicates}\nFailed: ${res.data.failed}`);
+                                loadGmailStatus();
+                                loadJobs();
+                                loadIngestionMonitor();
+                              } catch (err) {
+                                alert(err.message);
+                              } finally {
+                                setGmailSyncing(false);
+                              }
+                            }}
+                          >
+                            <IconRefresh />
+                            {gmailSyncing ? 'Syncing...' : 'Sync Now'}
+                          </button>
+                          <button
+                            className="job-icon-btn job-icon-btn--danger"
+                            aria-label="Disconnect Gmail"
+                            title="Disconnect"
+                            onClick={async () => {
+                              if (confirm('Disconnect Gmail integration?')) {
                                 try {
-                                  const res = await api.request('/integrations/gmail/jobs/sync', { method: 'POST' });
-                                  alert(`Gmail Sync Complete!\nEmails Processed: ${res.data.emailsProcessed}\nJobs Found: ${res.data.jobsFound}\nCreated: ${res.data.created}\nUpdated: ${res.data.updated}\nDuplicates: ${res.data.duplicates}\nFailed: ${res.data.failed}`);
+                                  await api.request('/integrations/gmail/disconnect', { method: 'POST' });
                                   loadGmailStatus();
-                                  loadJobs();
                                   loadIngestionMonitor();
                                 } catch (err) {
                                   alert(err.message);
-                                } finally {
-                                  setGmailSyncing(false);
                                 }
-                              }}
-                            >
-                              {gmailSyncing ? 'Syncing...' : 'Sync Now'}
-                            </button>
-                            <button
-                              className="btn btn-danger"
-                              onClick={async () => {
-                                if (confirm('Disconnect Gmail integration?')) {
-                                  try {
-                                    await api.request('/integrations/gmail/disconnect', { method: 'POST' });
-                                    loadGmailStatus();
-                                    loadIngestionMonitor();
-                                  } catch (err) {
-                                    alert(err.message);
-                                  }
-                                }
-                              }}
-                            >
-                              Disconnect
-                            </button>
-                          </div>
+                              }
+                            }}
+                          >
+                            <IconX />
+                          </button>
                         </div>
-                      </div>
+                      </>
                     ) : (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ color: 'var(--text-muted)' }}>Not Connected</span>
+                      <>
+                        <span className="job-integration-status job-integration-status--off">
+                          <IconXCircle /> Not Connected
+                        </span>
                         <button
-                          className="btn btn-primary"
+                          className="job-btn job-btn--primary"
                           onClick={handleConnectGmail}
                         >
+                          <IconPlug />
                           Connect Gmail
                         </button>
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
 
-                <div className="card-panel" style={{ marginBottom: '24px' }}>
-                  <h2 className="card-title">Telegram Job Tracker</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                <div className="job-panel">
+                  <div className="job-panel-head">
+                    <span className="job-panel-icon"><IconTelegram /></span>
+                    <h2 className="job-panel-title">Telegram Job Tracker</h2>
+                  </div>
+                  <p className="job-panel-desc">
                     Connect your Telegram account to CareerGraph to manually forward or copy-paste job postings directly into your private bot chat.
                   </p>
 
-                  <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
+                  <div className="job-integration-card">
                     {telegramStatus?.connected ? (
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, color: 'var(--success)' }}>
-                              🟢 Connected: @{telegramStatus.telegramUsername || telegramStatus.telegramUserId}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                              Bot: @{telegramStatus.botUsername} &bull; Linked: {new Date(telegramStatus.linkedAt).toLocaleDateString()}
-                            </div>
-                            <div style={{ display: 'flex', gap: '20px', marginTop: '12px' }}>
-                              <div><strong>{telegramStatus.stats.received}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Received</span></div>
-                              <div><strong>{telegramStatus.stats.jobsCreated}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Created</span></div>
-                              <div><strong>{telegramStatus.stats.duplicates}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Duplicates</span></div>
-                              <div><strong>{telegramStatus.stats.pendingReview}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Pending Review</span></div>
-                            </div>
+                      <>
+                        <div className="job-integration-info">
+                          <div className="job-integration-status job-integration-status--connected">
+                            <IconCheckCircle /> Connected: @{telegramStatus.telegramUsername || telegramStatus.telegramUserId}
                           </div>
-                          <div>
-                            <button
-                              className="btn btn-danger"
-                              onClick={async () => {
-                                if (confirm('Disconnect Telegram integration?')) {
-                                  try {
-                                    await api.request('/integrations/telegram/disconnect', { method: 'POST' });
-                                    loadTelegramStatus();
-                                    loadIngestionMonitor();
-                                  } catch (err) {
-                                    alert(err.message);
-                                  }
-                                }
-                              }}
-                            >
-                              Disconnect
-                            </button>
+                          <div className="job-integration-meta">
+                            Bot: @{telegramStatus.botUsername} &bull; Linked: {new Date(telegramStatus.linkedAt).toLocaleDateString()}
+                          </div>
+                          <div className="job-integration-stats">
+                            <div><strong>{telegramStatus.stats.received}</strong> <span>Received</span></div>
+                            <div><strong>{telegramStatus.stats.jobsCreated}</strong> <span>Created</span></div>
+                            <div><strong>{telegramStatus.stats.duplicates}</strong> <span>Duplicates</span></div>
+                            <div><strong>{telegramStatus.stats.pendingReview}</strong> <span>Pending Review</span></div>
                           </div>
                         </div>
-                      </div>
+                        <button
+                          className="job-icon-btn job-icon-btn--danger"
+                          aria-label="Disconnect Telegram"
+                          title="Disconnect"
+                          onClick={async () => {
+                            if (confirm('Disconnect Telegram integration?')) {
+                              try {
+                                await api.request('/integrations/telegram/disconnect', { method: 'POST' });
+                                loadTelegramStatus();
+                                loadIngestionMonitor();
+                              } catch (err) {
+                                alert(err.message);
+                              }
+                            }
+                          }}
+                        >
+                          <IconX />
+                        </button>
+                      </>
                     ) : (
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>Not Connected</span>
+                      <div className="job-integration-connect">
+                        <div className="job-integration-connect-row">
+                          <span className="job-integration-status job-integration-status--off">
+                            <IconXCircle /> Not Connected
+                          </span>
                           <button
-                            className="btn btn-primary"
+                            className="job-btn job-btn--primary"
                             onClick={generateTelegramCode}
                           >
+                            <IconPlug />
                             Generate Linking Code
                           </button>
                         </div>
                         {telegramLinkingCode && (
-                          <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-primary)', borderRadius: '6px', border: '1px dashed var(--border-color)' }}>
-                            <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>
+                          <div className="job-linking-code-box">
+                            <p>
                               1. Open Telegram and search for <strong>@{telegramStatus?.botUsername || 'CareerGraphJobBot'}</strong>
                             </p>
-                            <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem' }}>
+                            <p>
                               2. Send the command:
                             </p>
-                            <div style={{ background: 'var(--bg-secondary)', padding: '8px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', color: 'var(--accent)' }}>
+                            <div className="job-linking-code">
                               /start {telegramLinkingCode}
                             </div>
                           </div>
@@ -3682,26 +3821,29 @@ function App() {
                 </div>
 
                 {/* 2.7-I: USER AUTOMATION PREFERENCES PANEL */}
-                <div className="card-panel" style={{ marginBottom: '24px' }}>
-                  <h2 className="card-title">Job Discovery Automation Preferences</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                <div className="job-panel">
+                  <div className="job-panel-head">
+                    <span className="job-panel-icon"><IconSliders /></span>
+                    <h2 className="job-panel-title">Job Discovery Automation Preferences</h2>
+                  </div>
+                  <p className="job-panel-desc">
                     Configure automatic notifications, filtering rules, and quality thresholds for new job matches.
                   </p>
 
-                  <div style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '8px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                  <div className="job-pref-box">
+                    <div className="job-pref-list">
+                      <label className="job-pref-item">
                         <input
                           type="checkbox"
                           checked={preferences.notificationsEnabled}
                           onChange={(e) => savePreferences({ ...preferences, notificationsEnabled: e.target.checked })}
                         />
-                        <span style={{ fontWeight: 600 }}>Enable Real-time Job Notifications</span>
+                        <span className="job-pref-item-strong">Enable Real-time Job Notifications</span>
                       </label>
 
                       {preferences.notificationsEnabled && (
-                        <div style={{ marginLeft: '24px', display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '2px solid var(--border-color)', paddingLeft: '16px', marginTop: '4px' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <div className="job-pref-sublist">
+                          <label className="job-pref-item">
                             <input
                               type="checkbox"
                               checked={preferences.notifyHighlyRelevant}
@@ -3710,7 +3852,7 @@ function App() {
                             <span>Notify for highly relevant jobs (matching score &ge; threshold)</span>
                           </label>
 
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                          <label className="job-pref-item">
                             <input
                               type="checkbox"
                               checked={preferences.notifyStrongReferral}
@@ -3719,7 +3861,7 @@ function App() {
                             <span>Notify when strong referral exists at the company</span>
                           </label>
 
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                          <label className="job-pref-item">
                             <input
                               type="checkbox"
                               checked={preferences.notifyTargetCompany}
@@ -3728,7 +3870,7 @@ function App() {
                             <span>Notify for target companies list matching roles</span>
                           </label>
 
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                          <label className="job-pref-item">
                             <input
                               type="checkbox"
                               checked={preferences.dailyDigestEnabled}
@@ -3737,7 +3879,7 @@ function App() {
                             <span>Include new jobs in CareerGraph Daily Digest email</span>
                           </label>
 
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                          <label className="job-pref-item">
                             <input
                               type="checkbox"
                               checked={preferences.notifyLowRelevance}
@@ -3746,19 +3888,19 @@ function App() {
                             <span>Notify for low-relevance jobs (score &lt; 40)</span>
                           </label>
 
-                          <div style={{ marginTop: '8px' }}>
-                            <label className="form-label" style={{ display: 'block', marginBottom: '6px' }}>
+                          <div className="job-pref-slider-block">
+                            <label className="form-label">
                               Minimum Match Score for Notification: <strong>{preferences.minimumMatchScore || 80}</strong>
                             </label>
                             <input
                               type="range"
                               min="0"
                               max="100"
+                              className="job-pref-slider"
                               value={preferences.minimumMatchScore || 80}
                               onChange={(e) => setPreferences({ ...preferences, minimumMatchScore: parseInt(e.target.value) })}
                               onMouseUp={(e) => savePreferences({ ...preferences, minimumMatchScore: parseInt(e.target.value) })}
                               onTouchEnd={(e) => savePreferences({ ...preferences, minimumMatchScore: parseInt(e.target.value) })}
-                              style={{ width: '100%', maxWidth: '300px', accentColor: 'var(--accent)' }}
                             />
                           </div>
                         </div>
@@ -3767,9 +3909,12 @@ function App() {
                   </div>
                 </div>
 
-                <div className="card-panel">
-                  <h2 className="card-title">Job Search Profiles</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                <div className="job-panel">
+                  <div className="job-panel-head">
+                    <span className="job-panel-icon"><IconSearch /></span>
+                    <h2 className="job-panel-title">Job Search Profiles</h2>
+                  </div>
+                  <p className="job-panel-desc">
                     Configure search queries. The Adzuna sync service will run queries for each active profile to discover relevant roles.
                   </p>
 
@@ -3794,8 +3939,8 @@ function App() {
                     } catch (err) {
                       alert(err.message);
                     }
-                  }} style={{ background: 'var(--bg-secondary)', padding: '20px', borderRadius: '8px', marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '12px' }}>Add Search Profile</h3>
+                  }} className="job-inset-box job-inset-box--form">
+                    <h3 className="job-subheading">Add Search Profile</h3>
                     <div className="form-row">
                       <div className="form-group">
                         <label className="form-label">Profile Name *</label>
@@ -3839,38 +3984,37 @@ function App() {
                       </div>
                     </div>
 
-                    <button type="submit" className="btn btn-primary">Create Profile</button>
+                    <button type="submit" className="job-btn job-btn--primary">Create Profile</button>
                   </form>
 
                   {/* List of profiles */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="job-profile-list">
                     {searchProfiles.length === 0 ? (
-                      <div style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No search profiles configured yet. Default parameters matching your Profile targets will be used during sync.</div>
+                      <div className="job-empty">No search profiles configured yet. Default parameters matching your Profile targets will be used during sync.</div>
                     ) : (
                       searchProfiles.map(p => (
-                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div key={p.id} className="job-profile-card">
+                          <div className="job-profile-info">
+                            <div className="job-profile-name">
                               {p.name}
                               <span className={`badge ${p.isActive ? 'badge-success' : 'badge-secondary'}`}>
                                 {p.isActive ? 'Active' : 'Inactive'}
                               </span>
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                            <div className="job-profile-meta">
                               <strong>Keywords:</strong> {p.keywords} &bull;
                               <strong> Location:</strong> {p.location || 'Anywhere'} &bull;
                               <strong> Remote:</strong> {p.remotePreference || 'Any'}
                             </div>
                             {p.excludedKeywords && (
-                              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                              <div className="job-profile-excluded">
                                 <strong>Excluded:</strong> {p.excludedKeywords}
                               </div>
                             )}
                           </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                          <div className="job-profile-actions">
                             <button
-                              className="btn btn-secondary"
-                              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                              className="job-btn job-btn--ghost job-btn--sm"
                               onClick={async () => {
                                 try {
                                   await api.updateJobSearchProfile(p.id, { ...p, isActive: !p.isActive });
@@ -3883,8 +4027,9 @@ function App() {
                               Toggle Status
                             </button>
                             <button
-                              className="btn btn-danger"
-                              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                              className="job-icon-btn job-icon-btn--danger"
+                              aria-label="Delete search profile"
+                              title="Delete"
                               onClick={async () => {
                                 if (confirm('Delete this search profile?')) {
                                   try {
@@ -3896,7 +4041,7 @@ function App() {
                                 }
                               }}
                             >
-                              Delete
+                              <IconTrash />
                             </button>
                           </div>
                         </div>
@@ -3905,105 +4050,36 @@ function App() {
                   </div>
                 </div>
 
-                {/* <div className="card-panel" style={{ marginTop: '24px' }}>
-                  <h2 className="card-title">Telegram Job Tracker</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
-                    Connect your Telegram account to CareerGraph to manually forward or copy-paste job postings directly into your private bot chat.
-                  </p>
-
-                  <div style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
-                    {telegramStatus?.connected ? (
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, color: 'var(--success)' }}>
-                              🟢 Connected: @{telegramStatus.telegramUsername || telegramStatus.telegramUserId}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                              Bot: @{telegramStatus.botUsername} &bull; Linked: {new Date(telegramStatus.linkedAt).toLocaleDateString()}
-                            </div>
-                            <div style={{ display: 'flex', gap: '20px', marginTop: '12px' }}>
-                              <div><strong>{telegramStatus.stats.received}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Received</span></div>
-                              <div><strong>{telegramStatus.stats.jobsCreated}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Created</span></div>
-                              <div><strong>{telegramStatus.stats.duplicates}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Duplicates</span></div>
-                              <div><strong>{telegramStatus.stats.pendingReview}</strong> <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Pending Review</span></div>
-                            </div>
-                          </div>
-                          <div>
-                            <button
-                              className="btn btn-danger"
-                              onClick={async () => {
-                                if (confirm('Disconnect Telegram integration?')) {
-                                  try {
-                                    await api.request('/integrations/telegram/disconnect', { method: 'POST' });
-                                    loadTelegramStatus();
-                                  } catch (err) {
-                                    alert(err.message);
-                                  }
-                                }
-                              }}
-                            >
-                              Disconnect
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>Not Connected</span>
-                          <button
-                            className="btn btn-primary"
-                            onClick={generateTelegramCode}
-                          >
-                            Generate Linking Code
-                          </button>
-                        </div>
-                        {telegramLinkingCode && (
-                          <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-primary)', borderRadius: '6px', border: '1px dashed var(--border-color)' }}>
-                            <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>
-                              1. Open Telegram and search for <strong>@{telegramStatus?.botUsername || 'CareerGraphJobBot'}</strong>
-                            </p>
-                            <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem' }}>
-                              2. Send the command:
-                            </p>
-                            <div style={{ background: 'var(--bg-secondary)', padding: '8px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', color: 'var(--accent)' }}>
-                              /start {telegramLinkingCode}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div> */}
-
                 {/* 2.7-H: DEDUPLICATION AUDIT LOGS */}
-                <div className="card-panel" style={{ marginTop: '24px' }}>
-                  <h2 className="card-title">Deduplication & Quality Logs</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+                <div className="job-panel">
+                  <div className="job-panel-head">
+                    <span className="job-panel-icon"><IconInbox /></span>
+                    <h2 className="job-panel-title">Deduplication & Quality Logs</h2>
+                  </div>
+                  <p className="job-panel-desc">
                     Audit history of automatically rejected duplicate job postings and their match reasons.
                   </p>
 
-                  <div style={{ maxHeight: '300px', overflowY: 'auto', background: 'var(--bg-secondary)', borderRadius: '8px', padding: '16px' }}>
+                  <div className="job-dedup-box">
                     {deduplicationLogs.length === 0 ? (
-                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
+                      <div className="job-empty">
                         No duplicates detected yet. Your tracker is completely clean!
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div className="job-dedup-list">
                         {deduplicationLogs.map(l => (
-                          <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-primary)', padding: '10px 14px', borderRadius: '6px', fontSize: '0.85rem', border: '1px solid var(--border-color)' }}>
+                          <div key={l.id} className="job-dedup-row">
                             <div>
-                              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{l.duplicateText}</span>
-                              <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
+                              <span className="job-cell-strong">{l.duplicateText}</span>
+                              <span className="job-dedup-source">
                                 via {l.source}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>
+                            <div className="job-dedup-meta">
+                              <span className="badge badge-secondary">
                                 {l.reason}
                               </span>
-                              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                              <span className="job-dedup-time">
                                 {new Date(l.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
@@ -4017,63 +4093,65 @@ function App() {
             )}
 
             {jobSubTab === 'review' && (
-              <div className="card-panel">
-                <h2 className="card-title">Incoming Jobs Review Queue</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '8px 0 16px 0' }}>
+              <div className="job-panel">
+                <div className="job-panel-head">
+                  <span className="job-panel-icon"><IconInbox /></span>
+                  <h2 className="job-panel-title">Incoming Jobs Review Queue</h2>
+                </div>
+                <p className="job-panel-desc">
                   These jobs were sent from Telegram but could not be parsed with high confidence. Review and edit details below to track them.
                 </p>
 
                 {loadingIncoming ? (
-                  <div>Loading review queue...</div>
+                  <div className="job-empty">Loading review queue...</div>
                 ) : incomingJobs.filter(j => j.status === 'pending_review').length === 0 ? (
-                  <div className="empty-state">No jobs pending review. All caught up!</div>
+                  <div className="job-empty">No jobs pending review. All caught up!</div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="job-review-list">
                     {incomingJobs.filter(j => j.status === 'pending_review').map(item => (
-                      <div key={item.id} className="card-panel" style={{ background: 'var(--bg-secondary)', padding: '16px', border: '1px solid var(--border-color)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
-                          <div style={{ flex: 1, minWidth: '280px' }}>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{item.parsedData?.title || 'Unknown Role'}</h3>
-                              <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>Pending Review</span>
-                            </div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                              Company: <strong>{item.parsedData?.companyName || 'Unknown'}</strong> &bull; Location: {item.parsedData?.location || 'Unknown'}
-                            </div>
-
-                            <div style={{ marginTop: '12px', background: 'var(--bg-primary)', padding: '10px', borderRadius: '4px', borderLeft: '3px solid var(--accent)' }}>
-                              <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600 }}>Raw Message Text:</div>
-                              <pre style={{ margin: '6px 0 0 0', whiteSpace: 'pre-wrap', fontSize: '0.85rem', fontFamily: 'inherit', color: 'var(--text-primary)' }}>
-                                {item.rawText}
-                              </pre>
-                            </div>
+                      <div key={item.id} className="job-review-card">
+                        <div className="job-review-body">
+                          <div className="job-review-title-row">
+                            <h3>{item.parsedData?.title || 'Unknown Role'}</h3>
+                            <span className="badge badge-warning">Pending Review</span>
+                          </div>
+                          <div className="job-review-meta">
+                            Company: <strong>{item.parsedData?.companyName || 'Unknown'}</strong> &bull; Location: {item.parsedData?.location || 'Unknown'}
                           </div>
 
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              className="btn btn-primary"
-                              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={() => setReviewJob(item)}
-                            >
-                              Review &amp; Ingest
-                            </button>
-                            <button
-                              className="btn btn-danger"
-                              style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                              onClick={async () => {
-                                if (confirm('Ignore this job posting?')) {
-                                  try {
-                                    await api.request(`/incoming-jobs/${item.id}/ignore`, { method: 'POST' });
-                                    loadIncomingJobs();
-                                  } catch (err) {
-                                    alert(err.message);
-                                  }
+                          <div className="job-review-raw-box">
+                            <div className="job-review-raw-label">Raw Message Text:</div>
+                            <pre>
+                              {item.rawText}
+                            </pre>
+                          </div>
+                        </div>
+
+                        <div className="job-review-actions">
+                          <button
+                            className="job-btn job-btn--primary job-btn--sm"
+                            onClick={() => setReviewJob(item)}
+                          >
+                            <IconEdit />
+                            Review &amp; Ingest
+                          </button>
+                          <button
+                            className="job-icon-btn job-icon-btn--danger"
+                            aria-label="Ignore this job posting"
+                            title="Ignore"
+                            onClick={async () => {
+                              if (confirm('Ignore this job posting?')) {
+                                try {
+                                  await api.request(`/incoming-jobs/${item.id}/ignore`, { method: 'POST' });
+                                  loadIncomingJobs();
+                                } catch (err) {
+                                  alert(err.message);
                                 }
-                              }}
-                            >
-                              Ignore
-                            </button>
-                          </div>
+                              }
+                            }}
+                          >
+                            <IconTrash />
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -5214,8 +5292,11 @@ function App() {
       {
         modal === 'job' && (
           <div className="modal-overlay">
-            <div className="modal-content">
-              <h2 className="card-title">{editItem ? 'Edit Job Posting' : 'Track New Job'}</h2>
+            <div className="modal-content job-modal">
+              <div className="job-modal-head">
+                <span className="job-modal-icon"><IconBriefcase /></span>
+                <h2 className="modal-title">{editItem ? 'Edit Job Posting' : 'Track New Job'}</h2>
+              </div>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -5259,8 +5340,8 @@ function App() {
                   <textarea name="description" className="form-input" rows="3" defaultValue={editItem?.description || ''}></textarea>
                 </div>
                 <div className="modal-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary">Track Job</button>
+                  <button type="button" className="job-btn job-btn--ghost" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="job-btn job-btn--primary">Track Job</button>
                 </div>
               </form>
             </div>
@@ -5272,8 +5353,11 @@ function App() {
       {
         reviewJob && (
           <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '650px' }}>
-              <h2 className="card-title">Review &amp; Ingest Job</h2>
+            <div className="modal-content job-modal job-modal--wide">
+              <div className="job-modal-head">
+                <span className="job-modal-icon"><IconInbox /></span>
+                <h2 className="modal-title">Review &amp; Ingest Job</h2>
+              </div>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -5299,7 +5383,7 @@ function App() {
                   alert(err.message);
                 }
               }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="job-modal-grid-2">
                   <div className="form-group">
                     <label className="form-label">Job Title</label>
                     <input type="text" name="title" className="form-input" required defaultValue={reviewJob.parsedData?.title || ''} />
@@ -5310,7 +5394,7 @@ function App() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="job-modal-grid-2">
                   <div className="form-group">
                     <label className="form-label">Location</label>
                     <input type="text" name="location" className="form-input" defaultValue={reviewJob.parsedData?.location || ''} />
@@ -5321,7 +5405,7 @@ function App() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div className="job-modal-grid-3">
                   <div className="form-group">
                     <label className="form-label">Employment Type</label>
                     <select name="employmentType" className="form-input" defaultValue={reviewJob.parsedData?.employmentType || ''}>
@@ -5358,8 +5442,8 @@ function App() {
                 </div>
 
                 <div className="modal-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => setReviewJob(null)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary">Approve &amp; Import</button>
+                  <button type="button" className="job-btn job-btn--ghost" onClick={() => setReviewJob(null)}>Cancel</button>
+                  <button type="submit" className="job-btn job-btn--primary">Approve &amp; Import</button>
                 </div>
               </form>
             </div>
@@ -5670,22 +5754,25 @@ function App() {
       {
         modal === 'job_detail' && (
           <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '750px', width: '90%', maxHeight: '85vh', overflowY: 'auto' }}>
-              <h2 className="card-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span>Job Workspace: {editItem?.title}</span>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span className="badge badge-info">{editItem?.status}</span>
+            <div className="modal-content job-modal job-modal--detail">
+              <div className="job-detail-head">
+                <div className="job-detail-head-title">
+                  <span className="job-modal-icon"><IconBriefcase /></span>
+                  <h2 className="modal-title">{editItem?.title}</h2>
+                </div>
+                <div className="job-detail-head-actions">
+                  <span className={`badge ${JOB_STATUS_VARIANT[editItem?.status] || 'badge-info'}`}>{editItem?.status}</span>
                   <button
-                    className="btn btn-secondary"
-                    style={{ padding: '4px 8px', fontSize: '0.8rem', cursor: 'pointer', border: 'none', background: 'rgba(255,255,255,0.1)' }}
+                    className="job-icon-btn"
+                    aria-label="Close job workspace"
                     onClick={() => setModal(null)}
                   >
-                    ✕
+                    <IconX />
                   </button>
                 </div>
-              </h2>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ color: 'var(--text-secondary)' }}>
+              </div>
+              <div className="job-detail-subhead">
+                <div className="job-detail-subhead-meta">
                   {editItem?.companyName} &bull; {editItem?.location}
                 </div>
                 {(editItem?.url || editItem?.sourceUrl) && (
@@ -5693,49 +5780,49 @@ function App() {
                     href={editItem.url || editItem.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-primary"
-                    style={{ padding: '6px 12px', fontSize: '0.85rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    className="job-btn job-btn--primary job-btn--sm"
                   >
+                    <IconExternalLink />
                     Apply / Visit Job Posting
                   </a>
                 )}
               </div>
 
               {/* Navigation tabs inside the Job details modal */}
-              <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--bg-secondary)', marginBottom: '16px', paddingBottom: '8px' }}>
+              <div className="job-subnav job-subnav--modal">
                 <button
-                  className={`btn ${jobNetworkSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  className={`job-subnav-btn ${jobNetworkSubTab === 'overview' ? 'active' : ''}`}
                   onClick={() => setJobNetworkSubTab('overview')}
                 >
-                  Overview & Match
+                  <IconGauge />
+                  Overview &amp; Match
                 </button>
                 <button
-                  className={`btn ${jobNetworkSubTab === 'application' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  className={`job-subnav-btn ${jobNetworkSubTab === 'application' ? 'active' : ''}`}
                   onClick={() => setJobNetworkSubTab('application')}
                 >
+                  <IconClock />
                   Application Tracker
                 </button>
                 <button
-                  className={`btn ${jobNetworkSubTab === 'network' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  className={`job-subnav-btn ${jobNetworkSubTab === 'network' ? 'active' : ''}`}
                   onClick={() => setJobNetworkSubTab('network')}
                 >
+                  <IconUsers />
                   Referral Network Workspace
                 </button>
                 <button
-                  className={`btn ${jobNetworkSubTab === 'ai' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  className={`job-subnav-btn ${jobNetworkSubTab === 'ai' ? 'active' : ''}`}
                   onClick={() => { setJobNetworkSubTab('ai'); setEditingAiEnrichment(false); }}
                 >
+                  <IconZap />
                   AI Job Intelligence
                 </button>
                 <button
-                  className={`btn ${jobNetworkSubTab === 'resume_analysis' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                  className={`job-subnav-btn ${jobNetworkSubTab === 'resume_analysis' ? 'active' : ''}`}
                   onClick={() => { setJobNetworkSubTab('resume_analysis'); loadResumeFitAnalysis(editItem.id); }}
                 >
+                  <IconTie />
                   AI Resume Fit
                 </button>
               </div>
@@ -5743,30 +5830,36 @@ function App() {
               {/* TAB 1: OVERVIEW & MATCH */}
               {jobNetworkSubTab === 'overview' && (
                 <div>
-                  <div className="metrics-grid" style={{ marginBottom: '24px' }}>
-                    <div className="metric-card">
-                      <div className="metric-label">Match Score</div>
-                      <div className="metric-value" style={{ color: 'var(--success)' }}>{editItem?.matchScore}%</div>
+                  <div className="job-stat-grid">
+                    <div className="job-stat-card">
+                      <span className="job-stat-icon job-stat-icon--success"><IconGauge /></span>
+                      <div>
+                        <div className="job-stat-label">Match Score</div>
+                        <div className="job-stat-value">{editItem?.matchScore}%</div>
+                      </div>
                     </div>
-                    <div className="metric-card">
-                      <div className="metric-label">Opportunity Score</div>
-                      <div className="metric-value" style={{ color: 'var(--primary)' }}>{editItem?.opportunityScore}%</div>
+                    <div className="job-stat-card">
+                      <span className="job-stat-icon job-stat-icon--primary"><IconZap /></span>
+                      <div>
+                        <div className="job-stat-label">Opportunity Score</div>
+                        <div className="job-stat-value">{editItem?.opportunityScore}%</div>
+                      </div>
                     </div>
                   </div>
 
                   <div className="form-group">
                     <label className="form-label">Action Recommendation</label>
-                    <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '16px', borderRadius: '8px', color: '#fff', fontWeight: 600 }}>
+                    <div className="job-recommendation-box">
                       {editItem?.recommendedAction}
                     </div>
                   </div>
 
-                  <div className="form-row" style={{ gap: '24px' }}>
+                  <div className="form-row job-tab-gap">
                     <div className="form-group">
                       <label className="form-label">Matched Skills</label>
                       <div className="tags-list">
                         {editItem?.matchedSkills?.length === 0 ? (
-                          <span style={{ color: 'var(--text-muted)' }}>None matched</span>
+                          <span className="job-empty-inline">None matched</span>
                         ) : (
                           editItem?.matchedSkills?.map(s => <span key={s} className="badge badge-success">{s}</span>)
                         )}
@@ -5776,7 +5869,7 @@ function App() {
                       <label className="form-label">Missing Skills</label>
                       <div className="tags-list">
                         {editItem?.missingSkills?.length === 0 ? (
-                          <span style={{ color: 'var(--text-muted)' }}>None missing</span>
+                          <span className="job-empty-inline">None missing</span>
                         ) : (
                           editItem?.missingSkills?.map(s => <span key={s} className="badge badge-warning">{s}</span>)
                         )}
@@ -5785,9 +5878,9 @@ function App() {
                   </div>
 
                   {editItem?.description && (
-                    <div className="form-group" style={{ marginTop: '16px' }}>
+                    <div className="form-group job-tab-gap-top">
                       <label className="form-label">Description</label>
-                      <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', maxHeight: '180px', overflowY: 'auto' }}>
+                      <div className="job-desc-box">
                         {editItem.description}
                       </div>
                     </div>
@@ -5798,12 +5891,11 @@ function App() {
               {/* TAB: AI JOB INTELLIGENCE */}
               {jobNetworkSubTab === 'ai' && (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>AI Job Understanding &amp; Enrichment</h3>
+                  <div className="job-ai-header-row">
+                    <h3 className="job-subheading">AI Job Understanding &amp; Enrichment</h3>
                     {editItem?.aiEnrichment && (
                       <button
-                        className="btn btn-secondary"
-                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                        className="job-btn job-btn--ghost job-btn--sm"
                         onClick={async () => {
                           if (confirm('Re-run AI extraction? This takes a few seconds.')) {
                             try {
@@ -5816,16 +5908,17 @@ function App() {
                           }
                         }}
                       >
+                        <IconRefresh />
                         Force Re-Enrich Job
                       </button>
                     )}
                   </div>
 
                   {!editItem?.aiEnrichment ? (
-                    <div className="empty-state" style={{ padding: '24px', textAlign: 'center' }}>
+                    <div className="job-ai-state-box">
                       <p>AI Enrichment has not run or is disabled.</p>
                       <button
-                        className="btn btn-primary"
+                        className="job-btn job-btn--primary"
                         onClick={async () => {
                           try {
                             const data = await api.request(`/jobs/${editItem.id}/ai-enrich`, { method: 'POST' });
@@ -5836,30 +5929,32 @@ function App() {
                           }
                         }}
                       >
+                        <IconPlay />
                         Run AI Enrichment Now
                       </button>
                     </div>
                   ) : editItem.aiEnrichment.status === 'pending' || editItem.aiEnrichment.status === 'processing' ? (
-                    <div className="empty-state" style={{ padding: '24px', textAlign: 'center' }}>
+                    <div className="job-ai-state-box">
                       <p>AI Ingestion Monitor: Enrichment status is <strong>{editItem.aiEnrichment.status}</strong>...</p>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Refreshing in a few seconds.</p>
+                      <p className="job-ai-state-hint">Refreshing in a few seconds.</p>
                       <button
-                        className="btn btn-secondary"
+                        className="job-btn job-btn--ghost"
                         onClick={async () => {
                           const data = await api.request(`/jobs/${editItem.id}`);
                           setEditItem(data.data);
                         }}
                       >
+                        <IconRefresh />
                         Refresh Status
                       </button>
                     </div>
                   ) : editItem.aiEnrichment.status === 'failed' ? (
-                    <div className="empty-state" style={{ padding: '24px', border: '1px solid var(--danger)', background: 'rgba(239, 68, 68, 0.05)' }}>
-                      <p style={{ color: 'var(--danger)', fontWeight: 600 }}>⚠️ AI Enrichment Failed</p>
-                      <p style={{ fontSize: '0.85rem' }}>Error Code: <code>{editItem.aiEnrichment.errorCode}</code></p>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{editItem.aiEnrichment.rawResponse}</p>
+                    <div className="job-ai-state-box job-ai-state-box--danger">
+                      <p className="job-ai-state-danger-title"><IconAlertTriangle /> AI Enrichment Failed</p>
+                      <p className="job-ai-state-code">Error Code: <code>{editItem.aiEnrichment.errorCode}</code></p>
+                      <p className="job-ai-state-hint">{editItem.aiEnrichment.rawResponse}</p>
                       <button
-                        className="btn btn-primary"
+                        className="job-btn job-btn--primary"
                         style={{ marginTop: '12px' }}
                         onClick={async () => {
                           try {
@@ -5870,6 +5965,7 @@ function App() {
                           }
                         }}
                       >
+                        <IconRefresh />
                         Retry Enrichment
                       </button>
                     </div>
@@ -5877,68 +5973,45 @@ function App() {
                     <div>
                       {/* Display Mode or Edit Mode */}
                       {!editingAiEnrichment ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div className="job-ai-display">
 
                           {/* Header Status Bar */}
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            background: 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            padding: '12px 16px',
-                            borderRadius: '8px',
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{
-                                display: 'inline-block',
-                                width: '8px',
-                                height: '8px',
-                                borderRadius: '50%',
-                                background: 'var(--success)',
-                                boxShadow: '0 0 8px var(--success)'
-                              }}></span>
-                              <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Enrichment Complete</span>
+                          <div className="job-status-bar">
+                            <div className="job-status-bar-left">
+                              <span className="job-status-dot" />
+                              <span className="job-status-text">Enrichment Complete</span>
                             </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                              Model: <code style={{ color: 'var(--primary)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{editItem.aiEnrichment.model}</code>
-                              <span style={{ margin: '0 8px' }}>&bull;</span>
-                              Latency: <strong style={{ color: '#fff' }}>{editItem.aiEnrichment.latencyMs}ms</strong>
+                            <div className="job-status-meta">
+                              Model: <code>{editItem.aiEnrichment.model}</code>
+                              <span className="job-status-sep">&bull;</span>
+                              Latency: <strong>{editItem.aiEnrichment.latencyMs}ms</strong>
                             </div>
                           </div>
 
                           {/* 2x2 Info Matrix Cards */}
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                          <div className="job-info-grid job-info-grid--2">
 
                             {/* Classification Card */}
-                            <div style={{
-                              background: 'var(--bg-secondary)',
-                              border: '1px solid rgba(255,255,255,0.05)',
-                              padding: '16px',
-                              borderRadius: '10px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '12px'
-                            }}>
-                              <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Job Classification</h4>
+                            <div className="job-info-card">
+                              <h4 className="job-info-card-label">Job Classification</h4>
 
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Role Category</div>
-                                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px' }}>
+                              <div className="job-kv-grid">
+                                <div className="job-kv">
+                                  <div className="job-kv-label">Role Category</div>
+                                  <div className="job-kv-value">
                                     {editItem.aiEnrichment.userCorrectedRoleCategory || editItem.aiEnrichment.roleCategory || 'N/A'}
                                     {editItem.aiEnrichment.userCorrectedRoleCategory && (
-                                      <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                      <span className="badge badge-success job-edited-tag">Edited</span>
                                     )}
                                   </div>
                                 </div>
 
-                                <div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Seniority</div>
-                                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
+                                <div className="job-kv">
+                                  <div className="job-kv-label">Seniority</div>
+                                  <div className="job-kv-value job-kv-value--capitalize">
                                     {editItem.aiEnrichment.userCorrectedSeniority || editItem.aiEnrichment.seniority || 'N/A'}
                                     {editItem.aiEnrichment.userCorrectedSeniority && (
-                                      <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                      <span className="badge badge-success job-edited-tag">Edited</span>
                                     )}
                                   </div>
                                 </div>
@@ -5946,34 +6019,26 @@ function App() {
                             </div>
 
                             {/* Work Type Card */}
-                            <div style={{
-                              background: 'var(--bg-secondary)',
-                              border: '1px solid rgba(255,255,255,0.05)',
-                              padding: '16px',
-                              borderRadius: '10px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '12px'
-                            }}>
-                              <h4 style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Position Parameters</h4>
+                            <div className="job-info-card">
+                              <h4 className="job-info-card-label">Position Parameters</h4>
 
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                <div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remote setup</div>
-                                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
+                              <div className="job-kv-grid">
+                                <div className="job-kv">
+                                  <div className="job-kv-label">Remote setup</div>
+                                  <div className="job-kv-value job-kv-value--capitalize">
                                     {editItem.aiEnrichment.userCorrectedRemoteType || editItem.aiEnrichment.remoteType || 'N/A'}
                                     {editItem.aiEnrichment.userCorrectedRemoteType && (
-                                      <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                      <span className="badge badge-success job-edited-tag">Edited</span>
                                     )}
                                   </div>
                                 </div>
 
-                                <div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Employment Type</div>
-                                  <div style={{ fontWeight: 600, fontSize: '0.95rem', marginTop: '2px', textTransform: 'capitalize' }}>
+                                <div className="job-kv">
+                                  <div className="job-kv-label">Employment Type</div>
+                                  <div className="job-kv-value job-kv-value--capitalize">
                                     {editItem.aiEnrichment.userCorrectedEmploymentType || editItem.aiEnrichment.employmentType || 'N/A'}
                                     {editItem.aiEnrichment.userCorrectedEmploymentType && (
-                                      <span className="badge badge-success" style={{ marginLeft: '4px', fontSize: '0.65rem' }}>Edited</span>
+                                      <span className="badge badge-success job-edited-tag">Edited</span>
                                     )}
                                   </div>
                                 </div>
@@ -5982,34 +6047,24 @@ function App() {
                           </div>
 
                           {/* Experience and Domains */}
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px' }}>
-                            <div style={{
-                              background: 'var(--bg-secondary)',
-                              border: '1px solid rgba(255,255,255,0.05)',
-                              padding: '16px',
-                              borderRadius: '10px'
-                            }}>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Required Experience</div>
-                              <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)' }}>
+                          <div className="job-info-grid job-info-grid--exp">
+                            <div className="job-info-card">
+                              <div className="job-info-card-label">Required Experience</div>
+                              <div className="job-exp-value">
                                 {(editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears) !== null ? (
                                   `${editItem.aiEnrichment.userCorrectedExperienceMinYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMinYears : editItem.aiEnrichment.experienceMinYears} to ${editItem.aiEnrichment.userCorrectedExperienceMaxYears !== null ? editItem.aiEnrichment.userCorrectedExperienceMaxYears : (editItem.aiEnrichment.experienceMaxYears || 'unspecified')} yrs`
                                 ) : 'N/A'}
                               </div>
                             </div>
 
-                            <div style={{
-                              background: 'var(--bg-secondary)',
-                              border: '1px solid rgba(255,255,255,0.05)',
-                              padding: '16px',
-                              borderRadius: '10px'
-                            }}>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Target Domains</div>
+                            <div className="job-info-card">
+                              <div className="job-info-card-label">Target Domains</div>
                               <div className="tags-list">
                                 {(editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).length === 0 ? (
-                                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None identified</span>
+                                  <span className="job-empty-inline">None identified</span>
                                 ) : (
                                   (editItem.aiEnrichment.userCorrectedDomain || editItem.aiEnrichment.domain || []).map(d => (
-                                    <span key={d} className="badge badge-info" style={{ textTransform: 'capitalize' }}>{d}</span>
+                                    <span key={d} className="badge badge-info job-badge-capitalize">{d}</span>
                                   ))
                                 )}
                               </div>
@@ -6017,36 +6072,28 @@ function App() {
                           </div>
 
                           {/* Skills breakdown */}
-                          <div style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid rgba(255,255,255,0.05)',
-                            padding: '16px',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '16px'
-                          }}>
+                          <div className="job-info-card job-info-card--stack">
                             <div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Required Technical Skills</div>
+                              <div className="job-info-card-label">Required Technical Skills</div>
                               <div className="tags-list">
                                 {(editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).length === 0 ? (
-                                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None extracted</span>
+                                  <span className="job-empty-inline">None extracted</span>
                                 ) : (
                                   (editItem.aiEnrichment.userCorrectedRequiredSkills || editItem.aiEnrichment.requiredSkills || []).map(s => (
-                                    <span key={s} className="badge badge-success" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>{s}</span>
+                                    <span key={s} className="badge badge-success">{s}</span>
                                   ))
                                 )}
                               </div>
                             </div>
 
                             <div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Preferred / Desired Skills</div>
+                              <div className="job-info-card-label">Preferred / Desired Skills</div>
                               <div className="tags-list">
                                 {(editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).length === 0 ? (
-                                  <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>None extracted</span>
+                                  <span className="job-empty-inline">None extracted</span>
                                 ) : (
                                   (editItem.aiEnrichment.userCorrectedPreferredSkills || editItem.aiEnrichment.preferredSkills || []).map(s => (
-                                    <span key={s} className="badge badge-secondary" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>{s}</span>
+                                    <span key={s} className="badge badge-secondary">{s}</span>
                                   ))
                                 )}
                               </div>
@@ -6054,21 +6101,17 @@ function App() {
                           </div>
 
                           {/* AI Summary Block */}
-                          <div style={{
-                            borderLeft: '4px solid var(--primary)',
-                            background: 'rgba(255,255,255,0.02)',
-                            padding: '16px',
-                            borderRadius: '0 8px 8px 0'
-                          }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Role Intel Summary</div>
-                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                              "{editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || 'No summary available.'}"
+                          <div className="job-summary-quote">
+                            <div className="job-info-card-label">Role Intel Summary</div>
+                            <div className="job-summary-quote-text">
+                              &ldquo;{editItem.aiEnrichment.userCorrectedSummary || editItem.aiEnrichment.summary || 'No summary available.'}&rdquo;
                             </div>
                           </div>
 
                           {/* Action Buttons */}
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--bg-secondary)', paddingTop: '16px' }}>
-                            <button className="btn btn-secondary" onClick={() => setEditingAiEnrichment(true)}>
+                          <div className="job-tab-actions">
+                            <button className="job-btn job-btn--ghost" onClick={() => setEditingAiEnrichment(true)}>
+                              <IconEdit />
                               Correct AI Details
                             </button>
                           </div>
@@ -6169,8 +6212,8 @@ function App() {
                           </div>
 
                           <div className="modal-actions">
-                            <button type="button" className="btn btn-secondary" onClick={() => setEditingAiEnrichment(false)}>Cancel</button>
-                            <button type="submit" className="btn btn-primary">Save Corrections</button>
+                            <button type="button" className="job-btn job-btn--ghost" onClick={() => setEditingAiEnrichment(false)}>Cancel</button>
+                            <button type="submit" className="job-btn job-btn--primary">Save Corrections</button>
                           </div>
                         </form>
                       )}
@@ -6179,57 +6222,49 @@ function App() {
                 </div>
               )}
 
-
               {jobNetworkSubTab === 'resume_analysis' && (
                 <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '16px' }}>AI Resume ↔ Job Fit Analysis</h3>
+                  <h3 className="job-subheading">AI Resume &harr; Job Fit Analysis</h3>
 
                   {loadingResumeAnalysis ? (
-                    <div className="empty-state" style={{ padding: '32px', textAlign: 'center' }}>
+                    <div className="job-ai-state-box">
                       <p>Generating alignment analysis...</p>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="job-ai-display">
 
                       {/* Compatibility Rating Card */}
-                      <div style={{
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                        padding: '20px',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
+                      <div className="job-compat-card">
                         <div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Compatibility Assessment</div>
-                          <div style={{ fontSize: '1.8rem', fontWeight: 800, textTransform: 'capitalize', color: resumeAnalysis?.compatibilityAssessment === 'high' ? 'var(--success)' : resumeAnalysis?.compatibilityAssessment === 'medium' ? '#f59e0b' : 'var(--danger)' }}>
+                          <div className="job-info-card-label">Compatibility Assessment</div>
+                          <div className={`job-compat-value job-compat-value--${resumeAnalysis?.compatibilityAssessment === 'high' ? 'high' : resumeAnalysis?.compatibilityAssessment === 'medium' ? 'medium' : 'low'}`}>
                             {resumeAnalysis?.compatibilityAssessment || 'unknown'}
                           </div>
                         </div>
                         <button
-                          className="btn btn-secondary"
+                          className="job-btn job-btn--ghost"
                           onClick={() => loadResumeFitAnalysis(editItem.id)}
                         >
+                          <IconRefresh />
                           Re-Analyze Fit
                         </button>
                       </div>
 
                       {/* Summary Bio */}
-                      <div style={{ borderLeft: '4px solid var(--primary)', background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '0 8px 8px 0' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Analysis Summary</div>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                      <div className="job-summary-quote">
+                        <div className="job-info-card-label">Analysis Summary</div>
+                        <p className="job-summary-quote-text job-summary-quote-text--plain">
                           {resumeAnalysis?.analysisSummary}
                         </p>
                       </div>
 
                       {/* Matched vs Missing Skills */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Matched Skills</div>
+                      <div className="job-info-grid job-info-grid--2">
+                        <div className="job-info-card">
+                          <div className="job-info-card-label">Matched Skills</div>
                           <div className="tags-list">
                             {(resumeAnalysis?.matchedSkills || []).length === 0 ? (
-                              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No matching skills detected</span>
+                              <span className="job-empty-inline">No matching skills detected</span>
                             ) : (
                               (resumeAnalysis.matchedSkills || []).map(s => (
                                 <span key={s} className="badge badge-success">{s}</span>
@@ -6238,11 +6273,11 @@ function App() {
                           </div>
                         </div>
 
-                        <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Potential Gaps / Missing Skills</div>
+                        <div className="job-info-card">
+                          <div className="job-info-card-label">Potential Gaps / Missing Skills</div>
                           <div className="tags-list">
                             {(resumeAnalysis?.missingSkills || []).length === 0 ? (
-                              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No gaps detected</span>
+                              <span className="job-empty-inline">No gaps detected</span>
                             ) : (
                               (resumeAnalysis.missingSkills || []).map(s => (
                                 <span key={s} className="badge badge-danger">{s}</span>
@@ -6253,28 +6288,28 @@ function App() {
                       </div>
 
                       {/* Strengths List */}
-                      <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Core Alignment Strengths</div>
+                      <div className="job-info-card">
+                        <div className="job-info-card-label">Core Alignment Strengths</div>
                         {(resumeAnalysis?.strengths || []).length === 0 ? (
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No key strengths highlighted yet.</div>
+                          <div className="job-empty-inline">No key strengths highlighted yet.</div>
                         ) : (
-                          <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                          <ul className="job-plain-list">
                             {(resumeAnalysis.strengths || []).map((str, idx) => (
-                              <li key={idx} style={{ marginBottom: '4px' }}>{str}</li>
+                              <li key={idx}>{str}</li>
                             ))}
                           </ul>
                         )}
                       </div>
 
                       {/* Gaps List */}
-                      <div style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '10px' }}>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Areas of Improvement / Growth</div>
+                      <div className="job-info-card">
+                        <div className="job-info-card-label">Areas of Improvement / Growth</div>
                         {(resumeAnalysis?.potentialGaps || []).length === 0 ? (
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No potential gaps highlighted.</div>
+                          <div className="job-empty-inline">No potential gaps highlighted.</div>
                         ) : (
-                          <ul style={{ margin: '4px 0 0 16px', padding: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                          <ul className="job-plain-list">
                             {(resumeAnalysis.potentialGaps || []).map((gap, idx) => (
-                              <li key={idx} style={{ marginBottom: '4px' }}>{gap}</li>
+                              <li key={idx}>{gap}</li>
                             ))}
                           </ul>
                         )}
@@ -6289,8 +6324,8 @@ function App() {
               {jobNetworkSubTab === 'application' && (
                 <div>
                   {!editItem?.application ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Start Tracking Application</h3>
+                    <div className="job-app-start">
+                      <h3 className="job-subheading">Start Tracking Application</h3>
                       <form onSubmit={async (e) => {
                         e.preventDefault();
                         const formData = new FormData(e.target);
@@ -6362,14 +6397,14 @@ function App() {
                           <textarea name="notes" className="form-input" rows="3" placeholder="Initial thoughts, referral requests, etc..."></textarea>
                         </div>
 
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Initialize Application</button>
+                        <button type="submit" className="job-btn job-btn--primary job-btn--block">Initialize Application</button>
                       </form>
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+                    <div className="job-app-grid">
                       {/* Left Column: Update Form */}
                       <div>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Application Details</h3>
+                        <h3 className="job-subheading">Application Details</h3>
                         <form onSubmit={async (e) => {
                           e.preventDefault();
                           const formData = new FormData(e.target);
@@ -6442,37 +6477,37 @@ function App() {
                             <textarea name="notes" className="form-input" rows="3" defaultValue={editItem.application.notes || ''}></textarea>
                           </div>
 
-                          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Save Updates</button>
+                          <button type="submit" className="job-btn job-btn--primary job-btn--block">Save Updates</button>
                         </form>
                       </div>
 
                       {/* Right Column: Timeline & Add Event */}
-                      <div style={{ borderLeft: '1px solid var(--bg-secondary)', paddingLeft: '24px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '16px' }}>Application Timeline</h3>
+                      <div className="job-app-timeline-col">
+                        <h3 className="job-subheading">Application Timeline</h3>
 
                         {/* Visual Timeline */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '180px', overflowY: 'auto', marginBottom: '24px', paddingRight: '8px' }}>
+                        <div className="job-app-timeline">
                           {(!editItem.application.events || editItem.application.events.length === 0) ? (
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No timeline events recorded.</div>
+                            <div className="job-empty-inline">No timeline events recorded.</div>
                           ) : (
                             editItem.application.events.map((ev, index) => (
-                              <div key={ev.id || index} style={{ display: 'flex', gap: '12px', position: 'relative' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--primary)', marginTop: '4px' }}></div>
+                              <div key={ev.id || index} className="job-app-timeline-item">
+                                <div className="job-app-timeline-rail">
+                                  <div className="job-app-timeline-dot" />
                                   {index < editItem.application.events.length - 1 && (
-                                    <div style={{ width: '2px', flexGrow: 1, background: 'var(--bg-secondary)', margin: '4px 0' }}></div>
+                                    <div className="job-app-timeline-connector" />
                                   )}
                                 </div>
                                 <div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                  <div className="job-app-timeline-date">
                                     {new Date(ev.occurredAt).toLocaleDateString()}
                                   </div>
-                                  <div style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'capitalize' }}>
+                                  <div className="job-app-timeline-type">
                                     {ev.eventType.replace('_', ' ')}: <span className="badge badge-info">{ev.status}</span>
                                   </div>
                                   {ev.notes && (
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
-                                      "{ev.notes}"
+                                    <div className="job-app-timeline-note">
+                                      &ldquo;{ev.notes}&rdquo;
                                     </div>
                                   )}
                                 </div>
@@ -6499,11 +6534,11 @@ function App() {
                           } catch (err) {
                             alert(err.message);
                           }
-                        }} style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px' }}>
-                          <h4 style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '8px' }}>Add Timeline Event</h4>
-                          <div className="form-group" style={{ marginBottom: '8px' }}>
-                            <label className="form-label" style={{ fontSize: '0.75rem' }}>Event Type</label>
-                            <select name="eventType" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} defaultValue="interview_scheduled">
+                        }} className="job-app-event-form">
+                          <h4>Add Timeline Event</h4>
+                          <div className="form-group">
+                            <label className="form-label">Event Type</label>
+                            <select name="eventType" className="form-input" defaultValue="interview_scheduled">
                               <option value="application_submitted">Application Submitted</option>
                               <option value="recruiter_contacted">Recruiter Contacted</option>
                               <option value="referral_requested">Referral Requested</option>
@@ -6517,9 +6552,9 @@ function App() {
                               <option value="note">Note / Event</option>
                             </select>
                           </div>
-                          <div className="form-group" style={{ marginBottom: '8px' }}>
-                            <label className="form-label" style={{ fontSize: '0.75rem' }}>Associated Stage</label>
-                            <select name="status" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} defaultValue={editItem.application.status}>
+                          <div className="form-group">
+                            <label className="form-label">Associated Stage</label>
+                            <select name="status" className="form-input" defaultValue={editItem.application.status}>
                               <option value="saved">Saved</option>
                               <option value="applying">Applying</option>
                               <option value="applied">Applied</option>
@@ -6532,11 +6567,11 @@ function App() {
                               <option value="withdrawn">Withdrawn</option>
                             </select>
                           </div>
-                          <div className="form-group" style={{ marginBottom: '8px' }}>
-                            <label className="form-label" style={{ fontSize: '0.75rem' }}>Event Notes</label>
-                            <input type="text" name="notes" className="form-input" style={{ padding: '6px', fontSize: '0.8rem' }} placeholder="e.g. Round 1 Technical round" />
+                          <div className="form-group">
+                            <label className="form-label">Event Notes</label>
+                            <input type="text" name="notes" className="form-input" placeholder="e.g. Round 1 Technical round" />
                           </div>
-                          <button type="submit" className="btn btn-secondary" style={{ width: '100%', padding: '6px', fontSize: '0.8rem' }}>Log Event</button>
+                          <button type="submit" className="job-btn job-btn--ghost job-btn--block job-btn--sm">Log Event</button>
                         </form>
                       </div>
                     </div>
@@ -6548,43 +6583,42 @@ function App() {
               {jobNetworkSubTab === 'network' && (
                 <div>
                   {jobNetworkLoading ? (
-                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading referral candidates...</div>
+                    <div className="job-ai-state-box">Loading referral candidates...</div>
                   ) : (
                     <div>
                       {/* Summary Metrics */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '16px' }}>
-                        <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)' }}>
+                      <div className="job-net-summary-grid">
+                        <div className="job-net-summary-tile">
+                          <div className="job-net-summary-value job-net-summary-value--primary">
                             {jobNetworkDetails?.summary?.totalConnections || 0}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Connections</div>
+                          <div className="job-net-summary-label">Connections</div>
                         </div>
-                        <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--success)' }}>
+                        <div className="job-net-summary-tile">
+                          <div className="job-net-summary-value job-net-summary-value--success">
                             {jobNetworkDetails?.summary?.relevantConnections || 0}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Relevant</div>
+                          <div className="job-net-summary-label">Relevant</div>
                         </div>
-                        <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--warning)' }}>
+                        <div className="job-net-summary-tile">
+                          <div className="job-net-summary-value job-net-summary-value--warning">
                             {jobNetworkDetails?.summary?.highPotential || 0}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>High Potential</div>
+                          <div className="job-net-summary-label">High Potential</div>
                         </div>
-                        <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>
+                        <div className="job-net-summary-tile">
+                          <div className="job-net-summary-value">
                             {jobNetworkDetails?.summary?.recruiters || 0}
                           </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Recruiters</div>
+                          <div className="job-net-summary-label">Recruiters</div>
                         </div>
                       </div>
 
                       {/* Filters Bar */}
-                      <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '8px', marginBottom: '16px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flexGrow: 1 }}>
+                      <div className="job-net-filter-bar">
+                        <div className="job-net-filter-group">
                           <select
                             className="form-input"
-                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
                             value={jobNetworkFilters.roleCategory}
                             onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, roleCategory: e.target.value, page: 1 })}
                           >
@@ -6595,7 +6629,6 @@ function App() {
 
                           <select
                             className="form-input"
-                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
                             value={jobNetworkFilters.seniority}
                             onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, seniority: e.target.value, page: 1 })}
                           >
@@ -6610,7 +6643,6 @@ function App() {
 
                           <select
                             className="form-input"
-                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
                             value={jobNetworkFilters.relationshipStatus}
                             onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, relationshipStatus: e.target.value, page: 1 })}
                           >
@@ -6626,7 +6658,6 @@ function App() {
 
                           <select
                             className="form-input"
-                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '110px' }}
                             value={jobNetworkFilters.priority}
                             onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, priority: e.target.value, page: 1 })}
                           >
@@ -6636,11 +6667,10 @@ function App() {
                             <option value="low">Low</option>
                           </select>
                         </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Sort:</span>
+                        <div className="job-net-sort-group">
+                          <span>Sort</span>
                           <select
                             className="form-input"
-                            style={{ padding: '6px', fontSize: '0.8rem', minWidth: '130px' }}
                             value={jobNetworkFilters.sortBy}
                             onChange={(e) => setJobNetworkFilters({ ...jobNetworkFilters, sortBy: e.target.value, page: 1 })}
                           >
@@ -6655,9 +6685,9 @@ function App() {
 
                       {/* Recommended Actions */}
                       {jobNetworkDetails?.candidates?.length > 0 && (
-                        <div style={{ background: 'var(--primary-glow)', border: '1px solid var(--primary)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
-                          <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--primary)', marginBottom: '6px' }}>⭐ Recommended Workspace Actions</div>
-                          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.8rem', color: '#fff' }}>
+                        <div className="job-net-recommend-box">
+                          <div className="job-net-recommend-title"><IconStar /> Recommended Workspace Actions</div>
+                          <ul className="job-net-recommend-list">
                             {jobNetworkDetails.candidates.slice(0, 3).map((candidate, idx) => {
                               let action = 'Research relationship details';
                               if (candidate.relationshipStatus === 'not_contacted') {
@@ -6668,7 +6698,7 @@ function App() {
                                 action = 'Proceed with submitting application on company portal';
                               }
                               return (
-                                <li key={idx} style={{ marginBottom: '4px' }}>
+                                <li key={idx}>
                                   <strong>Contact {candidate.connection.name}</strong>: {action}
                                 </li>
                               );
@@ -6679,102 +6709,100 @@ function App() {
 
                       {/* Candidates List */}
                       {jobNetworkDetails?.candidates?.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '24px', background: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        <div className="job-empty">
                           No referral candidates match your filter criteria at {editItem?.companyName}.
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div className="job-net-candidate-list">
                           {jobNetworkDetails?.candidates?.map((candidate) => (
                             <div
                               key={candidate.connection.id}
-                              style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderLeft: '4px solid var(--primary)' }}
+                              className="job-net-candidate-card"
                             >
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>{candidate.connection.name}</span>
-                                  <span className={`badge ${candidate.relationshipStatus === 'not_contacted' ? 'badge-info' : 'badge-success'}`} style={{ fontSize: '0.75rem' }}>
+                              <div className="job-net-candidate-main">
+                                <div className="job-net-candidate-name-row">
+                                  <span className="job-net-candidate-name">{candidate.connection.name}</span>
+                                  <span className={`badge ${candidate.relationshipStatus === 'not_contacted' ? 'badge-info' : 'badge-success'}`}>
                                     {candidate.relationshipStatus.replace('_', ' ')}
                                   </span>
                                   {candidate.priority && candidate.priority !== 'none' && (
-                                    <span className="badge badge-warning" style={{ fontSize: '0.75rem' }}>{candidate.priority} priority</span>
+                                    <span className="badge badge-warning">{candidate.priority} priority</span>
                                   )}
                                 </div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                <div className="job-net-candidate-meta">
                                   {candidate.connection.title} &bull; {candidate.connection.company}
                                 </div>
                                 {/* Explainable scoring reasons */}
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                                <div className="job-net-candidate-reasons">
                                   {candidate.reasons?.map((reason, ridx) => (
-                                    <span key={ridx} style={{ fontSize: '0.75rem', background: 'var(--bg-tertiary)', padding: '4px 8px', borderRadius: '4px', color: 'var(--primary)' }}>
-                                      ✓ {reason}
+                                    <span key={ridx} className="job-net-reason-chip">
+                                      <IconCheck /> {reason}
                                     </span>
                                   ))}
                                 </div>
                                 {/* AI Matching Evidence */}
                                 {candidate.aiEvidence && (
-                                  <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <div className="job-net-evidence">
                                     {candidate.aiEvidence.skillAlignment.length > 0 && (
-                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                        💡 <strong style={{ color: 'var(--success)' }}>AI Skill Match:</strong> {candidate.aiEvidence.skillAlignment.join(', ')}
+                                      <div className="job-net-evidence-line">
+                                        <span className="job-net-evidence-icon job-net-evidence-icon--success"><IconLightbulb /></span> <strong className="job-net-evidence-strong--success">AI Skill Match:</strong> {candidate.aiEvidence.skillAlignment.join(', ')}
                                       </div>
                                     )}
                                     {candidate.aiEvidence.domainAlignment.length > 0 && (
-                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                        🌐 <strong style={{ color: 'var(--primary)' }}>AI Domain Match:</strong> {candidate.aiEvidence.domainAlignment.join(', ')}
+                                      <div className="job-net-evidence-line">
+                                        <span className="job-net-evidence-icon job-net-evidence-icon--primary"><IconGlobe /></span> <strong className="job-net-evidence-strong--primary">AI Domain Match:</strong> {candidate.aiEvidence.domainAlignment.join(', ')}
                                       </div>
                                     )}
                                     {candidate.aiEvidence.roleAlignment !== 'neutral' && (
-                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                        👔 <strong>AI Role Alignment:</strong> <span style={{ textTransform: 'capitalize', color: candidate.aiEvidence.roleAlignment === 'strong' ? 'var(--success)' : '#f59e0b' }}>{candidate.aiEvidence.roleAlignment}</span>
+                                      <div className="job-net-evidence-line">
+                                        <span className="job-net-evidence-icon"><IconTie /></span> <strong>AI Role Alignment:</strong> <span className={`job-net-role-alignment ${candidate.aiEvidence.roleAlignment === 'strong' ? 'job-net-role-alignment--strong' : 'job-net-role-alignment--medium'}`}>{candidate.aiEvidence.roleAlignment}</span>
                                       </div>
                                     )}
                                   </div>
                                 )}
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Score:</span>
-                                  <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)' }}>
+                              <div className="job-net-candidate-score">
+                                <div className="job-net-score-row">
+                                  <span>Score:</span>
+                                  <span className="job-net-score-value">
                                     {candidate.referralScore}
                                   </span>
                                 </div>
                                 {candidate.semanticSimilarity !== undefined && (
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'bold' }}>
+                                  <div className="job-net-relevance">
                                     Relevance: {Math.round(candidate.semanticSimilarity * 100)}%
                                   </div>
                                 )}
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                  <button
-                                    className="btn btn-secondary"
-                                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                                    onClick={async () => {
-                                      try {
-                                        const res = await api.request(`/connections/${candidate.connection.id}`);
-                                        setEditItem(res.data);
-                                        setModal('connection_detail');
-                                      } catch (err) {
-                                        alert(err.message);
-                                      }
-                                    }}
-                                  >
-                                    View CRM
-                                  </button>
-                                  <button
-                                    className="btn btn-primary"
-                                    style={{ padding: '6px 10px', fontSize: '0.8rem' }}
-                                    onClick={() => {
-                                      setEditItem({
-                                        ...candidate.connection,
-                                        job_id: editItem.id // pass selected job_id context
-                                      });
-                                      setModal('outreach');
-                                    }}
-                                  >
-                                    Log Outreach
-                                  </button>
-                                </div>
+                              <div className="job-net-candidate-actions">
+                                <button
+                                  className="job-btn job-btn--ghost job-btn--sm"
+                                  onClick={async () => {
+                                    try {
+                                      const res = await api.request(`/connections/${candidate.connection.id}`);
+                                      setEditItem(res.data);
+                                      setModal('connection_detail');
+                                    } catch (err) {
+                                      alert(err.message);
+                                    }
+                                  }}
+                                >
+                                  <IconEye />
+                                  View CRM
+                                </button>
+                                <button
+                                  className="job-btn job-btn--primary job-btn--sm"
+                                  onClick={() => {
+                                    setEditItem({
+                                      ...candidate.connection,
+                                      job_id: editItem.id // pass selected job_id context
+                                    });
+                                    setModal('outreach');
+                                  }}
+                                >
+                                  <IconSend />
+                                  Log Outreach
+                                </button>
                               </div>
                             </div>
                           ))}
@@ -6786,7 +6814,7 @@ function App() {
               )}
 
               <div className="modal-actions">
-                <button className="btn btn-secondary" onClick={() => { setModal(null); setJobNetworkSubTab('overview'); }}>Close Intel</button>
+                <button className="job-btn job-btn--ghost" onClick={() => { setModal(null); setJobNetworkSubTab('overview'); }}>Close Intel</button>
               </div>
             </div>
           </div>
