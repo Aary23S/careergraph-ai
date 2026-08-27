@@ -253,6 +253,16 @@ function getInitials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+// Fixed color cycle for the Role Distribution segmented bar/legend — display only.
+const CONN_ROLE_PALETTE = [
+  'var(--primary)', 'var(--info)', 'var(--accent)', 'var(--warning)',
+  'var(--danger)', '#a78bfa', 'var(--success)', '#f472b6', 'var(--secondary)', '#60a5fa'
+];
+
+// Business-hierarchy display order for the Seniority Distribution chart — display only.
+// Values not listed here (unexpected/legacy data) sort after all known levels.
+const CONN_SENIORITY_ORDER = ['founder', 'executive', 'director', 'manager', 'lead', 'senior', 'mid', 'junior', 'intern', 'unknown'];
+
 // Maps a Connection's relationshipStatus value to a badge color variant — display only.
 const CONN_STATUS_VARIANT = {
   not_contacted: 'badge-secondary',
@@ -2144,118 +2154,177 @@ function App() {
                       </div>
                     </div>
 
-                    {/* Third Row: Top Companies & Role Distribution */}
-                    <div className="conn-grid-2">
-                      {/* Top Companies */}
-                      <div className="conn-panel">
-                        <div className="conn-panel-head">
-                          <span className="conn-panel-icon"><IconBuilding /></span>
-                          <h2 className="conn-panel-title">Top Companies</h2>
-                        </div>
-                        <div className="conn-list">
-                          {dashboardOverview.topCompanies && dashboardOverview.topCompanies.length > 0 ? (
-                            dashboardOverview.topCompanies.map((c) => (
+                    {/* Top Companies */}
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <span className="conn-panel-icon"><IconBuilding /></span>
+                        <h2 className="conn-panel-title">Top Companies</h2>
+                        <span className="conn-panel-note">Sized by connections</span>
+                      </div>
+                      {dashboardOverview.topCompanies && dashboardOverview.topCompanies.length > 0 ? (
+                        <>
+                          <div className="conn-company-hero-grid">
+                            {dashboardOverview.topCompanies.slice(0, 3).map((c) => (
                               <div
                                 key={c.normalizedName}
-                                className="conn-list-row"
+                                className="conn-company-hero-tile"
                                 onClick={() => {
                                   setConnFilters({ ...connFilters, company: c.name, page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
-                                <span className="conn-list-row-label">{c.name}</span>
-                                <span className="badge badge-info">{c.count} connections</span>
+                                <span className="conn-company-hero-name">{c.name}</span>
+                                <span className="conn-company-hero-count">{c.count}</span>
                               </div>
-                            ))
-                          ) : (
-                            <div className="conn-empty">No company aggregates available.</div>
+                            ))}
+                          </div>
+                          {dashboardOverview.topCompanies.length > 3 && (
+                            <div className="conn-company-grid">
+                              {dashboardOverview.topCompanies.slice(3).map((c) => (
+                                <div
+                                  key={c.normalizedName}
+                                  className="conn-company-tile"
+                                  onClick={() => {
+                                    setConnFilters({ ...connFilters, company: c.name, page: 1 });
+                                    setConnectionSubTab('all');
+                                  }}
+                                >
+                                  <span className="conn-company-tile-name">{c.name}</span>
+                                  <span className="conn-company-tile-count">{c.count}</span>
+                                </div>
+                              ))}
+                            </div>
                           )}
-                        </div>
-                      </div>
-
-                      {/* Role Distribution */}
-                      <div className="conn-panel">
-                        <div className="conn-panel-head">
-                          <span className="conn-panel-icon"><IconBriefcase /></span>
-                          <h2 className="conn-panel-title">Role Distribution</h2>
-                        </div>
-                        <div className="conn-list">
-                          {dashboardOverview.roles && dashboardOverview.roles.length > 0 ? (
-                            dashboardOverview.roles.map((r) => (
-                              <div
-                                key={r.category}
-                                className="conn-list-row"
-                                onClick={() => {
-                                  setConnFilters({ ...connFilters, roleCategory: [r.category], page: 1 });
-                                  setConnectionSubTab('all');
-                                }}
-                              >
-                                <span className="conn-list-row-label conn-list-row-label--capitalize">{r.category.replace('_', ' ')}</span>
-                                <span className="badge badge-success">{r.count}</span>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="conn-empty">No role category aggregates available.</div>
-                          )}
-                        </div>
-                      </div>
+                        </>
+                      ) : (
+                        <div className="conn-empty">No company aggregates available.</div>
+                      )}
                     </div>
 
-                    {/* Fourth Row: Seniority & Relationship Health */}
-                    <div className="conn-grid-2">
-                      {/* Seniority Distribution */}
-                      <div className="conn-panel">
-                        <div className="conn-panel-head">
-                          <span className="conn-panel-icon"><IconAward /></span>
-                          <h2 className="conn-panel-title">Seniority Distribution</h2>
-                        </div>
-                        <div className="conn-list">
-                          {dashboardOverview.seniority && dashboardOverview.seniority.length > 0 ? (
-                            dashboardOverview.seniority.map((s) => (
+                    {/* Role Distribution */}
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <span className="conn-panel-icon"><IconBriefcase /></span>
+                        <h2 className="conn-panel-title">Role Distribution</h2>
+                      </div>
+                      {dashboardOverview.roles && dashboardOverview.roles.length > 0 ? (() => {
+                        const roleTotal = dashboardOverview.roles.reduce((sum, r) => sum + r.count, 0) || 1;
+                        return (
+                          <>
+                            <div className="conn-role-bar">
+                              {dashboardOverview.roles.map((r, idx) => (
+                                <div
+                                  key={r.category}
+                                  className="conn-role-bar-segment"
+                                  title={`${r.category.replace('_', ' ')}: ${r.count}`}
+                                  style={{ width: `${(r.count / roleTotal) * 100}%`, background: CONN_ROLE_PALETTE[idx % CONN_ROLE_PALETTE.length] }}
+                                  onClick={() => {
+                                    setConnFilters({ ...connFilters, roleCategory: [r.category], page: 1 });
+                                    setConnectionSubTab('all');
+                                  }}
+                                />
+                              ))}
+                            </div>
+                            <div className="conn-role-legend">
+                              {dashboardOverview.roles.map((r, idx) => (
+                                <div
+                                  key={r.category}
+                                  className="conn-role-legend-item"
+                                  onClick={() => {
+                                    setConnFilters({ ...connFilters, roleCategory: [r.category], page: 1 });
+                                    setConnectionSubTab('all');
+                                  }}
+                                >
+                                  <span className="conn-role-swatch" style={{ background: CONN_ROLE_PALETTE[idx % CONN_ROLE_PALETTE.length] }} />
+                                  <span className="conn-role-legend-label">{r.category.replace('_', ' ')}</span>
+                                  <span className="conn-role-legend-value">{r.count}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        );
+                      })() : (
+                        <div className="conn-empty">No role category aggregates available.</div>
+                      )}
+                    </div>
+
+                    {/* Seniority Distribution */}
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <span className="conn-panel-icon"><IconAward /></span>
+                        <h2 className="conn-panel-title">Seniority Distribution</h2>
+                      </div>
+                      {dashboardOverview.seniority && dashboardOverview.seniority.length > 0 ? (() => {
+                        const sorted = [...dashboardOverview.seniority].sort((a, b) => {
+                          const ai = CONN_SENIORITY_ORDER.indexOf(a.level);
+                          const bi = CONN_SENIORITY_ORDER.indexOf(b.level);
+                          return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+                        });
+                        const maxCount = Math.max(1, ...sorted.map(s => s.count));
+                        return (
+                          <div className="conn-seniority-list">
+                            {sorted.map(s => (
                               <div
                                 key={s.level}
-                                className="conn-list-row"
+                                className="conn-seniority-row"
                                 onClick={() => {
                                   setConnFilters({ ...connFilters, seniority: [s.level], page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
-                                <span className="conn-list-row-label conn-list-row-label--capitalize">{s.level}</span>
-                                <span className="badge badge-info">{s.count}</span>
+                                <div className="conn-seniority-track">
+                                  <div className="conn-seniority-fill" style={{ width: `${(s.count / maxCount) * 100}%` }} />
+                                </div>
+                                <span className="conn-seniority-label">{s.level.replace('_', ' ')}</span>
+                                <span className="conn-seniority-value">{s.count}</span>
                               </div>
-                            ))
-                          ) : (
-                            <div className="conn-empty">No seniority level aggregates available.</div>
-                          )}
-                        </div>
-                      </div>
+                            ))}
+                          </div>
+                        );
+                      })() : (
+                        <div className="conn-empty">No seniority level aggregates available.</div>
+                      )}
+                    </div>
 
-                      {/* Relationship Health */}
-                      <div className="conn-panel">
-                        <div className="conn-panel-head">
-                          <span className="conn-panel-icon"><IconUsers /></span>
-                          <h2 className="conn-panel-title">Relationship Health</h2>
-                        </div>
-                        <div className="conn-list">
-                          {dashboardOverview.relationships && dashboardOverview.relationships.length > 0 ? (
-                            dashboardOverview.relationships.map((rel) => (
-                              <div
-                                key={rel.status}
-                                className="conn-list-row"
-                                onClick={() => {
-                                  setConnFilters({ ...connFilters, relationshipStatus: rel.status, page: 1 });
-                                  setConnectionSubTab('all');
-                                }}
-                              >
-                                <span className="conn-list-row-label conn-list-row-label--capitalize">{rel.status.replace('_', ' ')}</span>
-                                <span className="badge badge-warning">{rel.count}</span>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="conn-empty">No relationship status aggregates available.</div>
-                          )}
-                        </div>
+                    {/* Relationship Health */}
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <span className="conn-panel-icon"><IconUsers /></span>
+                        <h2 className="conn-panel-title">Relationship Health</h2>
                       </div>
+                      {dashboardOverview.relationships && dashboardOverview.relationships.length > 0 ? (() => {
+                        const total = dashboardOverview.summary.totalConnections || 0;
+                        const notContacted = dashboardOverview.relationships.find(r => r.status === 'not_contacted')?.count || 0;
+                        const contacted = Math.max(0, total - notContacted);
+                        const pct = total > 0 ? Math.round((notContacted / total) * 100) : 0;
+                        return (
+                          <>
+                            <div className="conn-health-stat">
+                              <span className="conn-health-pct">{pct}%</span>
+                              <span className="conn-health-desc">of {total.toLocaleString()} connections never contacted</span>
+                            </div>
+                            <div className="conn-health-bar">
+                              <div className="conn-health-bar-segment conn-health-bar-segment--danger" style={{ width: `${pct}%` }} />
+                              <div className="conn-health-bar-segment conn-health-bar-segment--success" style={{ width: `${100 - pct}%` }} />
+                            </div>
+                            <div className="conn-health-legend">
+                              <span><span className="conn-dot conn-dot--danger" />Not contacted &middot; {notContacted.toLocaleString()}</span>
+                              <span><span className="conn-dot conn-dot--success" />Contacted &middot; {contacted.toLocaleString()}</span>
+                            </div>
+                            <button
+                              className="conn-btn conn-btn--ghost conn-btn--block"
+                              onClick={() => {
+                                setConnFilters({ ...connFilters, relationshipStatus: 'not_contacted', page: 1 });
+                                setConnectionSubTab('all');
+                              }}
+                            >
+                              Start outreach to cold connections ↗
+                            </button>
+                          </>
+                        );
+                      })() : (
+                        <div className="conn-empty">No relationship status aggregates available.</div>
+                      )}
                     </div>
 
                     {/* Fifth Row: High Priority Connections */}
