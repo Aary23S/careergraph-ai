@@ -686,6 +686,8 @@ router.post(
     let matchedConnection = null;
     
     const cleanUrl = (url) => url ? url.toLowerCase().replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '') : '';
+    const normalizeName = (name) => name ? name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim() : '';
+    const normalizeCompany = (company) => company ? company.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim() : '';
 
     const allConnections = await models.Connection.findAll({
       where: { user_id: req.auth.userId }
@@ -697,24 +699,35 @@ router.post(
     }
 
     if (!matchedConnection && parsed.email) {
-      const targetEmail = parsed.email.toLowerCase();
-      matchedConnection = allConnections.find(c => c.email && c.email.toLowerCase() === targetEmail);
-    }
-
-    if (!matchedConnection && parsed.name && parsed.company) {
-      const targetName = parsed.name.toLowerCase();
-      const targetCompany = parsed.company.toLowerCase();
-      matchedConnection = allConnections.find(c => 
-        c.name && c.name.toLowerCase() === targetName && 
-        c.company && c.company.toLowerCase() === targetCompany
-      );
+      const targetEmail = parsed.email.toLowerCase().trim();
+      matchedConnection = allConnections.find(c => c.email && c.email.toLowerCase().trim() === targetEmail);
     }
 
     if (!matchedConnection && parsed.name) {
-      const targetName = parsed.name.toLowerCase();
-      matchedConnection = allConnections.find(c => 
-        c.name && c.name.toLowerCase() === targetName
-      );
+      const parsedNameNorm = normalizeName(parsed.name);
+      const parsedCompanyNorm = normalizeCompany(parsed.company);
+
+      if (parsedCompanyNorm) {
+        matchedConnection = allConnections.find(c => {
+          if (!c.name || !c.company) return false;
+          const cNameNorm = normalizeName(c.name);
+          const cCompanyNorm = normalizeCompany(c.company);
+          
+          const namesMatch = cNameNorm === parsedNameNorm || 
+                             cNameNorm.includes(parsedNameNorm) || 
+                             parsedNameNorm.includes(cNameNorm);
+          
+          const companiesMatch = cCompanyNorm === parsedCompanyNorm || 
+                                 cCompanyNorm.includes(parsedCompanyNorm) || 
+                                 parsedCompanyNorm.includes(cCompanyNorm);
+
+          return namesMatch && companiesMatch;
+        });
+      }
+
+      if (!matchedConnection) {
+        matchedConnection = allConnections.find(c => c.name && normalizeName(c.name) === parsedNameNorm);
+      }
     }
 
     ok(res, {

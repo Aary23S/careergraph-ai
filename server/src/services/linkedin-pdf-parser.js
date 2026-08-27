@@ -102,45 +102,23 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     'education': 'EDUCATION'
   };
 
-  // 2. Section state machine routing (first pass)
-  let activeSection = 'NONE';
-  const sectionContent = {
-    CONTACT: [],
-    SKILLS: [],
-    CERTIFICATIONS: [],
-    PROJECTS: [],
-    LANGUAGES: [],
-    SUMMARY: [],
-    EXPERIENCE: [],
-    EDUCATION: []
-  };
-
-  let skillsHeaderIdx = -1;
-  let summaryHeaderIdx = -1;
-
+  // Find the start of the main column (first main section heading)
+  let firstMainHeadingIdx = lines.length;
   for (let i = 0; i < lines.length; i++) {
-    const lineObj = lines[i];
-    const textLower = lineObj.normalizedText.toLowerCase();
-
-    if (SECTION_HEADINGS[textLower]) {
-      activeSection = SECTION_HEADINGS[textLower];
-      if (activeSection === 'SKILLS') skillsHeaderIdx = i;
-      if (activeSection === 'SUMMARY') summaryHeaderIdx = i;
-      continue;
-    }
-
-    if (activeSection !== 'NONE') {
-      sectionContent[activeSection].push({ ...lineObj, originalIndex: i });
+    const txt = lines[i].normalizedText.toLowerCase();
+    if (txt === 'summary' || txt === 'about' || txt === 'experience' || txt === 'education') {
+      firstMainHeadingIdx = i;
+      break;
     }
   }
 
-  // Extract email, profileUrl strictly from CONTACT section
+  // Extract email and profileUrl globally since they are highly unique patterns
   let email = '';
   let profileUrl = '';
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
   const linkedinRegex = /(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9_\-%\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+/g;
 
-  sectionContent.CONTACT.forEach(l => {
+  lines.forEach(l => {
     const txt = l.normalizedText;
     const matchEmail = txt.match(emailRegex);
     if (matchEmail && !email) {
@@ -161,60 +139,106 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     linkedinId = profileUrl.split('/in/')[1]?.split('/')[0]?.split('?')[0]?.trim() || '';
   }
 
-  // Extract identity header strictly between Skills and Summary bounds
-  let searchStart = 0;
-  if (sectionContent.SKILLS.length > 0) {
-    searchStart = sectionContent.SKILLS[sectionContent.SKILLS.length - 1].originalIndex + 1;
-  } else if (skillsHeaderIdx !== -1) {
-    searchStart = skillsHeaderIdx + 1;
-  }
+  // Candidate scoring for name extraction
+  function scoreNameCandidate(lineText, targetSlug = '', targetEmailUser = '') {
+    const text = lineText.trim();
+    const lower = text.toLowerCase();
 
-  const searchEnd = summaryHeaderIdx !== -1 ? summaryHeaderIdx : lines.length;
+    if (!text) return -1000;
+    if (lower.includes('@') || lower.includes('linkedin.com') || lower.includes('http') || lower.includes('www.')) return -1000;
+    if (SECTION_HEADINGS[lower]) return -1000;
 
-  let name = '';
-  let nameIdx = -1;
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return -1000;
 
-  let slugWords = [];
-  const stopWords = ['www', 'linkedin', 'com', 'in', 'http', 'https', 'pdf', 'profile'];
-  if (linkedinId) {
-    slugWords = linkedinId.toLowerCase()
-      .split(/[^a-z0-9]/)
-      .filter(w => w.length >= 3 && !/^\d+$/.test(w) && !stopWords.includes(w));
-  }
-  if (slugWords.length === 0 && email) {
-    const emailUser = email.split('@')[0] || '';
-    slugWords = emailUser.toLowerCase()
-      .split(/[^a-z0-9]/)
-      .filter(w => w.length >= 3 && !/^\d+$/.test(w) && !stopWords.includes(w));
-  }
+    let score = 0;
 
-  for (let i = searchStart; i < searchEnd; i++) {
-    const line = lines[i].normalizedText;
-    const lower = line.toLowerCase();
-    if (
-      lower.includes('(linkedin)') ||
-      lower.includes('linkedin.com') ||
-      lower.includes('@') ||
-      SECTION_HEADINGS[lower]
-    ) {
-      continue;
+    // Person names are typically 2 to 3 words
+    if (words.length === 2 || words.length === 3) {
+      score += 40;
+    } else if (words.length === 4) {
+      score += 20;
+    } else if (words.length === 1) {
+      score -= 10;
+    } else {
+      score -= 30;
     }
 
     const nameParts = lower.split(/[^a-z]/).filter(p => p.length >= 3);
-    const targetSlug = (linkedinId || '').toLowerCase();
-    const targetEmailUser = (email || '').split('@')[0].toLowerCase();
+    let slugMatchCount = 0;
+    let emailMatchCount = 0;
 
-    if (nameParts.length > 0 && nameParts.every(part => targetSlug.includes(part) || targetEmailUser.includes(part))) {
-      name = lines[i].rawText;
-      nameIdx = i;
-      break;
+    if (nameParts.length > 0) {
+      nameParts.forEach(part => {
+        if (targetSlug && targetSlug.toLowerCase().includes(part)) slugMatchCount++;
+        if (targetEmailUser && targetEmailUser.toLowerCase().includes(part)) emailMatchCount++;
+      });
+
+      if (slugMatchCount > 0 || emailMatchCount > 0) {
+        score += 150;
+        score += (slugMatchCount + emailMatchCount) * 10;
+      }
     }
+
+    const locationKeywords = ['india', 'area', 'united states', 'usa', 'uk', 'london', 'bengaluru', 'bangalore', 'noida', 'delhi', 'mumbai', 'san francisco', 'bay area', 'california', 'new york', 'germany', 'singapore', 'ncr', 'district', 'county', 'region', 'city'];
+    const headlineKeywords = ['engineer', 'developer', 'manager', 'lead', 'director', 'vice president', 'vp', 'architect', 'analyst', 'consultant', 'specialist', 'intern', 'student', 'fellow', 'head', 'founder', 'co-founder', 'ceo', 'cto', 'cfo', 'executive', 'officer', 'scientist', 'researcher', 'designer', 'writer', 'hiring', 'recruiter', 'talent', 'ex-', 'adobe', 'google', 'microsoft', 'amazon', 'meta', 'apple', 'netflix', 'uber', 'salesforce'];
+    const certificationKeywords = [
+      'certified', 'certification', 'license', 'credential', 'aws', 'gcp', 'azure', 'cisco', 'oracle', 'java', 'python', 'scrum', 'agile', 'pmp',
+      'course', 'training', 'network', 'networks', 'learning', 'deep', 'machine', 'data', 'science', 'database', 'development', 'programming', 
+      'software', 'introduction', 'basics', 'advanced', 'systems', 'cloud', 'architecture', 'security', 'foundations'
+    ];
+
+    const locationMatch = locationKeywords.some(kw => lower.includes(kw));
+    if (locationMatch) score -= 40;
+
+    const headlineMatch = headlineKeywords.some(kw => lower.includes(kw));
+    if (headlineMatch) score -= 30;
+
+    const certificationMatch = certificationKeywords.some(kw => lower.includes(kw));
+    if (certificationMatch) score -= 40;
+
+    const isCapitalized = words.every(w => /^[A-Z]/.test(w));
+    if (isCapitalized) score += 20;
+
+    return score;
   }
 
+  const emailUser = email ? email.split('@')[0] : '';
+  const candidates = [];
+  const searchStartIdx = Math.max(0, firstMainHeadingIdx - 5);
+  for (let i = searchStartIdx; i < firstMainHeadingIdx; i++) {
+    let score = scoreNameCandidate(lines[i].normalizedText, linkedinId, emailUser);
+    
+    // Heuristic: boost candidate if the immediately following line looks like a headline or location
+    if (i + 1 < firstMainHeadingIdx) {
+      const nextLineLower = lines[i + 1].normalizedText.toLowerCase();
+      const locationKeywords = ['india', 'area', 'united states', 'usa', 'uk', 'london', 'bengaluru', 'bangalore', 'noida', 'delhi', 'mumbai', 'san francisco', 'bay area', 'california', 'new york', 'germany', 'singapore', 'ncr', 'district', 'county', 'region', 'city'];
+      const headlineKeywords = ['engineer', 'developer', 'manager', 'lead', 'director', 'vice president', 'vp', 'architect', 'analyst', 'consultant', 'specialist', 'intern', 'student', 'fellow', 'head', 'founder', 'co-founder', 'ceo', 'cto', 'cfo', 'executive', 'officer', 'scientist', 'researcher', 'designer', 'writer', 'hiring', 'recruiter', 'talent', 'ex-', 'adobe', 'google', 'microsoft', 'amazon', 'meta', 'apple', 'netflix', 'uber', 'salesforce'];
+      
+      const nextIsHeadline = headlineKeywords.some(kw => nextLineLower.includes(kw)) || nextLineLower.includes('@') || nextLineLower.includes('||') || nextLineLower.includes('|');
+      const nextIsLocation = locationKeywords.some(kw => nextLineLower.includes(kw)) || nextLineLower.includes(',');
+      
+      if (nextIsHeadline || nextIsLocation) {
+        score += 30;
+      }
+    }
+
+    candidates.push({ index: i, line: lines[i], score });
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+
+  let name = '';
+  let nameIdx = -1;
+  if (candidates.length > 0 && candidates[0].score > -100) {
+    name = candidates[0].line.rawText;
+    nameIdx = candidates[0].index;
+  }
+
+  // Fallback to first non-contact line if no candidate matched
   if (!name) {
-    for (let i = searchStart; i < searchEnd; i++) {
-      const line = lines[i].normalizedText;
-      const lower = line.toLowerCase();
+    for (let i = 0; i < lines.length; i++) {
+      const lower = lines[i].normalizedText.toLowerCase();
       if (
         lower.includes('(linkedin)') ||
         lower.includes('linkedin.com') ||
@@ -232,18 +256,59 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
   let headline = '';
   let location = '';
   if (nameIdx !== -1) {
-    if (nameIdx + 1 < searchEnd && !SECTION_HEADINGS[lines[nameIdx + 1].normalizedText.toLowerCase()]) {
+    const diff = firstMainHeadingIdx - nameIdx;
+    if (diff === 3) {
       headline = lines[nameIdx + 1].rawText;
-      if (nameIdx + 2 < searchEnd && !SECTION_HEADINGS[lines[nameIdx + 2].normalizedText.toLowerCase()]) {
-        location = lines[nameIdx + 2].rawText;
+      location = lines[nameIdx + 2].rawText;
+    } else if (diff === 2) {
+      const nextLine = lines[nameIdx + 1].normalizedText.toLowerCase();
+      const locationKeywords = ['india', 'area', 'united states', 'usa', 'uk', 'london', 'bengaluru', 'bangalore', 'noida', 'delhi', 'mumbai', 'san francisco', 'bay area', 'california', 'new york', 'germany', 'singapore', 'ncr', 'district', 'county', 'region', 'city'];
+      const hasLocationWord = locationKeywords.some(kw => nextLine.includes(kw)) || nextLine.includes(',');
+      if (hasLocationWord) {
+        location = lines[nameIdx + 1].rawText;
+      } else {
+        headline = lines[nameIdx + 1].rawText;
       }
+    } else if (diff > 3) {
+      const headlineParts = [];
+      for (let k = nameIdx + 1; k < firstMainHeadingIdx - 1; k++) {
+        headlineParts.push(lines[k].rawText);
+      }
+      headline = headlineParts.join(' ');
+      location = lines[firstMainHeadingIdx - 1].rawText;
+    }
+  }
+
+  // 2. Section state machine routing (second pass)
+  let activeSection = 'NONE';
+  const sectionContent = {
+    CONTACT: [],
+    SKILLS: [],
+    CERTIFICATIONS: [],
+    PROJECTS: [],
+    LANGUAGES: [],
+    SUMMARY: [],
+    EXPERIENCE: [],
+    EDUCATION: []
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const lineObj = lines[i];
+    const textLower = lineObj.normalizedText.toLowerCase();
+
+    if (SECTION_HEADINGS[textLower]) {
+      activeSection = SECTION_HEADINGS[textLower];
+      continue;
     }
 
-    // Clean sectionContent to remove header fields if they leaked
-    const skipIndices = [nameIdx, nameIdx + 1, nameIdx + 2];
-    Object.keys(sectionContent).forEach(section => {
-      sectionContent[section] = sectionContent[section].filter(l => !skipIndices.includes(l.originalIndex));
-    });
+    // Skip Name, Headline, and Location to prevent leakage into sidebar sections
+    if (nameIdx !== -1 && i >= nameIdx && i < firstMainHeadingIdx) {
+      continue;
+    }
+
+    if (activeSection !== 'NONE') {
+      sectionContent[activeSection].push({ ...lineObj, originalIndex: i });
+    }
   }
 
   // Extract Contact links (excluding main LinkedIn profile)
@@ -298,7 +363,7 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
   let currentEdu = null;
   sectionContent.EDUCATION.forEach(l => {
     const txt = l.normalizedText;
-    const isYearRange = /^\d{4}\s*-\s*(?:\d{4}|present)$/i.test(txt) || /^\d{4}$/.test(txt);
+    const isYearRange = /^\d{4}\s*[-–—]\s*(?:\d{4}|present)$/i.test(txt) || /^\d{4}$/.test(txt);
     const isDegree = /bachelor|master|btech|mtech|phd|diploma|degree|high school/i.test(txt);
     const isInstitution = !isYearRange && !isDegree;
 
@@ -322,7 +387,7 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
       };
     } else if (currentEdu) {
       if (isYearRange) {
-        const years = txt.split('-').map(y => y.trim());
+        const years = txt.split(/[-–—]/).map(y => y.trim());
         currentEdu.startYear = years[0];
         currentEdu.endYear = years[1] || '';
       } else {
@@ -338,10 +403,10 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
     education.push(currentEdu);
   }
 
-  // Parse Experience
+  // Parse Experience (supporting en-dash, em-dash and prevention of company override in promotion/multi-role flows)
   const experiences = [];
-  const dateRangeRegex = /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+\d{4}\s*-\s*(?:present|(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+\d{4})/i;
-  const yearRangeRegex = /^\d{4}\s*-\s*(?:present|\d{4})/i;
+  const dateRangeRegex = /(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+\d{4}\s*[-–—]\s*(?:present|(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+\d{4})/i;
+  const yearRangeRegex = /^\d{4}\s*[-–—]\s*(?:present|\d{4})/i;
   
   let currentCompany = '';
   let currentCompanyDuration = '';
@@ -394,7 +459,19 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
           currentCompanyDuration = prevPrev;
         } else if (!isPrevPrevDuration) {
           const prevPrevIsWord = prevPrev.length > 0 && prevPrev.length < 50;
-          if (prevPrevIsWord && j > 1) {
+          let isNewCompany = prevPrevIsWord;
+          if (prevPrevIsWord && j > 2) {
+            const lineBeforePrevPrev = expLines[j - 3].normalizedText;
+            const lineBeforeIsDateOrDuration = dateRangeRegex.test(lineBeforePrevPrev) || yearRangeRegex.test(lineBeforePrevPrev) || /^\d+\s+years?\s*(?:\d+\s+months?)?$/i.test(lineBeforePrevPrev) || /^\d+\s+months?$/i.test(lineBeforePrevPrev) || /less than a year/i.test(lineBeforePrevPrev);
+            
+            const locationKeywords = ['india', 'area', 'united states', 'usa', 'uk', 'london', 'bengaluru', 'bangalore', 'noida', 'delhi', 'mumbai', 'san francisco', 'bay area', 'california', 'new york', 'germany', 'singapore', 'ncr', 'district', 'county', 'region', 'city'];
+            const prevPrevIsLocation = locationKeywords.some(kw => prevPrev.toLowerCase().includes(kw)) || prevPrev.includes(',');
+            
+            if (lineBeforeIsDateOrDuration || prevPrevIsLocation) {
+              isNewCompany = false;
+            }
+          }
+          if (isNewCompany) {
             company = expLines[j - 2].rawText;
             currentCompany = company;
           }
@@ -455,7 +532,7 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
   }
 
   const confidence = {
-    name: name && name !== 'Unknown Contact' ? (slugWords.length > 0 && slugWords.some(w => name.toLowerCase().includes(w)) ? 0.99 : 0.75) : 0.0,
+    name: name && name !== 'Unknown' ? 0.99 : 0.0,
     email: email ? 0.99 : 0.0,
     profileUrl: profileUrl ? 0.99 : 0.0,
     skills: skills.length > 0 ? 0.95 : 0.0,
@@ -464,7 +541,7 @@ export async function parseLinkedInPDF(buffer, overrideText = null) {
   };
 
   const validation = {
-    nameValid: name && name !== 'Unknown Contact' && name.length >= 2,
+    nameValid: name && name !== 'Unknown' && name.length >= 2,
     emailValid: email ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) : false,
     profileUrlValid: profileUrl ? profileUrl.includes('linkedin.com') : false,
     hasExperience: experiences.length > 0,
