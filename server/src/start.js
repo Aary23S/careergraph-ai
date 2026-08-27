@@ -49,6 +49,14 @@ export async function startServer({
     console.error('[Start] Failed to initialize Telegram Polling:', err);
   }
 
+  // Initialize AI Worker
+  try {
+    await import('./workers/ai.worker.js');
+    console.log('[Start] AI Worker module initialized.');
+  } catch (err) {
+    console.error('[Start] Failed to initialize AI Worker:', err);
+  }
+
   return new Promise((resolve, reject) => {
     const server = app.listen(port, host, () => {
       console.log(`CareerGraph API listening on port ${port}`);

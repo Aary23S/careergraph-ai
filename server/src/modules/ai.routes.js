@@ -8,7 +8,7 @@ const router = Router();
 router.get('/health', async (req, res) => {
   try {
     const available = await aiService.healthCheck();
-    const summary = aiObservability.getSummaryReport();
+    const summary = await aiObservability.getSummaryReport();
     return res.json({
       success: true,
       data: {
@@ -42,9 +42,9 @@ router.get('/health', async (req, res) => {
   }
 });
 
-router.get('/metrics', (req, res) => {
+router.get('/metrics', async (req, res) => {
   try {
-    const summary = aiObservability.getSummaryReport();
+    const summary = await aiObservability.getSummaryReport();
     return res.json({
       success: true,
       data: summary

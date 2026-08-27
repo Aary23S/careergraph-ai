@@ -5,6 +5,7 @@ import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
 import { buildConnectionAiInput } from './connection-ai-input.service.js';
 import { aiObservability } from './ai/observability.service.js';
+import { aiQueue, generateJobId } from '../queues/ai.queue.js';
 
 export const connectionAiSchema = Joi.object({
   professionalRole: Joi.string().allow('', null).default(''),
@@ -47,32 +48,14 @@ CRITICAL RULES:
 - JSON output only matching the schema exactly.`;
 }
 
-// Background Queue
-const queue = [];
-let processing = false;
+// Background Queue Fallbacks (kept simple for backward-comp observability stubs)
 let queueFailures = 0;
 
 aiObservability.registerQueueProvider('connection_enrichment', () => ({
-  pending: queue.length,
-  processing,
+  pending: 0,
+  processing: false,
   failed: queueFailures
 }));
-
-async function processQueue() {
-  if (processing) return;
-  processing = true;
-
-  while (queue.length > 0) {
-    const connectionId = queue.shift();
-    try {
-      await executeEnrichment(connectionId);
-    } catch (e) {
-      console.error(`[ConnectionAiEnrichmentService] Error processing connection ${connectionId}:`, e);
-    }
-  }
-
-  processing = false;
-}
 
 /**
  * Enqueues a Connection for async AI profile analysis.
@@ -111,8 +94,8 @@ export async function enqueueConnectionEnrichment(connectionId) {
       });
     }
 
-    queue.push(connectionId);
-    processQueue();
+    const stableJobId = generateJobId('connection_enrichment', connectionId, inputHash);
+    await aiQueue.add('connection_enrichment', { entityId: connectionId }, { jobId: stableJobId });
   } catch (err) {
     console.error(`[ConnectionAiEnrichmentService] Failed to enqueue connection ${connectionId}:`, err);
   }

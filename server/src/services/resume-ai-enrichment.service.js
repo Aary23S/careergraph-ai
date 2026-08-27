@@ -8,6 +8,7 @@ import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
 import { fileStorage } from '../lib/storage.js';
 import { aiObservability } from './ai/observability.service.js';
+import { aiQueue, generateJobId } from '../queues/ai.queue.js';
 
 const require = createRequire(import.meta.url);
 let pdf = require('pdf-parse');
@@ -107,32 +108,14 @@ Resume Text:
 ${text}`;
 }
 
-// In-Memory Background Processing Queue
-const resumeQueue = [];
-let queueProcessing = false;
+// In-Memory Background Processing Queue Fallbacks (kept simple for backward-comp observability stubs)
 let queueFailures = 0;
 
 aiObservability.registerQueueProvider('resume_enrichment', () => ({
-  pending: resumeQueue.length,
-  processing: queueProcessing,
+  pending: 0,
+  processing: false,
   failed: queueFailures
 }));
-
-async function processQueue() {
-  if (queueProcessing) return;
-  queueProcessing = true;
-
-  while (resumeQueue.length > 0) {
-    const resumeId = resumeQueue.shift();
-    try {
-      await executeResumeEnrichment(resumeId);
-    } catch (e) {
-      console.error(`[ResumeAiEnrichmentService] Error processing resume ${resumeId} queue item:`, e);
-    }
-  }
-
-  queueProcessing = false;
-}
 
 /**
  * Enqueues a Resume ID for asynchronous AI enrichment.
@@ -178,8 +161,8 @@ export async function enqueueResumeEnrichment(resumeId) {
       });
     }
 
-    resumeQueue.push(resumeId);
-    processQueue();
+    const stableJobId = generateJobId('resume_enrichment', resumeId, inputHash);
+    await aiQueue.add('resume_enrichment', { entityId: resumeId }, { jobId: stableJobId });
   } catch (err) {
     console.error(`[ResumeAiEnrichmentService] Failed to enqueue resume ${resumeId}:`, err);
   }

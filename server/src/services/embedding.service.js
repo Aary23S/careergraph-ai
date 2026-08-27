@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
+import { aiQueue, generateJobId } from '../queues/ai.queue.js';
 
 /**
  * Computes SHA-256 hash for a given string.
@@ -135,11 +136,15 @@ export async function backfillConnectionsEmbedding({ userId, limit = 50, onlyMis
         }
       }
 
-      await getOrGenerateEmbedding({
+      const stableJobId = generateJobId('embedding_generation', conn.id, textHash);
+      await aiQueue.add('embedding_generation', {
         userId,
         entityType: 'connection',
         entityId: conn.id,
         text
+      }, {
+        jobId: stableJobId,
+        priority: 30
       });
       processed++;
     } catch (err) {
@@ -188,11 +193,15 @@ export async function backfillJobsEmbedding({ userId, limit = 50, onlyMissing = 
         }
       }
 
-      await getOrGenerateEmbedding({
+      const stableJobId = generateJobId('embedding_generation', job.id, textHash);
+      await aiQueue.add('embedding_generation', {
         userId,
         entityType: 'job',
         entityId: job.id,
         text
+      }, {
+        jobId: stableJobId,
+        priority: 30
       });
       processed++;
     } catch (err) {
@@ -241,11 +250,15 @@ export async function backfillResumesEmbedding({ userId, limit = 50, onlyMissing
         }
       }
 
-      await getOrGenerateEmbedding({
+      const stableJobId = generateJobId('embedding_generation', resume.id, textHash);
+      await aiQueue.add('embedding_generation', {
         userId,
         entityType: 'resume',
         entityId: resume.id,
         text
+      }, {
+        jobId: stableJobId,
+        priority: 30
       });
       processed++;
     } catch (err) {
