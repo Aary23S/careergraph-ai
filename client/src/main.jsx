@@ -121,6 +121,104 @@ const IconBarChart = () => (
   </svg>
 );
 
+const IconEdit = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12.5 3.5 16.5 7.5 7 17H3v-4L12.5 3.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M11 5 15 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconTrash = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3.5 5.5h13M8 5.5V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M5 5.5 5.7 16a1.5 1.5 0 0 0 1.5 1.4h5.6a1.5 1.5 0 0 0 1.5-1.4L15 5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8.3 8.7v5M11.7 8.7v5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconRefresh = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16.5 10a6.5 6.5 0 0 1-11.2 4.5M3.5 10a6.5 6.5 0 0 1 11.2-4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M14.2 4.8h2.6v2.6M5.8 15.2H3.2v-2.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconBuilding = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="2.5" width="9" height="15" rx="1" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M13 8h2.5a1 1 0 0 1 1 1v7.5H13" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M6.5 5.5h1.2M6.5 8.3h1.2M6.5 11.1h1.2M9.3 5.5h1.2M9.3 8.3h1.2M9.3 11.1h1.2M6.5 14h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+  </svg>
+);
+
+const IconMapPin = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 17.5s5.5-4.9 5.5-9.1a5.5 5.5 0 1 0-11 0c0 4.2 5.5 9.1 5.5 9.1Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <circle cx="10" cy="8.3" r="2" stroke="currentColor" strokeWidth="1.4" />
+  </svg>
+);
+
+const IconSearch = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="8.8" cy="8.8" r="5.8" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M13 13l4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconSliders = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 5.5h9M15.5 5.5h1.5M3 14.5h5M11.5 14.5h5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <circle cx="12.5" cy="5.5" r="2" stroke="currentColor" strokeWidth="1.4" />
+    <circle cx="8.5" cy="14.5" r="2" stroke="currentColor" strokeWidth="1.4" />
+  </svg>
+);
+
+const IconLayers = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 2.5 17.5 7 10 11.5 2.5 7 10 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M2.5 11 10 15.5 17.5 11M2.5 15 10 19.5 17.5 15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconUpload = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 13V3.5M6.5 6.8 10 3.3l3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M3.5 13.5v2a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconFile = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5.5 2.5h6L15.5 6.5v11a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M11.5 2.5V6a1 1 0 0 0 1 1h3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconArrowLeft = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 10H4M4 10 9 5M4 10l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconChevronRight = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7.5 4.5 13 10l-5.5 5.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconStar = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10 2.8 12.3 7.6l5.2.8-3.8 3.7.9 5.2-4.6-2.5-4.6 2.5.9-5.2-3.8-3.7 5.2-.8L10 2.8Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconInbox = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 11.5 5.3 4.3A1.5 1.5 0 0 1 6.7 3.3h6.6a1.5 1.5 0 0 1 1.4 1L17 11.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M3 11.5h4.2l1 2h3.6l1-2H17V15a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 15v-3.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  </svg>
+);
+
 // Pure presentational helper — formats a ISO date string as a short relative label.
 // Falls back to a locale date once the value is more than a week old.
 function formatRelativeTime(dateStr) {
@@ -144,6 +242,27 @@ const DASH_ACTIVITY_META = {
   application_event: { label: 'Application', icon: IconBriefcase, chip: 'dash-chip--primary' },
   outreach_event: { label: 'Outreach', icon: IconSend, chip: 'dash-chip--accent' },
   notification: { label: 'Notification', icon: IconBell, chip: 'dash-chip--info' }
+};
+
+// Pure presentational helper — first-letter initials for an avatar chip, e.g. "Jane Doe" -> "JD"
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+// Maps a Connection's relationshipStatus value to a badge color variant — display only.
+const CONN_STATUS_VARIANT = {
+  not_contacted: 'badge-secondary',
+  researching: 'badge-info',
+  contacted: 'badge-info',
+  replied: 'badge-primary',
+  conversation: 'badge-primary',
+  referral_requested: 'badge-warning',
+  referral_received: 'badge-success',
+  closed: 'badge-success'
 };
 
 function App() {
@@ -1844,148 +1963,176 @@ function App() {
 
         {/* CONNECTIONS CRM TAB */}
         {activeTab === 'connections' && (
-          <div>
-            <div className="page-header">
-              <h1 className="page-title">Connections CRM</h1>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button className="btn btn-secondary" onClick={() => setModal('csv')}>
+          <div className="conn-page">
+            <div className="conn-header">
+              <div>
+                <h1 className="conn-title">Connections CRM</h1>
+                <p className="conn-subtitle">Your professional network, organized and scored</p>
+              </div>
+              <div className="conn-header-actions">
+                <button className="conn-btn conn-btn--ghost" onClick={() => setModal('csv')}>
+                  <IconUpload />
                   Import CSV
                 </button>
-                <button className="btn btn-secondary" onClick={() => {
+                <button className="conn-btn conn-btn--ghost" onClick={() => {
                   setEnrichmentPreview(null);
                   setEnrichmentError(null);
                   setModal('linkedin_pdf');
                 }}>
+                  <IconFile />
                   Import LinkedIn PDF
                 </button>
-                <button className="btn btn-primary" onClick={() => { setEditItem(null); setModal('connection'); }}>
+                <button className="conn-btn conn-btn--primary" onClick={() => { setEditItem(null); setModal('connection'); }}>
+                  <IconUsers />
                   Add Connection
                 </button>
               </div>
             </div>
 
             {/* Sub Tabs Selection */}
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+            <div className="conn-subnav">
               <button
-                className={`btn ${connectionSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                className={`conn-subnav-btn ${connectionSubTab === 'overview' ? 'active' : ''}`}
                 onClick={() => { setConnectionSubTab('overview'); setActiveCompanyKey(null); }}
               >
+                <IconBarChart />
                 Network Overview
               </button>
               <button
-                className={`btn ${connectionSubTab === 'all' && !connFilters.followUpDue ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                className={`conn-subnav-btn ${connectionSubTab === 'all' && !connFilters.followUpDue ? 'active' : ''}`}
                 onClick={() => { setConnFilters({ ...connFilters, followUpDue: undefined, page: 1 }); setConnectionSubTab('all'); setActiveCompanyKey(null); }}
               >
+                <IconUsers />
                 All Connections
               </button>
               <button
-                className={`btn ${connectionSubTab === 'companies' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                className={`conn-subnav-btn ${connectionSubTab === 'companies' ? 'active' : ''}`}
                 onClick={() => { setConnectionSubTab('companies'); setActiveCompanyKey(null); }}
               >
+                <IconBuilding />
                 Companies
               </button>
               <button
-                className={`btn ${connectionSubTab === 'saved_views' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                className={`conn-subnav-btn ${connectionSubTab === 'saved_views' ? 'active' : ''}`}
                 onClick={() => { setConnectionSubTab('saved_views'); setActiveCompanyKey(null); }}
               >
+                <IconLayers />
                 Saved Views
               </button>
               <button
-                className={`btn ${connectionSubTab === 'all' && connFilters.followUpDue ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                className={`conn-subnav-btn ${connectionSubTab === 'all' && connFilters.followUpDue ? 'active' : ''}`}
                 onClick={() => { setConnFilters({ ...connFilters, followUpDue: true, page: 1 }); setConnectionSubTab('all'); setActiveCompanyKey(null); }}
               >
+                <IconClockAlert />
                 Follow-ups Due
+                {dashboardOverview?.followUps && (dashboardOverview.followUps.overdue + dashboardOverview.followUps.today) > 0 && (
+                  <span className="conn-subnav-badge">{dashboardOverview.followUps.overdue + dashboardOverview.followUps.today}</span>
+                )}
               </button>
             </div>
 
             {/* OVERVIEW SUB-TAB */}
             {connectionSubTab === 'overview' && (
               <div>
-                {loadingOverview && <div className="empty-state">Loading network insights...</div>}
-                {overviewError && <div className="empty-state" style={{ color: 'var(--danger)' }}>{overviewError}</div>}
+                {loadingOverview && <div className="conn-empty">Loading network insights...</div>}
+                {overviewError && <div className="conn-empty conn-empty--error">{overviewError}</div>}
 
                 {!loadingOverview && !overviewError && dashboardOverview && (
                   <div>
                     {/* KPI Cards Grid */}
-                    <div className="metrics-grid" style={{ marginBottom: '24px' }}>
-                      <div className="metric-card">
-                        <div className="metric-label">Total Connections</div>
-                        <div className="metric-value">{dashboardOverview.summary.totalConnections}</div>
-                      </div>
-                      <div className="metric-card">
-                        <div className="metric-label">Companies</div>
-                        <div className="metric-value">{dashboardOverview.summary.companies}</div>
-                      </div>
-                      <div className="metric-card">
-                        <div className="metric-label">High Priority</div>
-                        <div className="metric-value" style={{ color: 'var(--warning)' }}>
-                          {dashboardOverview.summary.highPriority}
+                    <div className="conn-stat-grid">
+                      <div className="conn-stat-card">
+                        <span className="conn-stat-icon conn-stat-icon--primary"><IconUsers /></span>
+                        <div>
+                          <div className="conn-stat-label">Total Connections</div>
+                          <div className="conn-stat-value">{dashboardOverview.summary.totalConnections}</div>
                         </div>
                       </div>
-                      <div className="metric-card">
-                        <div className="metric-label">Never Contacted</div>
-                        <div className="metric-value">{dashboardOverview.summary.neverContacted}</div>
-                      </div>
-                      <div className="metric-card">
-                        <div className="metric-label">Follow-ups Due</div>
-                        <div className="metric-value" style={{ color: dashboardOverview.summary.followUpsDue > 0 ? 'var(--danger)' : '#fff' }}>
-                          {dashboardOverview.summary.followUpsDue}
+                      <div className="conn-stat-card">
+                        <span className="conn-stat-icon conn-stat-icon--accent"><IconBuilding /></span>
+                        <div>
+                          <div className="conn-stat-label">Companies</div>
+                          <div className="conn-stat-value">{dashboardOverview.summary.companies}</div>
                         </div>
                       </div>
-                      <div className="metric-card">
-                        <div className="metric-label">With Email</div>
-                        <div className="metric-value">{dashboardOverview.summary.withEmail}</div>
+                      <div className={`conn-stat-card ${dashboardOverview.summary.highPriority > 0 ? 'conn-stat-card--warn' : ''}`}>
+                        <span className="conn-stat-icon conn-stat-icon--warning"><IconStar /></span>
+                        <div>
+                          <div className="conn-stat-label">High Priority</div>
+                          <div className="conn-stat-value">{dashboardOverview.summary.highPriority}</div>
+                        </div>
+                      </div>
+                      <div className="conn-stat-card">
+                        <span className="conn-stat-icon conn-stat-icon--info"><IconInbox /></span>
+                        <div>
+                          <div className="conn-stat-label">Never Contacted</div>
+                          <div className="conn-stat-value">{dashboardOverview.summary.neverContacted}</div>
+                        </div>
+                      </div>
+                      <div className={`conn-stat-card ${dashboardOverview.summary.followUpsDue > 0 ? 'conn-stat-card--danger' : ''}`}>
+                        <span className="conn-stat-icon conn-stat-icon--danger"><IconClockAlert /></span>
+                        <div>
+                          <div className="conn-stat-label">Follow-ups Due</div>
+                          <div className="conn-stat-value">{dashboardOverview.summary.followUpsDue}</div>
+                        </div>
+                      </div>
+                      <div className="conn-stat-card">
+                        <span className="conn-stat-icon conn-stat-icon--success"><IconMail /></span>
+                        <div>
+                          <div className="conn-stat-label">With Email</div>
+                          <div className="conn-stat-value">{dashboardOverview.summary.withEmail}</div>
+                        </div>
                       </div>
                     </div>
 
                     {/* Second Row: Growth & Followups */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                    <div className="conn-grid-2-1">
                       {/* Growth timeline list */}
-                      <div className="card-panel">
-                        <h2 className="card-title">Network Growth History</h2>
+                      <div className="conn-panel">
+                        <div className="conn-panel-head">
+                          <span className="conn-panel-icon"><IconBarChart /></span>
+                          <h2 className="conn-panel-title">Network Growth History</h2>
+                        </div>
                         {dashboardOverview.growth && dashboardOverview.growth.length > 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+                          <div className="conn-growth-list">
                             {dashboardOverview.growth.slice(-6).map((item) => (
-                              <div key={item.month} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <span style={{ width: '80px', fontWeight: 600 }}>{item.month}</span>
-                                <div style={{ flex: 1, background: 'var(--bg-secondary)', height: '16px', borderRadius: '4px', overflow: 'hidden' }}>
-                                  <div style={{ background: 'var(--primary)', height: '100%', width: `${Math.min(100, (item.total / dashboardOverview.summary.totalConnections) * 100)}%` }} />
+                              <div key={item.month} className="conn-growth-row">
+                                <span className="conn-growth-month">{item.month}</span>
+                                <div className="conn-growth-track">
+                                  <div className="conn-growth-fill" style={{ width: `${Math.min(100, (item.total / dashboardOverview.summary.totalConnections) * 100)}%` }} />
                                 </div>
-                                <span style={{ width: '100px', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                <span className="conn-growth-value">
                                   {item.total} total (+{item.added})
                                 </span>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="empty-state">No connection dates recorded.</div>
+                          <div className="conn-empty">No connection dates recorded.</div>
                         )}
                       </div>
 
                       {/* Follow-up center card */}
-                      <div className="card-panel">
-                        <h2 className="card-title">Follow-up Summary</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', borderLeft: '4px solid var(--danger)', borderRadius: '6px' }}>
-                            <span style={{ fontWeight: 600, color: 'var(--danger)' }}>🔴 Overdue</span>
-                            <strong style={{ fontSize: '1.2rem' }}>{dashboardOverview.followUps.overdue}</strong>
+                      <div className="conn-panel">
+                        <div className="conn-panel-head">
+                          <span className="conn-panel-icon"><IconClockAlert /></span>
+                          <h2 className="conn-panel-title">Follow-up Summary</h2>
+                        </div>
+                        <div className="conn-followup-list">
+                          <div className="conn-followup-row conn-followup-row--danger">
+                            <span className="conn-followup-label"><span className="conn-dot conn-dot--danger" />Overdue</span>
+                            <strong>{dashboardOverview.followUps.overdue}</strong>
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(245, 158, 11, 0.1)', borderLeft: '4px solid var(--warning)', borderRadius: '6px' }}>
-                            <span style={{ fontWeight: 600, color: 'var(--warning)' }}>🟠 Today</span>
-                            <strong style={{ fontSize: '1.2rem' }}>{dashboardOverview.followUps.today}</strong>
+                          <div className="conn-followup-row conn-followup-row--warning">
+                            <span className="conn-followup-label"><span className="conn-dot conn-dot--warning" />Today</span>
+                            <strong>{dashboardOverview.followUps.today}</strong>
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(59, 130, 246, 0.1)', borderLeft: '4px solid var(--info)', borderRadius: '6px' }}>
-                            <span style={{ fontWeight: 600, color: 'var(--info)' }}>🟡 This Week</span>
-                            <strong style={{ fontSize: '1.2rem' }}>{dashboardOverview.followUps.thisWeek}</strong>
+                          <div className="conn-followup-row conn-followup-row--info">
+                            <span className="conn-followup-label"><span className="conn-dot conn-dot--info" />This Week</span>
+                            <strong>{dashboardOverview.followUps.thisWeek}</strong>
                           </div>
                           <button
-                            className="btn btn-secondary"
-                            style={{ width: '100%', padding: '10px' }}
+                            className="conn-btn conn-btn--ghost conn-btn--block"
                             onClick={() => {
                               setConnFilters({ ...connFilters, followUpDue: true, page: 1 });
                               setConnectionSubTab('all');
@@ -1998,139 +2145,146 @@ function App() {
                     </div>
 
                     {/* Third Row: Top Companies & Role Distribution */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-
+                    <div className="conn-grid-2">
                       {/* Top Companies */}
-                      <div className="card-panel">
-                        <h2 className="card-title">Top Companies</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                      <div className="conn-panel">
+                        <div className="conn-panel-head">
+                          <span className="conn-panel-icon"><IconBuilding /></span>
+                          <h2 className="conn-panel-title">Top Companies</h2>
+                        </div>
+                        <div className="conn-list">
                           {dashboardOverview.topCompanies && dashboardOverview.topCompanies.length > 0 ? (
                             dashboardOverview.topCompanies.map((c) => (
                               <div
                                 key={c.normalizedName}
-                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
-                                className="activity-item"
+                                className="conn-list-row"
                                 onClick={() => {
                                   setConnFilters({ ...connFilters, company: c.name, page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
-                                <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{c.name}</span>
+                                <span className="conn-list-row-label">{c.name}</span>
                                 <span className="badge badge-info">{c.count} connections</span>
                               </div>
                             ))
                           ) : (
-                            <div className="empty-state">No company aggregates available.</div>
+                            <div className="conn-empty">No company aggregates available.</div>
                           )}
                         </div>
                       </div>
 
                       {/* Role Distribution */}
-                      <div className="card-panel">
-                        <h2 className="card-title">Role Distribution</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                      <div className="conn-panel">
+                        <div className="conn-panel-head">
+                          <span className="conn-panel-icon"><IconBriefcase /></span>
+                          <h2 className="conn-panel-title">Role Distribution</h2>
+                        </div>
+                        <div className="conn-list">
                           {dashboardOverview.roles && dashboardOverview.roles.length > 0 ? (
                             dashboardOverview.roles.map((r) => (
                               <div
                                 key={r.category}
-                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
-                                className="activity-item"
+                                className="conn-list-row"
                                 onClick={() => {
                                   setConnFilters({ ...connFilters, roleCategory: [r.category], page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
-                                <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{r.category.replace('_', ' ')}</span>
+                                <span className="conn-list-row-label conn-list-row-label--capitalize">{r.category.replace('_', ' ')}</span>
                                 <span className="badge badge-success">{r.count}</span>
                               </div>
                             ))
                           ) : (
-                            <div className="empty-state">No role category aggregates available.</div>
+                            <div className="conn-empty">No role category aggregates available.</div>
                           )}
                         </div>
                       </div>
-
                     </div>
 
                     {/* Fourth Row: Seniority & Relationship Health */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-
+                    <div className="conn-grid-2">
                       {/* Seniority Distribution */}
-                      <div className="card-panel">
-                        <h2 className="card-title">Seniority Distribution</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                      <div className="conn-panel">
+                        <div className="conn-panel-head">
+                          <span className="conn-panel-icon"><IconAward /></span>
+                          <h2 className="conn-panel-title">Seniority Distribution</h2>
+                        </div>
+                        <div className="conn-list">
                           {dashboardOverview.seniority && dashboardOverview.seniority.length > 0 ? (
                             dashboardOverview.seniority.map((s) => (
                               <div
                                 key={s.level}
-                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
-                                className="activity-item"
+                                className="conn-list-row"
                                 onClick={() => {
                                   setConnFilters({ ...connFilters, seniority: [s.level], page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
-                                <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{s.level}</span>
+                                <span className="conn-list-row-label conn-list-row-label--capitalize">{s.level}</span>
                                 <span className="badge badge-info">{s.count}</span>
                               </div>
                             ))
                           ) : (
-                            <div className="empty-state">No seniority level aggregates available.</div>
+                            <div className="conn-empty">No seniority level aggregates available.</div>
                           )}
                         </div>
                       </div>
 
                       {/* Relationship Health */}
-                      <div className="card-panel">
-                        <h2 className="card-title">Relationship Health</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                      <div className="conn-panel">
+                        <div className="conn-panel-head">
+                          <span className="conn-panel-icon"><IconUsers /></span>
+                          <h2 className="conn-panel-title">Relationship Health</h2>
+                        </div>
+                        <div className="conn-list">
                           {dashboardOverview.relationships && dashboardOverview.relationships.length > 0 ? (
                             dashboardOverview.relationships.map((rel) => (
                               <div
                                 key={rel.status}
-                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
-                                className="activity-item"
+                                className="conn-list-row"
                                 onClick={() => {
                                   setConnFilters({ ...connFilters, relationshipStatus: rel.status, page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
-                                <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{rel.status.replace('_', ' ')}</span>
+                                <span className="conn-list-row-label conn-list-row-label--capitalize">{rel.status.replace('_', ' ')}</span>
                                 <span className="badge badge-warning">{rel.count}</span>
                               </div>
                             ))
                           ) : (
-                            <div className="empty-state">No relationship status aggregates available.</div>
+                            <div className="conn-empty">No relationship status aggregates available.</div>
                           )}
                         </div>
                       </div>
-
                     </div>
 
                     {/* Fifth Row: High Priority Connections */}
-                    <div className="card-panel" style={{ marginBottom: '24px' }}>
-                      <h2 className="card-title">High Priority Connections</h2>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <span className="conn-panel-icon"><IconStar /></span>
+                        <h2 className="conn-panel-title">High Priority Connections</h2>
+                      </div>
+                      <div className="conn-list">
                         {dashboardOverview.highPriorityConnections && dashboardOverview.highPriorityConnections.length > 0 ? (
                           dashboardOverview.highPriorityConnections.map((h) => (
                             <div
                               key={h.id}
-                              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '12px', borderRadius: '6px' }}
-                              className="activity-item"
+                              className="conn-person-row"
                               onClick={() => {
                                 setActiveConnectionId(h.id);
                                 setActiveTab('connection-detail');
                               }}
                             >
-                              <div>
-                                <span style={{ fontWeight: 600, fontSize: '1.05rem', color: '#fff' }}>{h.name}</span>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{h.title || 'No Title'} &bull; {h.company || 'Unknown Company'}</div>
+                              <span className="conn-avatar">{getInitials(h.name)}</span>
+                              <div className="conn-person-info">
+                                <span className="conn-person-name">{h.name}</span>
+                                <span className="conn-person-meta">{h.title || 'No Title'} &bull; {h.company || 'Unknown Company'}</span>
                               </div>
                               <span className="badge badge-success">Score: {h.connectionScore}</span>
                             </div>
                           ))
                         ) : (
-                          <div className="empty-state">No high priority connections set. Go to All Connections to mark priority.</div>
+                          <div className="conn-empty">No high priority connections set. Go to All Connections to mark priority.</div>
                         )}
                       </div>
                     </div>
@@ -2142,136 +2296,158 @@ function App() {
             {connectionSubTab === 'companies' && activeCompanyKey && (
               <div>
                 <button
-                  className="btn btn-secondary"
-                  style={{ marginBottom: '16px' }}
+                  className="conn-back-btn"
                   onClick={() => { setActiveCompanyKey(null); setCompanyDetailData(null); }}
                 >
-                  &larr; Back to Company Directory
+                  <IconArrowLeft />
+                  Back to Company Directory
                 </button>
 
-                {loadingCompanyDetail && <div className="empty-state">Loading company stats...</div>}
+                {loadingCompanyDetail && <div className="conn-empty">Loading company stats...</div>}
 
                 {!loadingCompanyDetail && companyDetailData && (
                   <div>
-                    <div className="page-header" style={{ marginBottom: '24px' }}>
+                    <div className="conn-company-head">
+                      <span className="conn-avatar conn-avatar--lg"><IconBuilding /></span>
                       <div>
-                        <h1 className="page-title">{companyDetailData.companyName}</h1>
-                        <p style={{ color: 'var(--text-secondary)' }}>{companyDetailData.totalConnections} Contacts in your network</p>
+                        <h1 className="conn-title">{companyDetailData.companyName}</h1>
+                        <p className="conn-subtitle">{companyDetailData.totalConnections} contacts in your network</p>
                       </div>
                     </div>
 
                     {/* Quick Stats Grid */}
-                    <div className="metrics-grid" style={{ marginBottom: '24px' }}>
-                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                    <div className="conn-stat-grid">
+                      <div className="conn-stat-card conn-stat-card--link" onClick={() => {
                         setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], page: 1 });
                         setConnectionSubTab('all');
                       }}>
-                        <div className="metric-label">Total Connections</div>
-                        <div className="metric-value">{companyDetailData.totalConnections}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View all &rarr;</div>
+                        <span className="conn-stat-icon conn-stat-icon--primary"><IconUsers /></span>
+                        <div>
+                          <div className="conn-stat-label">Total Connections</div>
+                          <div className="conn-stat-value">{companyDetailData.totalConnections}</div>
+                          <div className="conn-stat-link-text">View all <IconChevronRight /></div>
+                        </div>
                       </div>
-                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                      <div className="conn-stat-card conn-stat-card--link" onClick={() => {
                         setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], roleCategory: ['recruiting'], page: 1 });
                         setConnectionSubTab('all');
                       }}>
-                        <div className="metric-label">Recruiters</div>
-                        <div className="metric-value">{companyDetailData.recruiters}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
+                        <span className="conn-stat-icon conn-stat-icon--accent"><IconSend /></span>
+                        <div>
+                          <div className="conn-stat-label">Recruiters</div>
+                          <div className="conn-stat-value">{companyDetailData.recruiters}</div>
+                          <div className="conn-stat-link-text">View list <IconChevronRight /></div>
+                        </div>
                       </div>
-                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                      <div className="conn-stat-card conn-stat-card--link" onClick={() => {
                         setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], roleCategory: ['engineering'], page: 1 });
                         setConnectionSubTab('all');
                       }}>
-                        <div className="metric-label">Engineering Leaders</div>
-                        <div className="metric-value">{companyDetailData.engineeringLeaders}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
+                        <span className="conn-stat-icon conn-stat-icon--info"><IconBriefcase /></span>
+                        <div>
+                          <div className="conn-stat-label">Engineering Leaders</div>
+                          <div className="conn-stat-value">{companyDetailData.engineeringLeaders}</div>
+                          <div className="conn-stat-link-text">View list <IconChevronRight /></div>
+                        </div>
                       </div>
-                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                      <div className="conn-stat-card conn-stat-card--link" onClick={() => {
                         setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], priority: ['high'], page: 1 });
                         setConnectionSubTab('all');
                       }}>
-                        <div className="metric-label">High Priority</div>
-                        <div className="metric-value" style={{ color: 'var(--warning)' }}>{companyDetailData.highPriority}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
+                        <span className="conn-stat-icon conn-stat-icon--warning"><IconStar /></span>
+                        <div>
+                          <div className="conn-stat-label">High Priority</div>
+                          <div className="conn-stat-value">{companyDetailData.highPriority}</div>
+                          <div className="conn-stat-link-text">View list <IconChevronRight /></div>
+                        </div>
                       </div>
-                      <div className="metric-card" style={{ cursor: 'pointer' }} onClick={() => {
+                      <div className="conn-stat-card conn-stat-card--link" onClick={() => {
                         setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], relationshipStatus: 'not_contacted', page: 1 });
                         setConnectionSubTab('all');
                       }}>
-                        <div className="metric-label">Not Contacted</div>
-                        <div className="metric-value">{companyDetailData.notContacted}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>View list &rarr;</div>
+                        <span className="conn-stat-icon conn-stat-icon--danger"><IconInbox /></span>
+                        <div>
+                          <div className="conn-stat-label">Not Contacted</div>
+                          <div className="conn-stat-value">{companyDetailData.notContacted}</div>
+                          <div className="conn-stat-link-text">View list <IconChevronRight /></div>
+                        </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                    <div className="conn-grid-2">
                       {/* Role distribution */}
-                      <div className="card-panel">
-                        <h2 className="card-title">Role Distribution</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                      <div className="conn-panel">
+                        <div className="conn-panel-head">
+                          <span className="conn-panel-icon"><IconBriefcase /></span>
+                          <h2 className="conn-panel-title">Role Distribution</h2>
+                        </div>
+                        <div className="conn-list">
                           {companyDetailData.rolesDistribution && companyDetailData.rolesDistribution.length > 0 ? (
                             companyDetailData.rolesDistribution.map(r => (
                               <div
                                 key={r.category}
-                                className="activity-item"
-                                style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', cursor: 'pointer' }}
+                                className="conn-list-row"
                                 onClick={() => {
                                   setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], roleCategory: [r.category], page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
-                                <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{r.category.replace('_', ' ')}</span>
+                                <span className="conn-list-row-label conn-list-row-label--capitalize">{r.category.replace('_', ' ')}</span>
                                 <span className="badge badge-info">{r.count}</span>
                               </div>
                             ))
                           ) : (
-                            <div className="empty-state">No roles logged.</div>
+                            <div className="conn-empty">No roles logged.</div>
                           )}
                         </div>
                       </div>
 
                       {/* Seniority distribution */}
-                      <div className="card-panel">
-                        <h2 className="card-title">Seniority Level</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                      <div className="conn-panel">
+                        <div className="conn-panel-head">
+                          <span className="conn-panel-icon"><IconAward /></span>
+                          <h2 className="conn-panel-title">Seniority Level</h2>
+                        </div>
+                        <div className="conn-list">
                           {companyDetailData.seniorityDistribution && companyDetailData.seniorityDistribution.length > 0 ? (
                             companyDetailData.seniorityDistribution.map(s => (
                               <div
                                 key={s.level}
-                                className="activity-item"
-                                style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', cursor: 'pointer' }}
+                                className="conn-list-row"
                                 onClick={() => {
                                   setConnFilters({ ...connFilters, companies: [companyDetailData.companyName], seniority: [s.level], page: 1 });
                                   setConnectionSubTab('all');
                                 }}
                               >
-                                <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{s.level}</span>
+                                <span className="conn-list-row-label conn-list-row-label--capitalize">{s.level}</span>
                                 <span className="badge badge-success">{s.count}</span>
                               </div>
                             ))
                           ) : (
-                            <div className="empty-state">No seniority logged.</div>
+                            <div className="conn-empty">No seniority logged.</div>
                           )}
                         </div>
                       </div>
                     </div>
 
                     {/* AI Derived Expertise aggregated dashboard */}
-                    <div className="card-panel" style={{ marginTop: '24px' }}>
-                      <h2 className="card-title">  AI-Derived Technical Expertise / Domains</h2>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>Aggregate count of contacts matching these technical expertise tags (derived by Ollama profile analysis).</p>
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <h2 className="conn-panel-title">AI-Derived Technical Expertise / Domains</h2>
+                      </div>
+                      <p className="conn-panel-desc">Aggregate count of contacts matching these technical expertise tags (derived by Ollama profile analysis).</p>
 
                       {companyDetailData.aiExpertise && companyDetailData.aiExpertise.length > 0 ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                        <div className="conn-chip-grid">
                           {companyDetailData.aiExpertise.map(exp => (
-                            <div key={exp.name} className="activity-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', alignItems: 'center' }}>
-                              <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{exp.name}</span>
+                            <div key={exp.name} className="conn-chip-card">
+                              <span>{exp.name}</span>
                               <span className="badge badge-primary">{exp.count}</span>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <div className="empty-state">No AI-derived expertise analysis available yet. Enrich your connections at this company to see aggregate insights.</div>
+                        <div className="conn-empty">No AI-derived expertise analysis available yet. Enrich your connections at this company to see aggregate insights.</div>
                       )}
                     </div>
 
@@ -2282,17 +2458,18 @@ function App() {
 
             {connectionSubTab === 'companies' && !activeCompanyKey && (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '24px', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Search companies..."
-                    value={companySearch}
-                    onChange={(e) => { setCompanySearch(e.target.value); setCompaniesPage(1); }}
-                    style={{ maxWidth: '300px' }}
-                  />
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <span>Sort by:</span>
+                <div className="conn-toolbar">
+                  <div className="conn-search-field">
+                    <IconSearch />
+                    <input
+                      type="text"
+                      placeholder="Search companies..."
+                      value={companySearch}
+                      onChange={(e) => { setCompanySearch(e.target.value); setCompaniesPage(1); }}
+                    />
+                  </div>
+                  <div className="conn-toolbar-sort">
+                    <span>Sort by</span>
                     <select
                       className="form-input"
                       value={companySortBy}
@@ -2316,12 +2493,12 @@ function App() {
                   </div>
                 </div>
 
-                <div className="card-panel">
+                <div className="conn-panel conn-panel--flush">
                   {companies.length === 0 ? (
-                    <div className="empty-state">No companies found in network.</div>
+                    <div className="conn-empty">No companies found in network.</div>
                   ) : (
                     <div className="data-table-container">
-                      <table className="data-table">
+                      <table className="data-table conn-table">
                         <thead>
                           <tr>
                             <th>Company</th>
@@ -2339,20 +2516,20 @@ function App() {
                             <tr key={c.companyKey}>
                               <td>
                                 <button
-                                  className="btn-link"
-                                  style={{ fontWeight: 700, fontSize: '1rem', textAlign: 'left' }}
+                                  className="conn-table-link"
                                   onClick={() => setActiveCompanyKey(c.companyKey)}
                                 >
+                                  <span className="conn-avatar conn-avatar--sm"><IconBuilding /></span>
                                   {c.companyName}
                                 </button>
                               </td>
-                              <td style={{ fontWeight: 600 }}>{c.connectionCount}</td>
+                              <td className="conn-cell-strong">{c.connectionCount}</td>
                               <td>{c.seniorPlusCount}</td>
                               <td>{c.engineeringCount}</td>
                               <td>{c.recruiterCount}</td>
-                              <td style={{ color: 'var(--success)' }}>{c.contactedCount}</td>
+                              <td className="conn-cell-success">{c.contactedCount}</td>
                               <td>{c.notContactedCount}</td>
-                              <td style={{ color: 'var(--warning)', fontWeight: 600 }}>{c.highPriorityCount}</td>
+                              <td className="conn-cell-warning">{c.highPriorityCount}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -2362,19 +2539,19 @@ function App() {
                 </div>
 
                 {companiesMeta.totalPages > 1 && (
-                  <div className="pagination" style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
+                  <div className="conn-pagination">
                     <button
-                      className="btn btn-secondary"
+                      className="conn-btn conn-btn--ghost"
                       disabled={companiesPage === 1}
                       onClick={() => setCompaniesPage(companiesPage - 1)}
                     >
                       Prev
                     </button>
-                    <span style={{ padding: '8px 16px', color: 'var(--text-secondary)' }}>
+                    <span className="conn-pagination-status">
                       Page {companiesPage} of {companiesMeta.totalPages}
                     </span>
                     <button
-                      className="btn btn-secondary"
+                      className="conn-btn conn-btn--ghost"
                       disabled={companiesPage === companiesMeta.totalPages}
                       onClick={() => setCompaniesPage(companiesPage + 1)}
                     >
@@ -2387,9 +2564,9 @@ function App() {
 
             {connectionSubTab === 'saved_views' && (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', alignItems: 'center' }}>
-                  <h2 style={{ fontSize: '1.2rem', fontWeight: 600 }}>Your Saved Reusable Segments</h2>
-                  <button className="btn btn-primary" onClick={() => {
+                <div className="conn-section-head">
+                  <h2 className="conn-section-title">Your Saved Reusable Segments</h2>
+                  <button className="conn-btn conn-btn--primary" onClick={() => {
                     setConnectionSubTab('all');
                     setConnFilters({
                       page: 1,
@@ -2410,45 +2587,43 @@ function App() {
                   </button>
                 </div>
 
-                <div className="card-panel">
-                  {savedViews.length === 0 ? (
-                    <div className="empty-state">No saved connection views found. Set filters in All Connections and click &quot;Save view&quot;.</div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {savedViews.map(view => (
-                        <div
-                          key={view.id}
-                          className="activity-item"
-                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}
-                        >
-                          <div>
-                            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{view.name}</span>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{view.description || 'No description provided'}</p>
-                          </div>
-                          <div style={{ display: 'flex', gap: '12px' }}>
-                            <button
-                              className="btn btn-secondary"
-                              onClick={() => handleLoadSavedView(view)}
-                            >
-                              Open view
-                            </button>
-                            <button
-                              className="btn btn-danger"
-                              onClick={async () => {
-                                if (confirm('Delete this saved view?')) {
-                                  await api.request(`/connections/views/${view.id}`, { method: 'DELETE' });
-                                  loadSavedViews();
-                                }
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </div>
+                {savedViews.length === 0 ? (
+                  <div className="conn-panel">
+                    <div className="conn-empty">No saved connection views found. Set filters in All Connections and click &quot;Save view&quot;.</div>
+                  </div>
+                ) : (
+                  <div className="conn-view-list">
+                    {savedViews.map(view => (
+                      <div key={view.id} className="conn-view-card">
+                        <span className="conn-view-icon"><IconLayers /></span>
+                        <div className="conn-view-info">
+                          <span className="conn-view-name">{view.name}</span>
+                          <p className="conn-view-desc">{view.description || 'No description provided'}</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        <div className="conn-view-actions">
+                          <button
+                            className="conn-btn conn-btn--ghost"
+                            onClick={() => handleLoadSavedView(view)}
+                          >
+                            Open view
+                          </button>
+                          <button
+                            className="conn-icon-btn conn-icon-btn--danger"
+                            aria-label="Delete saved view"
+                            onClick={async () => {
+                              if (confirm('Delete this saved view?')) {
+                                await api.request(`/connections/views/${view.id}`, { method: 'DELETE' });
+                                loadSavedViews();
+                              }
+                            }}
+                          >
+                            <IconTrash />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -2456,44 +2631,41 @@ function App() {
             {connectionSubTab === 'all' && (
               <div>
                 {/* Saved Views Control Panel */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px', borderLeft: '4px solid var(--primary)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 600 }}>Active Segment:</span>
-                    <div className="dropdown" style={{ position: 'relative', display: 'inline-block' }}>
-                      <select
-                        className="form-input"
-                        style={{ minWidth: '220px', fontWeight: 600, background: 'var(--bg-primary)', color: 'var(--primary)' }}
-                        value={activeViewId || 'all'}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === 'all' || val === 'high_priority' || val === 'never_contacted' || val === 'follow_ups') {
-                            handleApplyBuiltinView(val);
-                          } else {
-                            const found = savedViews.find(v => v.id === val);
-                            if (found) handleLoadSavedView(found);
-                          }
-                        }}
-                      >
-                        <optgroup label="System Views">
-                          <option value="all">All Connections</option>
-                          <option value="high_priority">High Priority Only</option>
-                          <option value="never_contacted">Never Contacted</option>
-                          <option value="follow_ups">Follow-ups Due</option>
+                <div className="conn-segment-bar">
+                  <div className="conn-segment-left">
+                    <span className="conn-segment-tag">Active Segment</span>
+                    <select
+                      className="conn-segment-select"
+                      value={activeViewId || 'all'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'all' || val === 'high_priority' || val === 'never_contacted' || val === 'follow_ups') {
+                          handleApplyBuiltinView(val);
+                        } else {
+                          const found = savedViews.find(v => v.id === val);
+                          if (found) handleLoadSavedView(found);
+                        }
+                      }}
+                    >
+                      <optgroup label="System Views">
+                        <option value="all">All Connections</option>
+                        <option value="high_priority">High Priority Only</option>
+                        <option value="never_contacted">Never Contacted</option>
+                        <option value="follow_ups">Follow-ups Due</option>
+                      </optgroup>
+                      {savedViews.length > 0 && (
+                        <optgroup label="Custom Saved Views">
+                          {savedViews.map(view => (
+                            <option key={view.id} value={view.id}>{view.name}</option>
+                          ))}
                         </optgroup>
-                        {savedViews.length > 0 && (
-                          <optgroup label="Custom Saved Views">
-                            {savedViews.map(view => (
-                              <option key={view.id} value={view.id}>{view.name}</option>
-                            ))}
-                          </optgroup>
-                        )}
-                      </select>
-                    </div>
+                      )}
+                    </select>
 
-                    <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+                    <span className="conn-segment-name">
                       {activeViewName}
                       {activeViewId && activeViewId !== 'all' && activeViewId !== 'high_priority' && activeViewId !== 'never_contacted' && activeViewId !== 'follow_ups' && (
-                        <span>
+                        <span className="conn-segment-dirty">
                           {(() => {
                             const active = savedViews.find(v => v.id === activeViewId);
                             if (active) {
@@ -2521,26 +2693,26 @@ function App() {
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="conn-segment-actions">
                     {activeViewId && activeViewId !== 'all' && activeViewId !== 'high_priority' && activeViewId !== 'never_contacted' && activeViewId !== 'follow_ups' && (
                       <>
-                        <button className="btn btn-primary" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={handleSaveView}>Save Changes</button>
-                        <button className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={() => handleRenameView(activeViewId, activeViewName)}>Rename</button>
-                        <button className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={() => handleDuplicateView(activeViewId)}>Duplicate</button>
-                        <button className="btn btn-danger" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={() => handleDeleteView(activeViewId)}>Delete View</button>
+                        <button className="conn-btn conn-btn--primary conn-btn--sm" onClick={handleSaveView}>Save Changes</button>
+                        <button className="conn-btn conn-btn--ghost conn-btn--sm" onClick={() => handleRenameView(activeViewId, activeViewName)}>Rename</button>
+                        <button className="conn-btn conn-btn--ghost conn-btn--sm" onClick={() => handleDuplicateView(activeViewId)}>Duplicate</button>
+                        <button className="conn-icon-btn conn-icon-btn--danger" aria-label="Delete view" onClick={() => handleDeleteView(activeViewId)}><IconTrash /></button>
                       </>
                     )}
-                    <button className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }} onClick={() => {
+                    <button className="conn-btn conn-btn--ghost conn-btn--sm" onClick={() => {
                       setNewViewName(activeViewId && activeViewId !== 'all' && activeViewId !== 'high_priority' && activeViewId !== 'never_contacted' && activeViewId !== 'follow_ups' ? `${activeViewName} Copy` : 'My Custom View');
                       setShowSaveViewModal(true);
                     }}>Save View As...</button>
                     <button
-                      className="btn btn-primary"
-                      style={{ padding: '8px 14px', fontSize: '0.85rem', background: 'var(--accent)', borderColor: 'var(--accent)' }}
+                      className="conn-btn conn-btn--accent conn-btn--sm"
                       onClick={runBackfill}
                       disabled={syncingEmbeddings}
                     >
-                      {syncingEmbeddings ? 'Syncing...' : '🔄 Sync AI Embeddings'}
+                      <IconRefresh />
+                      {syncingEmbeddings ? 'Syncing...' : 'Sync AI Embeddings'}
                     </button>
                   </div>
                 </div>
@@ -2579,13 +2751,15 @@ function App() {
                   if (chips.length === 0) return null;
 
                   return (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Active Filters:</span>
+                    <div className="conn-chip-row">
+                      <span className="conn-chip-row-label">Active Filters</span>
                       {chips.map((chip, idx) => (
-                        <span key={idx} className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', fontSize: '0.85rem' }}>
+                        <span key={idx} className="conn-filter-chip">
                           {chip.label}
-                          <span
-                            style={{ cursor: 'pointer', fontWeight: 'bold', marginLeft: '4px' }}
+                          <button
+                            type="button"
+                            className="conn-filter-chip-remove"
+                            aria-label={`Remove filter ${chip.label}`}
                             onClick={() => {
                               if (chip.key === 'companies' || chip.key === 'seniority' || chip.key === 'roleCategory' || chip.key === 'priority') {
                                 setConnFilters({
@@ -2602,13 +2776,12 @@ function App() {
                               }
                             }}
                           >
-                            &times;
-                          </span>
+                            <IconX />
+                          </button>
                         </span>
                       ))}
                       <button
-                        className="btn-link"
-                        style={{ fontSize: '0.85rem', color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer' }}
+                        className="conn-clear-filters-btn"
                         onClick={() => {
                           setConnFilters({ page: 1, pageSize: 10, q: '', company: '', title: '' });
                         }}
@@ -2620,25 +2793,27 @@ function App() {
                 })()}
 
                 {/* Filter Bar */}
-                <div className="filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <div className="form-group" style={{ margin: 0, minWidth: '240px' }}>
-                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>Search Query</span>
-                      <div style={{ display: 'flex', gap: '8px', fontSize: '0.8rem' }}>
-                        <span
-                          style={{ cursor: 'pointer', fontWeight: connSearchMode === 'keyword' ? 'bold' : 'normal', color: connSearchMode === 'keyword' ? 'var(--primary)' : 'var(--text-secondary)' }}
+                <div className="conn-filter-bar">
+                  <div className="conn-filter-field conn-filter-field--wide">
+                    <label className="conn-filter-label-row">
+                      <span className="form-label">Search Query</span>
+                      <span className="conn-search-mode-toggle">
+                        <button
+                          type="button"
+                          className={connSearchMode === 'keyword' ? 'active' : ''}
                           onClick={() => { setConnSearchMode('keyword'); setSemanticConnResults(null); }}
-                        >Keyword</span>
-                        <span
-                          style={{ cursor: 'pointer', fontWeight: connSearchMode === 'semantic' ? 'bold' : 'normal', color: connSearchMode === 'semantic' ? 'var(--primary)' : 'var(--text-secondary)' }}
+                        >Keyword</button>
+                        <button
+                          type="button"
+                          className={connSearchMode === 'semantic' ? 'active' : ''}
                           onClick={() => { setConnSearchMode('semantic'); }}
-                        >Semantic</span>
-                      </div>
+                        >Semantic</button>
+                      </span>
                     </label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div className="conn-search-field">
+                      <IconSearch />
                       <input
                         type="text"
-                        className="form-input"
                         placeholder={connSearchMode === 'semantic' ? "Find people with experience in..." : "Name, title, company..."}
                         value={connFilters.q || ''}
                         onChange={(e) => {
@@ -2652,13 +2827,13 @@ function App() {
                         }}
                       />
                       {connSearchMode === 'semantic' && (
-                        <button className="btn btn-primary" onClick={runSemanticConnSearch} disabled={searchingSemantic}>
+                        <button className="conn-btn conn-btn--primary conn-btn--sm" onClick={runSemanticConnSearch} disabled={searchingSemantic}>
                           {searchingSemantic ? '...' : 'Search'}
                         </button>
                       )}
                     </div>
                   </div>
-                  <div className="form-group" style={{ margin: 0, minWidth: '120px' }}>
+                  <div className="conn-filter-field">
                     <label className="form-label">Filter Company</label>
                     <input
                       type="text"
@@ -2668,7 +2843,7 @@ function App() {
                       onChange={(e) => setConnFilters({ ...connFilters, company: e.target.value, page: 1 })}
                     />
                   </div>
-                  <div className="form-group" style={{ margin: 0, minWidth: '120px' }}>
+                  <div className="conn-filter-field">
                     <label className="form-label">Filter Title/Role</label>
                     <input
                       type="text"
@@ -2678,7 +2853,7 @@ function App() {
                       onChange={(e) => setConnFilters({ ...connFilters, title: e.target.value, page: 1 })}
                     />
                   </div>
-                  <div className="form-group" style={{ margin: 0, minWidth: '120px' }}>
+                  <div className="conn-filter-field">
                     <label className="form-label">Email Filter</label>
                     <select
                       className="form-input"
@@ -2697,7 +2872,7 @@ function App() {
                       <option value="false">No Email Only</option>
                     </select>
                   </div>
-                  <div className="form-group" style={{ margin: 0, minWidth: '120px' }}>
+                  <div className="conn-filter-field">
                     <label className="form-label">Relationship Status</label>
                     <select
                       className="form-input"
@@ -2715,7 +2890,7 @@ function App() {
                       <option value="closed">Closed</option>
                     </select>
                   </div>
-                  <div className="form-group" style={{ margin: 0, minWidth: '140px' }}>
+                  <div className="conn-filter-field">
                     <label className="form-label">Sort By</label>
                     <select
                       className="form-input"
@@ -2732,7 +2907,7 @@ function App() {
                       <option value="priority">Priority</option>
                     </select>
                   </div>
-                  <div className="form-group" style={{ margin: 0, minWidth: '100px' }}>
+                  <div className="conn-filter-field conn-filter-field--narrow">
                     <label className="form-label">Sort Order</label>
                     <select
                       className="form-input"
@@ -2743,19 +2918,19 @@ function App() {
                       <option value="asc">Ascending</option>
                     </select>
                   </div>
-                  <div className="form-group" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '8px' }}>
+                  <div className="conn-filter-field conn-filter-field--checkbox">
                     <input
                       type="checkbox"
                       id="followUpDueOnly"
                       checked={!!connFilters.followUpDue}
                       onChange={(e) => setConnFilters({ ...connFilters, followUpDue: e.target.checked ? true : undefined, page: 1 })}
                     />
-                    <label htmlFor="followUpDueOnly" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Follow-up Due</label>
+                    <label htmlFor="followUpDueOnly" className="form-label">Follow-up Due</label>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-secondary" onClick={loadConnections}>Apply</button>
+                  <div className="conn-filter-actions">
+                    <button className="conn-btn conn-btn--primary" onClick={loadConnections}>Apply</button>
                     <button
-                      className="btn btn-secondary"
+                      className="conn-btn conn-btn--ghost"
                       onClick={() => {
                         setConnFilters({ page: 1, pageSize: 10, q: '', company: '', title: '' });
                       }}
@@ -2766,13 +2941,13 @@ function App() {
                 </div>
 
                 {/* Collapsible Advanced Filters Drawer */}
-                <details style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-                  <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--primary)' }}>Advanced Attribute Filters</summary>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginTop: '12px' }}>
-                    <div>
-                      <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>Seniority</h4>
+                <details className="conn-filters-drawer">
+                  <summary><IconSliders /> Advanced Attribute Filters</summary>
+                  <div className="conn-filters-drawer-grid">
+                    <div className="conn-checkbox-group">
+                      <h4>Seniority</h4>
                       {['mid', 'senior', 'junior', 'intern', 'lead', 'manager', 'director', 'executive', 'founder', 'unknown'].map(lvl => (
-                        <label key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', marginBottom: '4px', textTransform: 'capitalize', cursor: 'pointer' }}>
+                        <label key={lvl}>
                           <input
                             type="checkbox"
                             checked={connFilters.seniority?.includes(lvl) || false}
@@ -2790,10 +2965,10 @@ function App() {
                         </label>
                       ))}
                     </div>
-                    <div>
-                      <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>Role Category</h4>
+                    <div className="conn-checkbox-group">
+                      <h4>Role Category</h4>
                       {['engineering', 'data', 'product', 'recruiting', 'sales', 'marketing', 'design', 'finance', 'other'].map(cat => (
-                        <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', marginBottom: '4px', textTransform: 'capitalize', cursor: 'pointer' }}>
+                        <label key={cat}>
                           <input
                             type="checkbox"
                             checked={connFilters.roleCategory?.includes(cat) || false}
@@ -2811,10 +2986,10 @@ function App() {
                         </label>
                       ))}
                     </div>
-                    <div>
-                      <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>Priority</h4>
+                    <div className="conn-checkbox-group">
+                      <h4>Priority</h4>
                       {['high', 'medium', 'low', 'none'].map(prio => (
-                        <label key={prio} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', marginBottom: '4px', textTransform: 'capitalize', cursor: 'pointer' }}>
+                        <label key={prio}>
                           <input
                             type="checkbox"
                             checked={connFilters.priority?.includes(prio) || false}
@@ -2835,19 +3010,19 @@ function App() {
                   </div>
                 </details>
 
-                <div className="card-panel">
+                <div className="conn-panel conn-panel--flush">
                   {(semanticConnResults !== null ? semanticConnResults : connections).length === 0 ? (
-                    <div className="empty-state">No connection CRM records matching query.</div>
+                    <div className="conn-empty">No connection CRM records matching query.</div>
                   ) : (
                     <div className="data-table-container">
-                      <table className="data-table">
+                      <table className="data-table conn-table">
                         <thead>
                           <tr>
                             <th>Name</th>
                             <th>Company & Title</th>
                             <th>Email / Location</th>
                             <th>Relationship Status</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
+                            <th className="conn-table-actions-head">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2856,68 +3031,81 @@ function App() {
                             : connections
                           ).map((c) => (
                             <tr key={c.id}>
-                              <td style={{ fontWeight: 600 }}>
-                                <div>{c.name}</div>
-                                {c.similarity !== undefined && (
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 'normal', marginTop: '4px' }}>
-                                    Similarity: {Math.round(c.similarity * 100)}% {c.matchedConcepts?.length > 0 && `(${c.matchedConcepts.join(', ')})`}
+                              <td>
+                                <div className="conn-name-cell">
+                                  <span className="conn-avatar conn-avatar--sm">{getInitials(c.name)}</span>
+                                  <div>
+                                    <div className="conn-cell-strong">{c.name}</div>
+                                    {c.similarity !== undefined && (
+                                      <div className="conn-similarity-note">
+                                        Similarity: {Math.round(c.similarity * 100)}% {c.matchedConcepts?.length > 0 && `(${c.matchedConcepts.join(', ')})`}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                </div>
                               </td>
                               <td>
                                 <div>{c.title || 'No Title'}</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{c.company || 'Unknown'}</div>
+                                <div className="conn-cell-sub">{c.company || 'Unknown'}</div>
                               </td>
                               <td>
                                 <div>{c.email || 'No email'}</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{c.location || 'Unknown'}</div>
+                                <div className="conn-cell-sub">{c.location || 'Unknown'}</div>
                               </td>
                               <td>
-                                <span className="badge badge-info">{c.relationshipStatus || 'Not Contacted'}</span>
+                                <span className={`badge ${CONN_STATUS_VARIANT[c.relationshipStatus] || 'badge-secondary'}`}>
+                                  {(c.relationshipStatus || 'not_contacted').replace('_', ' ')}
+                                </span>
                               </td>
-                              <td style={{ textAlign: 'right' }}>
-                                <button
-                                  className="btn btn-primary"
-                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                                  onClick={() => {
-                                    setActiveConnectionId(c.id);
-                                    setActiveTab('connection-detail');
-                                  }}
-                                >
-                                  View
-                                </button>
-                                <button
-                                  className="btn btn-secondary"
-                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                                  onClick={() => {
-                                    setEditItem(c);
-                                    setModal('outreach');
-                                  }}
-                                >
-                                  Log Outreach
-                                </button>
-                                <button
-                                  className="btn btn-secondary"
-                                  style={{ marginRight: '8px', padding: '6px 12px', fontSize: '0.85rem' }}
-                                  onClick={() => {
-                                    setEditItem(c);
-                                    setModal('connection');
-                                  }}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  className="btn btn-danger"
-                                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                                  onClick={async () => {
-                                    if (confirm('Delete this connection record?')) {
-                                      await api.deleteConnection(c.id);
-                                      loadConnections();
-                                    }
-                                  }}
-                                >
-                                  Delete
-                                </button>
+                              <td>
+                                <div className="conn-row-actions">
+                                  <button
+                                    className="conn-icon-btn"
+                                    aria-label="View connection"
+                                    title="View"
+                                    onClick={() => {
+                                      setActiveConnectionId(c.id);
+                                      setActiveTab('connection-detail');
+                                    }}
+                                  >
+                                    <IconEye />
+                                  </button>
+                                  <button
+                                    className="conn-icon-btn"
+                                    aria-label="Log outreach"
+                                    title="Log Outreach"
+                                    onClick={() => {
+                                      setEditItem(c);
+                                      setModal('outreach');
+                                    }}
+                                  >
+                                    <IconSend />
+                                  </button>
+                                  <button
+                                    className="conn-icon-btn"
+                                    aria-label="Edit connection"
+                                    title="Edit"
+                                    onClick={() => {
+                                      setEditItem(c);
+                                      setModal('connection');
+                                    }}
+                                  >
+                                    <IconEdit />
+                                  </button>
+                                  <button
+                                    className="conn-icon-btn conn-icon-btn--danger"
+                                    aria-label="Delete connection"
+                                    title="Delete"
+                                    onClick={async () => {
+                                      if (confirm('Delete this connection record?')) {
+                                        await api.deleteConnection(c.id);
+                                        loadConnections();
+                                      }
+                                    }}
+                                  >
+                                    <IconTrash />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -2925,17 +3113,17 @@ function App() {
                       </table>
 
                       {/* Pagination */}
-                      <div className="pagination">
+                      <div className="conn-pagination">
                         <button
-                          className="btn btn-secondary"
+                          className="conn-btn conn-btn--ghost"
                           disabled={connFilters.page <= 1}
                           onClick={() => setConnFilters({ ...connFilters, page: connFilters.page - 1 })}
                         >
                           Previous
                         </button>
-                        <span>Page {connFilters.page} of {connMeta.totalPages || 1}</span>
+                        <span className="conn-pagination-status">Page {connFilters.page} of {connMeta.totalPages || 1}</span>
                         <button
-                          className="btn btn-secondary"
+                          className="conn-btn conn-btn--ghost"
                           disabled={connFilters.page >= connMeta.totalPages}
                           onClick={() => setConnFilters({ ...connFilters, page: connFilters.page + 1 })}
                         >
@@ -4199,79 +4387,81 @@ function App() {
         {/* CONNECTION DETAIL TAB */}
         {activeTab === 'connection-detail' && (
           <div>
-            <div style={{ marginBottom: '16px' }}>
-              <button className="btn btn-secondary" onClick={() => setActiveTab('connections')}>
-                &larr; Back to Connections
-              </button>
-            </div>
+            <button className="conn-back-btn" onClick={() => setActiveTab('connections')}>
+              <IconArrowLeft />
+              Back to Connections
+            </button>
 
-            {loadingDetail && <div className="empty-state">Loading connection details...</div>}
-            {detailError && <div className="empty-state" style={{ color: 'var(--danger)' }}>{detailError}</div>}
+            {loadingDetail && <div className="conn-empty">Loading connection details...</div>}
+            {detailError && <div className="conn-empty conn-empty--error">{detailError}</div>}
 
             {!loadingDetail && !detailError && connectionDetail && (
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', alignItems: 'start' }}>
+                <div className="conn-detail-grid">
 
                   {/* Left Column */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div className="conn-detail-col">
 
                     {/* PERSON Profile Panel */}
-                    <div className="card-panel">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                        <div>
-                          <h1 className="page-title" style={{ marginBottom: '8px' }}>{connectionDetail.name}</h1>
-                          <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                            {connectionDetail.title || 'No Title'}
-                          </p>
-                          <p style={{ color: 'var(--text-muted)' }}>{connectionDetail.company || 'Unknown Company'}</p>
+                    <div className="conn-panel">
+                      <div className="conn-detail-header">
+                        <span className="conn-avatar conn-avatar--lg">{getInitials(connectionDetail.name)}</span>
+                        <div className="conn-detail-header-info">
+                          <h1 className="conn-title">{connectionDetail.name}</h1>
+                          <p className="conn-detail-headline-text">{connectionDetail.title || 'No Title'}</p>
+                          <p className="conn-subtitle">{connectionDetail.company || 'Unknown Company'}</p>
                         </div>
                         {connectionDetail.profileUrl && (
                           <a
                             href={connectionDetail.profileUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="btn btn-secondary"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                            className="conn-btn conn-btn--ghost"
                           >
                             LinkedIn ↗
                           </a>
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                      <div className="conn-detail-actions">
                         <button
-                          className="btn btn-primary"
+                          className="conn-btn conn-btn--primary"
                           onClick={() => {
                             setEditItem(connectionDetail);
                             setModal('connection');
                           }}
                         >
+                          <IconEdit />
                           Edit Connection
                         </button>
                         <button
-                          className="btn btn-secondary"
+                          className="conn-btn conn-btn--ghost"
                           onClick={() => {
                             setEditItem(connectionDetail);
                             setModal('outreach');
                           }}
                         >
+                          <IconSend />
                           Log Outreach
                         </button>
                       </div>
                     </div>
 
                     {/* LinkedIn PDF Enrichment Panel */}
-                    <div className="card-panel">
-                      <h2 className="card-title" style={{ marginBottom: '12px' }}>Enrich via LinkedIn PDF</h2>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <span className="conn-panel-icon"><IconFile /></span>
+                        <h2 className="conn-panel-title">Enrich via LinkedIn PDF</h2>
+                      </div>
+                      <p className="conn-panel-desc">
                         Upload a LinkedIn profile PDF to automatically extract and enrich headline, summary, links, and top skills for {connectionDetail.name}.
                       </p>
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <label className="conn-detail-upload-box">
+                        <IconUpload />
+                        <span>Click to choose a PDF file</span>
                         <input
                           type="file"
                           accept=".pdf"
-                          className="form-input"
-                          style={{ maxWidth: '300px' }}
                           onChange={async (e) => {
                             const file = e.target.files[0];
                             if (!file) return;
@@ -4290,44 +4480,49 @@ function App() {
                             }
                           }}
                         />
-                      </div>
+                      </label>
                     </div>
 
                     {/* PROFESSIONAL Information */}
-                    <div className="card-panel">
-                      <h2 className="card-title" style={{ marginBottom: '16px' }}>Professional Profile</h2>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Company</div>
-                          <div style={{ fontWeight: 600 }}>{connectionDetail.company || 'Not Specified'}</div>
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <span className="conn-panel-icon"><IconBriefcase /></span>
+                        <h2 className="conn-panel-title">Professional Profile</h2>
+                      </div>
+                      <div className="conn-detail-field-grid">
+                        <div className="conn-detail-field">
+                          <div className="conn-detail-field-label">Company</div>
+                          <div className="conn-detail-field-value">{connectionDetail.company || 'Not Specified'}</div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Position</div>
-                          <div style={{ fontWeight: 600 }}>{connectionDetail.title || 'Not Specified'}</div>
+                        <div className="conn-detail-field">
+                          <div className="conn-detail-field-label">Position</div>
+                          <div className="conn-detail-field-value">{connectionDetail.title || 'Not Specified'}</div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Location</div>
-                          <div style={{ fontWeight: 600 }}>{connectionDetail.location || 'Not Specified'}</div>
+                        <div className="conn-detail-field">
+                          <div className="conn-detail-field-label">Location</div>
+                          <div className="conn-detail-field-value">
+                            <IconMapPin /> {connectionDetail.location || 'Not Specified'}
+                          </div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Email</div>
-                          <div style={{ fontWeight: 600 }}>{connectionDetail.email || 'Not Specified'}</div>
+                        <div className="conn-detail-field">
+                          <div className="conn-detail-field-label">Email</div>
+                          <div className="conn-detail-field-value">{connectionDetail.email || 'Not Specified'}</div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Connected Since</div>
-                          <div style={{ fontWeight: 600 }}>
+                        <div className="conn-detail-field">
+                          <div className="conn-detail-field-label">Connected Since</div>
+                          <div className="conn-detail-field-value">
                             {connectionDetail.connectedDate ? new Date(connectionDetail.connectedDate).toLocaleDateString() : 'Not Specified'}
                           </div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Seniority Level (Derived)</div>
-                          <div style={{ fontWeight: 600, textTransform: 'capitalize', color: 'var(--info)' }}>
+                        <div className="conn-detail-field">
+                          <div className="conn-detail-field-label">Seniority Level (Derived)</div>
+                          <div className="conn-detail-field-value conn-detail-field-value--accent">
                             {connectionDetail.seniorityLevel || 'Mid'}
                           </div>
                         </div>
-                        <div>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Role Category (Derived)</div>
-                          <div style={{ fontWeight: 600, textTransform: 'capitalize', color: 'var(--info)' }}>
+                        <div className="conn-detail-field">
+                          <div className="conn-detail-field-label">Role Category (Derived)</div>
+                          <div className="conn-detail-field-value conn-detail-field-value--accent">
                             {connectionDetail.roleCategory || 'Engineering'}
                           </div>
                         </div>
@@ -4336,28 +4531,29 @@ function App() {
 
                     {/* ENRICHED PROFILE INFORMATION */}
                     {(connectionDetail.headline || connectionDetail.profileSummary || (connectionDetail.skills && connectionDetail.skills.length > 0) || (connectionDetail.externalLinks && connectionDetail.externalLinks.length > 0)) && (
-                      <div className="card-panel" style={{ borderLeft: '4px solid var(--success)' }}>
-                        <h2 className="card-title" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span>✨ Enriched LinkedIn Profile Intel</span>
-                        </h2>
+                      <div className="conn-panel conn-panel--intel">
+                        <div className="conn-panel-head">
+                          <span className="conn-panel-icon conn-panel-icon--success"><IconStar /></span>
+                          <h2 className="conn-panel-title">Enriched LinkedIn Profile Intel</h2>
+                        </div>
 
                         {connectionDetail.headline && (
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Headline</div>
-                            <div style={{ fontWeight: 500, color: '#fff', fontSize: '1.05rem' }}>{connectionDetail.headline}</div>
+                          <div className="conn-intel-block">
+                            <div className="conn-intel-label">Headline</div>
+                            <div className="conn-intel-headline">{connectionDetail.headline}</div>
                           </div>
                         )}
 
                         {connectionDetail.profileSummary && (
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '4px' }}>Profile Summary</div>
-                            <div style={{ fontSize: '0.95rem', background: 'var(--bg-tertiary)', padding: '12px', borderRadius: '6px', whiteSpace: 'pre-line' }}>{connectionDetail.profileSummary}</div>
+                          <div className="conn-intel-block">
+                            <div className="conn-intel-label">Profile Summary</div>
+                            <div className="conn-intel-summary">{connectionDetail.profileSummary}</div>
                           </div>
                         )}
 
                         {connectionDetail.skills && connectionDetail.skills.length > 0 && (
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Extracted Skills</div>
+                          <div className="conn-intel-block">
+                            <div className="conn-intel-label">Extracted Skills</div>
                             <div className="tags-list">
                               {connectionDetail.skills.map(s => (
                                 <span key={s} className="badge badge-success">{s}</span>
@@ -4367,11 +4563,11 @@ function App() {
                         )}
 
                         {connectionDetail.externalLinks && connectionDetail.externalLinks.length > 0 && (
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Profile Links</div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div className="conn-intel-block">
+                            <div className="conn-intel-label">Profile Links</div>
+                            <div className="conn-intel-links">
                               {connectionDetail.externalLinks.map(link => (
-                                <a key={link} href={link.startsWith('http') ? link : `https://${link}`} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline', fontSize: '0.9rem' }}>
+                                <a key={link} href={link.startsWith('http') ? link : `https://${link}`} target="_blank" rel="noreferrer">
                                   {link}
                                 </a>
                               ))}
@@ -4380,49 +4576,49 @@ function App() {
                         )}
 
                         {connectionDetail.languages && connectionDetail.languages.length > 0 && (
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Languages</div>
+                          <div className="conn-intel-block">
+                            <div className="conn-intel-label">Languages</div>
                             <div className="tags-list">
                               {connectionDetail.languages.map(l => (
-                                <span key={l} className="badge badge-info" style={{ marginRight: '6px', marginBottom: '6px', display: 'inline-block' }}>{l}</span>
+                                <span key={l} className="badge badge-info">{l}</span>
                               ))}
                             </div>
                           </div>
                         )}
 
                         {connectionDetail.certifications && connectionDetail.certifications.length > 0 && (
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Certifications</div>
+                          <div className="conn-intel-block">
+                            <div className="conn-intel-label">Certifications</div>
                             <div className="tags-list">
                               {connectionDetail.certifications.map(c => (
-                                <span key={c} className="badge badge-secondary" style={{ marginRight: '6px', marginBottom: '6px', display: 'inline-block' }}>{c}</span>
+                                <span key={c} className="badge badge-secondary">{c}</span>
                               ))}
                             </div>
                           </div>
                         )}
 
                         {connectionDetail.projects && connectionDetail.projects.length > 0 && (
-                          <div style={{ marginBottom: '16px' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Projects</div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div className="conn-intel-block">
+                            <div className="conn-intel-label">Projects</div>
+                            <div className="conn-project-list">
                               {connectionDetail.projects.map(p => (
-                                <div key={p} style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>• {p}</div>
+                                <div key={p} className="conn-project-item">{p}</div>
                               ))}
                             </div>
                           </div>
                         )}
 
                         {connectionDetail.experience && connectionDetail.experience.length > 0 && (
-                          <div style={{ marginBottom: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>Experience Timeline</div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          <div className="conn-intel-block conn-intel-block--divider">
+                            <div className="conn-intel-label">Experience Timeline</div>
+                            <div className="conn-mini-timeline">
                               {connectionDetail.experience.map((exp, idx) => (
-                                <div key={idx} style={{ position: 'relative', paddingLeft: '16px', borderLeft: '2px solid var(--primary-glow)' }}>
-                                  <div style={{ fontWeight: 600, color: '#fff' }}>{exp.title}</div>
-                                  <div style={{ fontSize: '0.85rem', color: 'var(--primary)' }}>{exp.company}</div>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{exp.dateRange} {exp.location && `| ${exp.location}`}</div>
+                                <div key={idx} className="conn-mini-timeline-item conn-mini-timeline-item--primary">
+                                  <div className="conn-mini-timeline-title">{exp.title}</div>
+                                  <div className="conn-mini-timeline-org">{exp.company}</div>
+                                  <div className="conn-mini-timeline-meta">{exp.dateRange} {exp.location && `| ${exp.location}`}</div>
                                   {exp.description && (
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px', whiteSpace: 'pre-wrap' }}>
+                                    <div className="conn-mini-timeline-desc">
                                       {exp.description}
                                     </div>
                                   )}
@@ -4433,17 +4629,17 @@ function App() {
                         )}
 
                         {connectionDetail.education && connectionDetail.education.length > 0 && (
-                          <div style={{ marginBottom: '16px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>Education Milestones</div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          <div className="conn-intel-block conn-intel-block--divider">
+                            <div className="conn-intel-label">Education Milestones</div>
+                            <div className="conn-mini-timeline">
                               {connectionDetail.education.map((edu, idx) => (
-                                <div key={idx} style={{ position: 'relative', paddingLeft: '16px', borderLeft: '2px solid var(--info-glow)' }}>
-                                  <div style={{ fontWeight: 600, color: '#fff' }}>{edu.institution}</div>
-                                  <div style={{ fontSize: '0.85rem', color: 'var(--info)' }}>
+                                <div key={idx} className="conn-mini-timeline-item conn-mini-timeline-item--info">
+                                  <div className="conn-mini-timeline-title">{edu.institution}</div>
+                                  <div className="conn-mini-timeline-org conn-mini-timeline-org--info">
                                     {edu.degree} {edu.field && ` - ${edu.field}`}
                                   </div>
                                   {(edu.startYear || edu.endYear) && (
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    <div className="conn-mini-timeline-meta">
                                       {edu.startYear} - {edu.endYear || 'Present'}
                                     </div>
                                   )}
@@ -4454,17 +4650,17 @@ function App() {
                         )}
 
                         {connectionDetail.profilePdfKey && (
-                          <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                          <div className="conn-intel-block conn-intel-block--divider">
                             <button
                               type="button"
-                              className="btn btn-secondary"
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}
+                              className="conn-btn conn-btn--ghost"
                               onClick={() => setShowOriginalPdf(!showOriginalPdf)}
                             >
-                              <span>📄 {showOriginalPdf ? 'Hide LinkedIn PDF' : 'View Original LinkedIn PDF'}</span>
+                              <IconFile />
+                              {showOriginalPdf ? 'Hide LinkedIn PDF' : 'View Original LinkedIn PDF'}
                             </button>
                             {showOriginalPdf && (
-                              <div style={{ marginTop: '8px', background: 'var(--bg-tertiary)', padding: '8px', borderRadius: '8px' }}>
+                              <div className="conn-pdf-frame-wrap">
                                 <iframe
                                   src={api.getConnectionPdfUrl(connectionDetail.id)}
                                   width="100%"
@@ -4481,11 +4677,14 @@ function App() {
                   </div>
 
                   {/* Right Column */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div className="conn-detail-col">
 
                     {/* RELATIONSHIP Status & Strength */}
-                    <div className="card-panel">
-                      <h2 className="card-title" style={{ marginBottom: '16px' }}>Relationship CRM</h2>
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <span className="conn-panel-icon"><IconUsers /></span>
+                        <h2 className="conn-panel-title">Relationship CRM</h2>
+                      </div>
 
                       <div className="form-group">
                         <label className="form-label">Relationship Status</label>
@@ -4593,8 +4792,8 @@ function App() {
                         />
                         {connectionDetail.nextFollowUpDate && (
                           <button
-                            className="btn btn-secondary"
-                            style={{ marginTop: '8px', width: '100%', padding: '6px' }}
+                            className="conn-btn conn-btn--ghost conn-btn--sm conn-btn--block"
+                            style={{ marginTop: '8px' }}
                             onClick={async () => {
                               try {
                                 await api.request(`/connections/${activeConnectionId}`, {
@@ -4617,18 +4816,21 @@ function App() {
                     </div>
 
                     {/* INTELLIGENCE Scores */}
-                    <div className="card-panel">
-                      <h2 className="card-title" style={{ marginBottom: '16px' }}>Network Intelligence</h2>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>Connection Score</span>
-                          <span className="badge badge-success" style={{ fontSize: '1.05rem', padding: '6px 12px' }}>
+                    <div className="conn-panel">
+                      <div className="conn-panel-head">
+                        <span className="conn-panel-icon"><IconBarChart /></span>
+                        <h2 className="conn-panel-title">Network Intelligence</h2>
+                      </div>
+                      <div className="conn-detail-score-list">
+                        <div className="conn-detail-score-row">
+                          <span>Connection Score</span>
+                          <span className="badge badge-success conn-detail-score-badge">
                             {connectionDetail.connectionScore || 0} / 100
                           </span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: 'var(--text-secondary)' }}>Profile Completeness</span>
-                          <span className="badge badge-info" style={{ fontSize: '1.05rem', padding: '6px 12px' }}>
+                        <div className="conn-detail-score-row">
+                          <span>Profile Completeness</span>
+                          <span className="badge badge-info conn-detail-score-badge">
                             {connectionDetail.profileCompleteness || 0}%
                           </span>
                         </div>
@@ -4640,31 +4842,32 @@ function App() {
                 </div>
 
                 {/* TAGS SECTION */}
-                <div className="card-panel" style={{ marginTop: '24px' }}>
-                  <h2 className="card-title" style={{ marginBottom: '12px' }}>Tags / Labels</h2>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                <div className="conn-panel">
+                  <div className="conn-panel-head">
+                    <h2 className="conn-panel-title">Tags / Labels</h2>
+                  </div>
+                  <div className="conn-tag-row">
                     {connectionDetail.tags && connectionDetail.tags.length > 0 ? (
                       connectionDetail.tags.map((tag) => (
-                        <span key={tag} className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 12px' }}>
+                        <span key={tag} className="conn-tag">
                           {tag}
                           <button
-                            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '0.85rem' }}
+                            className="conn-tag-remove"
+                            aria-label={`Remove tag ${tag}`}
                             onClick={() => handleRemoveTag(tag)}
                           >
-                            &times;
+                            <IconX />
                           </button>
                         </span>
                       ))
                     ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>No tags added yet.</span>
+                      <span className="conn-tag-empty">No tags added yet.</span>
                     )}
 
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+                    <div className="conn-tag-add">
                       <input
                         type="text"
-                        className="form-input"
                         placeholder="New tag..."
-                        style={{ width: '120px', padding: '4px 8px', fontSize: '0.85rem', margin: 0 }}
                         value={newTagText}
                         onChange={(e) => setNewTagText(e.target.value)}
                         onKeyDown={(e) => {
@@ -4674,103 +4877,105 @@ function App() {
                         }}
                       />
                       <button
-                        className="btn btn-primary"
-                        style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                        className="conn-btn conn-btn--primary conn-btn--sm"
                         onClick={() => handleAddTag(newTagText)}
                       >
-                        + Add Tag
+                        Add Tag
                       </button>
                     </div>
                   </div>
                 </div>
 
                 {/* NOTES SECTION */}
-                <div className="card-panel" style={{ marginTop: '24px' }}>
-                  <h2 className="card-title" style={{ marginBottom: '16px' }}>Relationship & Interaction Notes</h2>
+                <div className="conn-panel">
+                  <div className="conn-panel-head">
+                    <span className="conn-panel-icon"><IconInbox /></span>
+                    <h2 className="conn-panel-title">Relationship & Interaction Notes</h2>
+                  </div>
 
-                  <form onSubmit={handleAddNote} style={{ marginBottom: '24px' }}>
-                    <div className="form-group">
-                      <textarea
-                        className="form-input"
-                        rows="3"
-                        placeholder="Log a new meeting note, update, context details..."
-                        required
-                        value={newNoteContent}
-                        onChange={(e) => setNewNoteContent(e.target.value)}
-                      />
-                    </div>
-                    <button type="submit" className="btn btn-primary">Add Note</button>
+                  <form onSubmit={handleAddNote} className="conn-note-form">
+                    <textarea
+                      className="form-input"
+                      rows="3"
+                      placeholder="Log a new meeting note, update, context details..."
+                      required
+                      value={newNoteContent}
+                      onChange={(e) => setNewNoteContent(e.target.value)}
+                    />
+                    <button type="submit" className="conn-btn conn-btn--primary">Add Note</button>
                   </form>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="conn-note-list">
                     {connectionDetail.notes && connectionDetail.notes.length > 0 ? (
                       connectionDetail.notes.map((note) => (
-                        <div key={note.id} style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px', borderLeft: '3px solid var(--primary)' }}>
-                          <p style={{ whiteSpace: 'pre-wrap', marginBottom: '8px' }}>{note.content}</p>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        <div key={note.id} className="conn-note-card">
+                          <p className="conn-note-content">{note.content}</p>
+                          <div className="conn-note-timestamp">
                             {new Date(note.createdAt).toLocaleString()}
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div className="empty-state">No notes recorded yet. Add one above to keep track of interactions.</div>
+                      <div className="conn-empty">No notes recorded yet. Add one above to keep track of interactions.</div>
                     )}
                   </div>
                 </div>
 
                 {/* OUTREACH HISTORY */}
-                <div className="card-panel" style={{ marginTop: '24px' }}>
-                  <h2 className="card-title" style={{ marginBottom: '16px' }}>Outreach & History Logs</h2>
+                <div className="conn-panel">
+                  <div className="conn-panel-head">
+                    <span className="conn-panel-icon"><IconSend /></span>
+                    <h2 className="conn-panel-title">Outreach & History Logs</h2>
+                  </div>
 
                   {connectionDetail.outreach && connectionDetail.outreach.length > 0 ? (
-                    <div className="timeline" style={{ paddingLeft: '10px' }}>
+                    <div className="timeline conn-timeline">
                       {connectionDetail.outreach.map((event) => (
-                        <div className="timeline-event" key={event.id} style={{ paddingBottom: '16px', borderLeft: '2px solid var(--border-color)', paddingLeft: '20px', position: 'relative' }}>
-                          <div style={{ position: 'absolute', left: '-6px', top: '4px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--warning)' }} />
-                          <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>
+                        <div className="timeline-event conn-timeline-event" key={event.id}>
+                          <div className="conn-timeline-status">
                             {event.status.replace('_', ' ')}
                           </div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0' }}>
+                          <div className="conn-timeline-date">
                             {new Date(event.occurredAt).toLocaleDateString()}
                           </div>
-                          {event.notes && <p style={{ color: 'var(--text-muted)' }}>{event.notes}</p>}
+                          {event.notes && <p className="conn-timeline-notes">{event.notes}</p>}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="empty-state">No outreach campaign history recorded yet.</div>
+                    <div className="conn-empty">No outreach campaign history recorded yet.</div>
                   )}
                 </div>
 
                 {/* RELEVANT OPPORTUNITIES */}
-                <div className="card-panel" style={{ marginTop: '24px', marginBottom: '24px' }}>
-                  <h2 className="card-title" style={{ marginBottom: '16px' }}>Relevant Opportunities at {connectionDetail.company || 'target company'}</h2>
+                <div className="conn-panel">
+                  <div className="conn-panel-head">
+                    <span className="conn-panel-icon"><IconBriefcase /></span>
+                    <h2 className="conn-panel-title">Relevant Opportunities at {connectionDetail.company || 'target company'}</h2>
+                  </div>
 
                   {connectionDetail.referralOpportunities && connectionDetail.referralOpportunities.length > 0 ? (
-                    <div className="activity-list">
+                    <div className="conn-list">
                       {connectionDetail.referralOpportunities.map((opp) => (
-                        <div className="activity-item" key={opp.jobId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '16px', borderRadius: '8px' }}>
+                        <div className="conn-list-row conn-list-row--static" key={opp.jobId}>
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: '1.05rem' }}>{opp.jobTitle}</div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{connectionDetail.company}</div>
+                            <div className="conn-cell-strong">{opp.jobTitle}</div>
+                            <div className="conn-cell-sub">{connectionDetail.company}</div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <span className="badge badge-success" style={{ fontSize: '0.9rem' }}>
-                              Referral Match: {opp.referralScore}%
-                            </span>
-                          </div>
+                          <span className="badge badge-success">
+                            Referral Match: {opp.referralScore}%
+                          </span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="empty-state">No active tracked jobs found matching company {connectionDetail.company || 'Not Specified'}.</div>
+                    <div className="conn-empty">No active tracked jobs found matching company {connectionDetail.company || 'Not Specified'}.</div>
                   )}
                 </div>
 
               </div>
-            )
-            }
-          </div >
+            )}
+          </div>
         )}
 
       </main >
@@ -4781,14 +4986,20 @@ function App() {
       {
         modal === 'csv' && (
           <div className="modal-overlay">
-            <div className="modal-content">
-              <h2 className="card-title">Import Connections CSV</h2>
-              <div className="form-group">
-                <label className="form-label">Choose CSV File</label>
+            <div className="modal-content conn-modal">
+              <div className="conn-modal-head">
+                <span className="conn-modal-icon"><IconUpload /></span>
+                <div>
+                  <h2 className="modal-title">Import Connections CSV</h2>
+                  <p className="conn-modal-subtitle">Bulk-import contacts from a LinkedIn or CRM export.</p>
+                </div>
+              </div>
+              <label className="conn-detail-upload-box conn-modal-upload">
+                <IconFile />
+                <span>Click to choose a CSV file</span>
                 <input
                   type="file"
                   accept=".csv"
-                  className="form-input"
                   onChange={async (e) => {
                     const file = e.target.files[0];
                     if (file) {
@@ -4803,9 +5014,9 @@ function App() {
                     }
                   }}
                 />
-              </div>
+              </label>
               <div className="modal-actions">
-                <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
+                <button className="conn-btn conn-btn--ghost" onClick={() => setModal(null)}>Cancel</button>
               </div>
             </div>
           </div>
@@ -4850,8 +5061,11 @@ function App() {
       {
         modal === 'connection' && (
           <div className="modal-overlay">
-            <div className="modal-content">
-              <h2 className="card-title">{editItem ? 'Edit Connection' : 'Add Connection'}</h2>
+            <div className="modal-content conn-modal conn-modal--wide">
+              <div className="conn-modal-head">
+                <span className="conn-modal-icon"><IconUsers /></span>
+                <h2 className="modal-title">{editItem ? 'Edit Connection' : 'Add Connection'}</h2>
+              </div>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
@@ -4918,8 +5132,8 @@ function App() {
                   </div>
                 </div>
                 <div className="modal-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary">Save Connection</button>
+                  <button type="button" className="conn-btn conn-btn--ghost" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="submit" className="conn-btn conn-btn--primary">Save Connection</button>
                 </div>
               </form>
             </div>
@@ -6805,21 +7019,25 @@ function App() {
       {
         modal === 'linkedin_pdf' && (
           <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: pdfObjectURL ? '1100px' : '650px', width: '95%', transition: 'max-width 0.3s ease' }}>
-              <h2 className="modal-title">LinkedIn PDF Profile Enrichment</h2>
+            <div className={`modal-content conn-modal ${pdfObjectURL ? 'conn-modal--xwide' : 'conn-modal--wide'}`}>
+              <div className="conn-modal-head">
+                <span className="conn-modal-icon"><IconFile /></span>
+                <h2 className="modal-title">LinkedIn PDF Profile Enrichment</h2>
+              </div>
 
               {enrichmentLoading && (
-                <div className="empty-state">
-                  <p>Uploading and parsing LinkedIn PDF...</p>
-                </div>
+                <div className="conn-empty">Uploading and parsing LinkedIn PDF...</div>
               )}
 
               {enrichmentError && (
-                <div className="empty-state" style={{ color: 'var(--danger)' }}>
-                  <p>Error: {enrichmentError}</p>
-                  <button className="btn btn-secondary" style={{ marginTop: '12px' }} onClick={() => setEnrichmentError(null)}>
-                    Try Again
-                  </button>
+                <div className="conn-modal-alert conn-modal-alert--danger">
+                  <IconAlert />
+                  <div>
+                    <p>{enrichmentError}</p>
+                    <button className="conn-btn conn-btn--ghost conn-btn--sm" style={{ marginTop: '10px' }} onClick={() => setEnrichmentError(null)}>
+                      Try Again
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -6841,57 +7059,109 @@ function App() {
                     setEnrichmentLoading(false);
                   }
                 }}>
-                  <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  <p className="conn-modal-subtitle">
                     Upload a LinkedIn profile PDF to match against existing network contacts and enrich their profile summary, headline, or skill arrays.
                   </p>
-                  <div className="form-group">
-                    <label className="form-label">Select LinkedIn PDF Export</label>
-                    <input type="file" name="pdfFile" className="form-input" accept=".pdf" required />
-                  </div>
+                  <label className="conn-detail-upload-box conn-modal-upload">
+                    <IconUpload />
+                    <span>Click to choose a LinkedIn PDF export</span>
+                    <input type="file" name="pdfFile" accept=".pdf" required />
+                  </label>
                   <div className="modal-actions">
-                    <button type="button" className="btn btn-secondary" onClick={closeEnrichmentModal}>Cancel</button>
-                    <button type="submit" className="btn btn-primary">Parse PDF</button>
+                    <button type="button" className="conn-btn conn-btn--ghost" onClick={closeEnrichmentModal}>Cancel</button>
+                    <button type="submit" className="conn-btn conn-btn--primary">Parse PDF</button>
                   </div>
                 </form>
               )}
 
               {!enrichmentLoading && !enrichmentError && enrichmentPreview && (
-                <div style={{ display: 'flex', gap: '24px', flexDirection: pdfObjectURL ? 'row' : 'column', alignItems: 'stretch', marginTop: '16px' }}>
+                <div className={`conn-modal-pdf-layout ${pdfObjectURL ? 'conn-modal-pdf-layout--split' : ''}`}>
                   {pdfObjectURL && (
-                    <div style={{ flex: 1.2, minWidth: '350px', background: 'var(--bg-tertiary)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column' }}>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '12px' }}>Uploaded Profile PDF</h3>
+                    <div className="conn-modal-pdf-pane">
+                      <h3 className="conn-modal-pane-title">Uploaded Profile PDF</h3>
                       <iframe src={pdfObjectURL} width="100%" height="450px" style={{ border: 'none', borderRadius: '6px', background: '#fff' }}></iframe>
                     </div>
                   )}
 
-                  <div style={{ flex: 1, minWidth: '300px' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '16px' }}>
-                      Profile Extracted: <span style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.name}</span>
+                  <div className="conn-modal-extract-pane">
+                    <h3 className="conn-modal-extract-title">
+                      Profile Extracted: <span>{enrichmentPreview.parsed.name}</span>
                     </h3>
 
-                    <div style={{ background: 'var(--bg-tertiary)', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem' }}>
+                    <div className="conn-modal-extract-list">
                       {enrichmentPreview.parsed.headline && <div><strong>Headline:</strong> {enrichmentPreview.parsed.headline}</div>}
-                      {enrichmentPreview.parsed.email && <div style={{ marginTop: '6px' }}><strong>Email:</strong> {enrichmentPreview.parsed.email}</div>}
-                      {enrichmentPreview.parsed.profileUrl && <div style={{ marginTop: '6px' }}><strong>LinkedIn URL:</strong> <a href={enrichmentPreview.parsed.profileUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{enrichmentPreview.parsed.profileUrl}</a></div>}
-                      {enrichmentPreview.parsed.skills && <div style={{ marginTop: '6px' }}><strong>Skills Extracted:</strong> {enrichmentPreview.parsed.skills.join(', ')}</div>}
+                      {enrichmentPreview.parsed.email && <div><strong>Email:</strong> {enrichmentPreview.parsed.email}</div>}
+                      {enrichmentPreview.parsed.profileUrl && <div><strong>LinkedIn URL:</strong> <a href={enrichmentPreview.parsed.profileUrl} target="_blank" rel="noreferrer">{enrichmentPreview.parsed.profileUrl}</a></div>}
+                      {enrichmentPreview.parsed.skills && <div><strong>Skills Extracted:</strong> {enrichmentPreview.parsed.skills.join(', ')}</div>}
                     </div>
 
                     {enrichmentPreview.matched.length > 0 ? (
-                      <div style={{ border: '1px solid var(--warning)', background: 'var(--warning-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
-                        <h4 style={{ color: 'var(--warning)', fontWeight: 700, marginBottom: '8px' }}>Existing Contact Matched</h4>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                          We found a matched profile in your CRM network: <strong>{enrichmentPreview.matched[0].name}</strong> at <strong>{enrichmentPreview.matched[0].company || 'No Company'}</strong> ({enrichmentPreview.matched[0].title || 'No Title'}).
-                        </p>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                          <button className="btn btn-primary" onClick={async () => {
+                      <div className="conn-modal-alert conn-modal-alert--warning">
+                        <IconAlert />
+                        <div>
+                          <h4>Existing Contact Matched</h4>
+                          <p>
+                            We found a matched profile in your CRM network: <strong>{enrichmentPreview.matched[0].name}</strong> at <strong>{enrichmentPreview.matched[0].company || 'No Company'}</strong> ({enrichmentPreview.matched[0].title || 'No Title'}).
+                          </p>
+                          <div className="conn-modal-alert-actions">
+                            <button className="conn-btn conn-btn--primary conn-btn--sm" onClick={async () => {
+                              setEnrichmentLoading(true);
+                              try {
+                                await api.confirmEnrichment({
+                                  action: 'enrich',
+                                  parsed: enrichmentPreview.parsed,
+                                  connectionId: enrichmentPreview.matched[0].id
+                                });
+                                alert('Connection enriched successfully!');
+                                closeEnrichmentModal();
+                                loadConnections();
+                              } catch (err) {
+                                alert(err.message);
+                              } finally {
+                                setEnrichmentLoading(false);
+                              }
+                            }}>
+                              Enrich Matched Contact
+                            </button>
+                            <button className="conn-btn conn-btn--ghost conn-btn--sm" onClick={async () => {
+                              if (confirm('Create a new duplicate connection anyway?')) {
+                                setEnrichmentLoading(true);
+                                try {
+                                  await api.confirmEnrichment({
+                                    action: 'create',
+                                    parsed: enrichmentPreview.parsed
+                                  });
+                                  alert('New duplicate connection created!');
+                                  closeEnrichmentModal();
+                                  loadConnections();
+                                } catch (err) {
+                                  alert(err.message);
+                                } finally {
+                                  setEnrichmentLoading(false);
+                                }
+                              }
+                            }}>
+                              Import as New Instead
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="conn-modal-alert conn-modal-alert--success">
+                        <IconCheck />
+                        <div>
+                          <h4>No matches found</h4>
+                          <p>
+                            This profile does not match any existing contacts in your CRM. Do you want to import them as a new connection?
+                          </p>
+                          <button className="conn-btn conn-btn--primary conn-btn--sm" onClick={async () => {
                             setEnrichmentLoading(true);
                             try {
                               await api.confirmEnrichment({
-                                action: 'enrich',
-                                parsed: enrichmentPreview.parsed,
-                                connectionId: enrichmentPreview.matched[0].id
+                                action: 'create',
+                                parsed: enrichmentPreview.parsed
                               });
-                              alert('Connection enriched successfully!');
+                              alert('New contact imported successfully!');
                               closeEnrichmentModal();
                               loadConnections();
                             } catch (err) {
@@ -6900,59 +7170,14 @@ function App() {
                               setEnrichmentLoading(false);
                             }
                           }}>
-                            Enrich Matched Contact
-                          </button>
-                          <button className="btn btn-secondary" onClick={async () => {
-                            if (confirm('Create a new duplicate connection anyway?')) {
-                              setEnrichmentLoading(true);
-                              try {
-                                await api.confirmEnrichment({
-                                  action: 'create',
-                                  parsed: enrichmentPreview.parsed
-                                });
-                                alert('New duplicate connection created!');
-                                closeEnrichmentModal();
-                                loadConnections();
-                              } catch (err) {
-                                alert(err.message);
-                              } finally {
-                                setEnrichmentLoading(false);
-                              }
-                            }
-                          }}>
-                            Import as New Instead
+                            Create New Connection
                           </button>
                         </div>
-                      </div>
-                    ) : (
-                      <div style={{ border: '1px solid var(--success)', background: 'var(--primary-glow)', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
-                        <h4 style={{ color: 'var(--success)', fontWeight: 700, marginBottom: '8px' }}>No matches found</h4>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                          This profile does not match any existing contacts in your CRM. Do you want to import them as a new connection?
-                        </p>
-                        <button className="btn btn-primary" onClick={async () => {
-                          setEnrichmentLoading(true);
-                          try {
-                            await api.confirmEnrichment({
-                              action: 'create',
-                              parsed: enrichmentPreview.parsed
-                            });
-                            alert('New contact imported successfully!');
-                            closeEnrichmentModal();
-                            loadConnections();
-                          } catch (err) {
-                            alert(err.message);
-                          } finally {
-                            setEnrichmentLoading(false);
-                          }
-                        }}>
-                          Create New Connection
-                        </button>
                       </div>
                     )}
 
                     <div className="modal-actions">
-                      <button className="btn btn-secondary" onClick={closeEnrichmentModal}>Cancel</button>
+                      <button className="conn-btn conn-btn--ghost" onClick={closeEnrichmentModal}>Cancel</button>
                     </div>
                   </div>
                 </div>
@@ -6966,8 +7191,11 @@ function App() {
       {
         showSaveViewModal && (
           <div className="modal-overlay">
-            <div className="modal-content" style={{ maxWidth: '450px' }}>
-              <h2 className="modal-title">Save Connection Segment View</h2>
+            <div className="modal-content conn-modal" style={{ maxWidth: '450px' }}>
+              <div className="conn-modal-head">
+                <span className="conn-modal-icon"><IconLayers /></span>
+                <h2 className="modal-title">Save Connection Segment View</h2>
+              </div>
               <div className="form-group">
                 <label className="form-label">View Name</label>
                 <input
@@ -6989,8 +7217,8 @@ function App() {
                 />
               </div>
               <div className="modal-actions">
-                <button className="btn btn-secondary" onClick={() => setShowSaveViewModal(false)}>Cancel</button>
-                <button className="btn btn-primary" onClick={handleSaveView}>Save View</button>
+                <button className="conn-btn conn-btn--ghost" onClick={() => setShowSaveViewModal(false)}>Cancel</button>
+                <button className="conn-btn conn-btn--primary" onClick={handleSaveView}>Save View</button>
               </div>
             </div>
           </div>
