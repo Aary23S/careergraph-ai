@@ -51,9 +51,39 @@ Bachelor of Science
     expect(result.experience[0].company).toBe('Adobe');
     expect(result.experience[0].title).toBe('Senior Machine Learning Engineer 1');
     expect(result.experience[0].dateRange).toBe('February 2026 - Present (1 month)');
+    expect(result.experience[1].company).toBe('Adobe');
+    expect(result.experience[1].title).toBe('Senior Computer Scientist 1');
+    expect(result.experience[1].dateRange).toBe('February 2025 - Present (1 year)');
     expect(result.education.length).toBe(1);
     expect(result.education[0].institution).toBe('BITS Pilani');
     expect(result.education[0].degree).toBe('Bachelor of Science');
+  });
+
+  it('correctly parses layout when name/slug match is not present (fuzzy/scored fallback)', async () => {
+    const mockPDFText = `
+Contact
+random-email@gmail.com
+www.linkedin.com/in/some-random-slug-12345
+
+Top Skills
+Java
+Eclipse
+
+Certifications
+Convolutional Neural Networks
+
+Anusree Sarkar
+Senior Machine Learning Engineer 1
+Rajasthan, India
+
+Summary
+Experienced Senior Machine Learning Engineer with a history of working in the semiconductor industry.
+`;
+
+    const result = await parseLinkedInPDF(Buffer.from('mock'), mockPDFText);
+    expect(result.name).toBe('Anusree Sarkar');
+    expect(result.headline).toBe('Senior Machine Learning Engineer 1');
+    expect(result.location).toBe('Rajasthan, India');
   });
 
   it('correctly parses Profile3 layout with split email lines', async () => {
