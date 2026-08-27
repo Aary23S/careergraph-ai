@@ -5,7 +5,7 @@ import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
 import { buildConnectionAiInput } from './connection-ai-input.service.js';
 import { aiObservability } from './ai/observability.service.js';
-import { aiQueue, generateJobId } from '../queues/ai.queue.js';
+import { enqueueAIJob } from '../queues/ai.queue.js';
 
 export const connectionAiSchema = Joi.object({
   professionalRole: Joi.string().allow('', null).default(''),
@@ -94,8 +94,7 @@ export async function enqueueConnectionEnrichment(connectionId) {
       });
     }
 
-    const stableJobId = generateJobId('connection_enrichment', connectionId, inputHash);
-    await aiQueue.add('connection_enrichment', { entityId: connectionId }, { jobId: stableJobId });
+    await enqueueAIJob('connection_enrichment', connectionId, { inputHash });
   } catch (err) {
     console.error(`[ConnectionAiEnrichmentService] Failed to enqueue connection ${connectionId}:`, err);
   }

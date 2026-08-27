@@ -17,7 +17,8 @@
     "connections:validate": "node scripts/validate-connection-intelligence.js",
     "ai:benchmark": "node scripts/ai-benchmark.js",
     "ai:embedding:benchmark": "node scripts/ai-embedding-benchmark.js",
-    "ai:evaluate": "node scripts/ai-evaluate.js"
+    "ai:evaluate": "node scripts/ai-evaluate.js",
+    "worker:ai": "node src/workers/ai.worker.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

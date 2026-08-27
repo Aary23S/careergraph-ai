@@ -50,11 +50,15 @@ export async function startServer({
   }
 
   // Initialize AI Worker
-  try {
-    await import('./workers/ai.worker.js');
-    console.log('[Start] AI Worker module initialized.');
-  } catch (err) {
-    console.error('[Start] Failed to initialize AI Worker:', err);
+  if (env.aiQueueDriver === 'memory') {
+    try {
+      await import('./workers/ai.worker.js');
+      console.log('[Start] AI Worker module initialized (In-Memory fallback mode).');
+    } catch (err) {
+      console.error('[Start] Failed to initialize AI Worker:', err);
+    }
+  } else {
+    console.log('[Start] Dedicated AI Worker Service mode enabled. Skipping worker initialization in API server process.');
   }
 
   return new Promise((resolve, reject) => {

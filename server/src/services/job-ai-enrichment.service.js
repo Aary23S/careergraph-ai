@@ -4,7 +4,7 @@ import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
 import { aiObservability } from './ai/observability.service.js';
-import { aiQueue, generateJobId } from '../queues/ai.queue.js';
+import { enqueueAIJob } from '../queues/ai.queue.js';
 
 // Define the structured schema matching database columns
 export const jobEnrichmentSchema = Joi.object({
@@ -99,8 +99,7 @@ export async function enqueueEnrichment(jobId) {
       });
     }
 
-    const stableJobId = generateJobId('job_enrichment', jobId, inputHash);
-    await aiQueue.add('job_enrichment', { entityId: jobId }, { jobId: stableJobId });
+    await enqueueAIJob('job_enrichment', jobId, { inputHash });
   } catch (err) {
     console.error(`[JobAiEnrichmentService] Failed to enqueue job ${jobId}:`, err);
   }

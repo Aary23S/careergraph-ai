@@ -3765,6 +3765,44 @@ function App() {
                         </div>
                       </div>
                     </div>
+
+                    {adminQueueData.activeWorkers && adminQueueData.activeWorkers.length > 0 && (
+                      <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                        <h4 style={{ margin: '0 0 12px 0' }}>Active Worker Node Registry ({adminQueueData.activeWorkers.length})</h4>
+                        <div className="data-table-container" style={{ margin: 0 }}>
+                          <table className="data-table" style={{ fontSize: '0.85rem' }}>
+                            <thead>
+                              <tr>
+                                <th>Worker Node ID</th>
+                                <th>Status</th>
+                                <th>Active Jobs</th>
+                                <th>Total Processed</th>
+                                <th>Total Failed</th>
+                                <th>Heartbeat</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {adminQueueData.activeWorkers.map((wrk) => (
+                                <tr key={wrk.workerId}>
+                                  <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{wrk.workerId}</td>
+                                  <td>
+                                    <span className={`badge badge-${wrk.status === 'active' ? 'success' : 'warning'}`}>
+                                      {wrk.status}
+                                    </span>
+                                  </td>
+                                  <td>{wrk.activeJobs}</td>
+                                  <td>{wrk.processedJobs}</td>
+                                  <td style={{ color: wrk.failedJobs > 0 ? 'var(--danger)' : 'inherit' }}>{wrk.failedJobs}</td>
+                                  <td style={{ color: 'var(--text-secondary)' }}>
+                                    {new Date(wrk.lastHeartbeat).toLocaleTimeString()}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="card-panel" style={{ marginBottom: '24px', padding: '16px', background: 'var(--bg-card)' }}>

@@ -8,7 +8,7 @@ import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
 import { fileStorage } from '../lib/storage.js';
 import { aiObservability } from './ai/observability.service.js';
-import { aiQueue, generateJobId } from '../queues/ai.queue.js';
+import { enqueueAIJob } from '../queues/ai.queue.js';
 
 const require = createRequire(import.meta.url);
 let pdf = require('pdf-parse');
@@ -161,8 +161,7 @@ export async function enqueueResumeEnrichment(resumeId) {
       });
     }
 
-    const stableJobId = generateJobId('resume_enrichment', resumeId, inputHash);
-    await aiQueue.add('resume_enrichment', { entityId: resumeId }, { jobId: stableJobId });
+    await enqueueAIJob('resume_enrichment', resumeId, { inputHash });
   } catch (err) {
     console.error(`[ResumeAiEnrichmentService] Failed to enqueue resume ${resumeId}:`, err);
   }

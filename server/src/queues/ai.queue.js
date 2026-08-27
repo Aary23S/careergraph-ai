@@ -58,11 +58,46 @@ if (env.aiQueueDriver === 'redis' && isRedisAvailable()) {
   activeQueue = new MemoryQueueFallback();
 }
 
+import Joi from 'joi';
+
+export const queueJobSchema = Joi.object({
+  jobSchemaVersion: Joi.number().integer().required(),
+  jobType: Joi.string().valid('job_enrichment', 'resume_enrichment', 'connection_enrichment', 'embedding_generation').required(),
+  entityId: Joi.string().required(),
+  userId: Joi.string().allow('', null).optional(),
+  inputHash: Joi.string().allow('', null).optional(),
+  requestedAt: Joi.date().iso().optional(),
+  requestId: Joi.string().allow('', null).optional()
+}).unknown(true);
+
 /**
  * Helper to generate a deterministic Job ID to prevent duplicate work.
  */
 export function generateJobId(jobType, entityId, inputHash = '') {
   return `ai-${jobType}-${entityId}${inputHash ? `-${inputHash}` : ''}`;
+}
+
+export async function enqueueAIJob(jobType, entityId, additionalData = {}, opts = {}) {
+  const payload = {
+    jobSchemaVersion: 1,
+    jobType,
+    entityId,
+    userId: additionalData.userId || null,
+    inputHash: additionalData.inputHash || null,
+    requestedAt: new Date().toISOString(),
+    requestId: additionalData.requestId || `req-${Date.now()}`
+  };
+
+  const { error, value } = queueJobSchema.validate(payload);
+  if (error) {
+    throw new Error(`[AIQueue] Payload contract validation failed: ${error.message}`);
+  }
+
+  const stableJobId = opts.jobId || generateJobId(jobType, entityId, payload.inputHash);
+  return await activeQueue.add(jobType, value, {
+    ...opts,
+    jobId: stableJobId
+  });
 }
 
 export const aiQueue = activeQueue;
