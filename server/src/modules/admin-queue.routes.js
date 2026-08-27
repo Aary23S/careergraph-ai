@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { env } from '../config/env.js';
 import { aiQueue } from '../queues/ai.queue.js';
-import { isRedisAvailable } from '../config/queue.js';
+import { isRedisAvailable, getRedisClient } from '../config/queue.js';
 
 const router = Router();
 
@@ -33,12 +33,37 @@ router.get('/status', async (req, res) => {
       ? await aiQueue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed')
       : { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0 };
 
+    const activeWorkers = [];
+    if (isRedisAvailable()) {
+      try {
+        const redis = getRedisClient();
+        const keys = await redis.keys('ai-workers:heartbeat:*');
+        for (const key of keys) {
+          const stats = await redis.hgetall(key);
+          if (stats && stats.workerId) {
+            activeWorkers.push({
+              workerId: stats.workerId,
+              startedAt: stats.startedAt,
+              lastHeartbeat: stats.lastHeartbeat,
+              activeJobs: parseInt(stats.activeJobs || '0', 10),
+              processedJobs: parseInt(stats.processedJobs || '0', 10),
+              failedJobs: parseInt(stats.failedJobs || '0', 10),
+              status: stats.status || 'active'
+            });
+          }
+        }
+      } catch (err) {
+        console.error('[AdminQueueRoutes] Failed to fetch active workers heartbeats:', err);
+      }
+    }
+
     return res.json({
       success: true,
       data: {
         isPaused,
         counts,
-        driver: isRedis ? 'redis' : 'memory'
+        driver: isRedis ? 'redis' : 'memory',
+        activeWorkers
       }
     });
   } catch (err) {

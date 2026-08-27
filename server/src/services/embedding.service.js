@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
-import { aiQueue, generateJobId } from '../queues/ai.queue.js';
+import { enqueueAIJob } from '../queues/ai.queue.js';
 
 /**
  * Computes SHA-256 hash for a given string.
@@ -143,14 +143,12 @@ export async function backfillConnectionsEmbedding({ userId, limit = 50, batchSi
           }
         }
 
-        const stableJobId = generateJobId('embedding_generation', conn.id, textHash);
-        await aiQueue.add('embedding_generation', {
+        await enqueueAIJob('embedding_generation', conn.id, {
           userId,
           entityType: 'connection',
-          entityId: conn.id,
-          text
+          text,
+          inputHash: textHash
         }, {
-          jobId: stableJobId,
           priority: priority
         });
         processed++;
@@ -210,14 +208,12 @@ export async function backfillJobsEmbedding({ userId, limit = 50, batchSize = 10
           }
         }
 
-        const stableJobId = generateJobId('embedding_generation', job.id, textHash);
-        await aiQueue.add('embedding_generation', {
+        await enqueueAIJob('embedding_generation', job.id, {
           userId,
           entityType: 'job',
-          entityId: job.id,
-          text
+          text,
+          inputHash: textHash
         }, {
-          jobId: stableJobId,
           priority: priority
         });
         processed++;
@@ -277,14 +273,12 @@ export async function backfillResumesEmbedding({ userId, limit = 50, batchSize =
           }
         }
 
-        const stableJobId = generateJobId('embedding_generation', resume.id, textHash);
-        await aiQueue.add('embedding_generation', {
+        await enqueueAIJob('embedding_generation', resume.id, {
           userId,
           entityType: 'resume',
-          entityId: resume.id,
-          text
+          text,
+          inputHash: textHash
         }, {
-          jobId: stableJobId,
           priority: priority
         });
         processed++;

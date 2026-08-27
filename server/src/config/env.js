@@ -77,7 +77,10 @@ const schema = Joi.object({
   AI_JOB_REMOVE_ON_FAIL: Joi.number().integer().min(0).default(5000),
   AI_QUEUE_RATE_LIMIT_MAX: Joi.number().integer().min(1).default(10),
   AI_QUEUE_RATE_LIMIT_DURATION: Joi.number().integer().min(1).default(60000),
-  AI_OPERATOR_EMAILS: Joi.string().default('satardekaraary@gmail.com')
+  AI_OPERATOR_EMAILS: Joi.string().default('satardekaraary@gmail.com'),
+  AI_WORKER_SHUTDOWN_TIMEOUT_MS: Joi.number().integer().min(0).default(30000),
+  AI_WORKER_HEARTBEAT_INTERVAL_MS: Joi.number().integer().min(100).default(10000),
+  AI_WORKER_ID: Joi.string().allow('', null).optional()
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -144,4 +147,7 @@ export const env = {
   aiQueueRateLimitMax: value.AI_QUEUE_RATE_LIMIT_MAX,
   aiQueueRateLimitDuration: value.AI_QUEUE_RATE_LIMIT_DURATION,
   aiOperatorEmails: value.AI_OPERATOR_EMAILS,
+  aiWorkerShutdownTimeoutMs: value.AI_WORKER_SHUTDOWN_TIMEOUT_MS,
+  aiWorkerHeartbeatIntervalMs: value.AI_WORKER_HEARTBEAT_INTERVAL_MS,
+  aiWorkerId: value.AI_WORKER_ID,
 };
