@@ -3,6 +3,57 @@ import { createRoot } from 'react-dom/client';
 import { api } from './api.js';
 import './styles.css';
 
+// Presentational icons for the login screen (client/src/main.jsx login block only)
+const IconMail = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h11A1.5 1.5 0 0 1 17 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5v-9Z" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M4 5.5 10 10.5 16 5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconLock = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="9" width="12" height="8" rx="2" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M6.5 9V6.5a3.5 3.5 0 1 1 7 0V9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconUser = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="6.5" r="3" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M3.5 17c.9-3.4 3.6-5 6.5-5s5.6 1.6 6.5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconEye = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1.5 10S4.5 4.5 10 4.5 18.5 10 18.5 10 15.5 15.5 10 15.5 1.5 10 1.5 10Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <circle cx="10" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.4" />
+  </svg>
+);
+
+const IconEyeOff = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2.5 2.5l15 15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M8.3 4.7C8.85 4.57 9.42 4.5 10 4.5c5.5 0 8.5 5.5 8.5 5.5a13.6 13.6 0 0 1-2.9 3.6M5.4 6.4A13.7 13.7 0 0 0 1.5 10s3 5.5 8.5 5.5c1.1 0 2.1-.22 3-.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8.1 8.1a2.4 2.4 0 0 0 3.4 3.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconCheck = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 10.5 8 14.5 16 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconAlert = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M10 6.5v4.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <circle cx="10" cy="13.4" r="0.9" fill="currentColor" />
+  </svg>
+);
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -245,6 +296,9 @@ function App() {
   const [authName, setAuthName] = useState('');
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
+  // UI-only: submit spinner + password visibility for the redesigned login screen
+  const [authLoading, setAuthLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Handle auto logout
   useEffect(() => {
@@ -1024,6 +1078,7 @@ function App() {
     e.preventDefault();
     setAuthError('');
     setAuthSuccess('');
+    setAuthLoading(true);
     try {
       if (authTab === 'login') {
         await api.login(authEmail, authPassword);
@@ -1039,6 +1094,8 @@ function App() {
       }
     } catch (err) {
       setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -1068,71 +1125,163 @@ function App() {
   };
 
   if (!isAuthenticated) {
+    const authCopy = {
+      login: { title: 'Welcome back', subtitle: 'Sign in to pick up your job search where you left off.' },
+      register: { title: 'Create your account', subtitle: 'Set up your career workspace in under a minute.' },
+      forgot: { title: 'Reset your password', subtitle: "We'll send a reset link to your inbox." }
+    }[authTab];
+
     return (
-      <div className="auth-page">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h1>CareerGraph</h1>
-            <p>Your premium personal career tracker & connection CRM</p>
-          </div>
+      <div className="login-screen">
+        <div className="login-brand" aria-hidden="true">
+          <div className="login-brand-glow" />
+          <div className="login-brand-mark">CareerGraph</div>
+          <h2 className="login-brand-heading">Your career, tracked like a real pipeline.</h2>
+          <p className="login-brand-sub">
+            One workspace for your network, applications, and outreach — with AI doing the busywork.
+          </p>
+          <ul className="login-feature-list">
+            <li><span className="login-feature-icon"><IconCheck /></span>Connection CRM with 9,000+ contacts, scored & searchable</li>
+            <li><span className="login-feature-icon"><IconCheck /></span>Job tracking with referral-network matching</li>
+            <li><span className="login-feature-icon"><IconCheck /></span>AI-drafted outreach, resume & job enrichment</li>
+          </ul>
+        </div>
 
-          <form onSubmit={handleAuthSubmit}>
-            {authError && <div style={{ color: 'var(--danger)', marginBottom: '16px' }}>{authError}</div>}
-            {authSuccess && <div style={{ color: 'var(--success)', marginBottom: '16px' }}>{authSuccess}</div>}
-
-            {authTab === 'register' && (
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  required
-                  value={authName}
-                  onChange={(e) => setAuthName(e.target.value)}
-                />
-              </div>
-            )}
-
-            <div className="form-group">
-              <label className="form-label">Email Address</label>
-              <input
-                type="email"
-                className="form-input"
-                required
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-              />
-            </div>
+        <div className="login-panel">
+          <div className="login-card">
+            <div className="login-card-mark">CareerGraph</div>
 
             {authTab !== 'forgot' && (
-              <div className="form-group">
-                <label className="form-label">Password</label>
-                <input
-                  type="password"
-                  className="form-input"
-                  required
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                />
+              <div className="login-switch" role="tablist" aria-label="Authentication mode">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authTab === 'login'}
+                  className={`login-switch-btn ${authTab === 'login' ? 'active' : ''}`}
+                  onClick={() => { setAuthTab('login'); setAuthError(''); setAuthSuccess(''); }}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authTab === 'register'}
+                  className={`login-switch-btn ${authTab === 'register' ? 'active' : ''}`}
+                  onClick={() => { setAuthTab('register'); setAuthError(''); setAuthSuccess(''); }}
+                >
+                  Sign Up
+                </button>
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }}>
-              {authTab === 'login' && 'Sign In'}
-              {authTab === 'register' && 'Sign Up'}
-              {authTab === 'forgot' && 'Send Reset Request'}
-            </button>
-          </form>
+            <div className="login-heading">
+              <h1>{authCopy.title}</h1>
+              <p>{authCopy.subtitle}</p>
+            </div>
 
-          <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-            {authTab === 'login' ? (
-              <>
-                <button className="btn-link" onClick={() => setAuthTab('register')}>Need an account? Register</button>
-                <button className="btn-link" onClick={() => setAuthTab('forgot')}>Forgot Password?</button>
-              </>
-            ) : (
-              <button className="btn-link" style={{ margin: '0 auto' }} onClick={() => setAuthTab('login')}>Back to Sign In</button>
+            {authError && (
+              <div className="login-alert login-alert-danger" role="alert">
+                <IconAlert /><span>{authError}</span>
+              </div>
             )}
+            {authSuccess && (
+              <div className="login-alert login-alert-success" role="status">
+                <IconCheck /><span>{authSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAuthSubmit} className="login-form" noValidate>
+              {authTab === 'register' && (
+                <div className="login-field">
+                  <label className="login-label" htmlFor="auth-name">Full Name</label>
+                  <div className="login-input-wrap">
+                    <span className="login-input-icon"><IconUser /></span>
+                    <input
+                      id="auth-name"
+                      type="text"
+                      className="login-input"
+                      placeholder="Jane Doe"
+                      autoComplete="name"
+                      required
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="login-field">
+                <label className="login-label" htmlFor="auth-email">Email Address</label>
+                <div className="login-input-wrap">
+                  <span className="login-input-icon"><IconMail /></span>
+                  <input
+                    id="auth-email"
+                    type="email"
+                    className="login-input"
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    required
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {authTab !== 'forgot' && (
+                <div className="login-field">
+                  <div className="login-label-row">
+                    <label className="login-label" htmlFor="auth-password">Password</label>
+                    {authTab === 'login' && (
+                      <button type="button" className="login-inline-link" onClick={() => { setAuthTab('forgot'); setAuthError(''); setAuthSuccess(''); }}>
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="login-input-wrap has-toggle">
+                    <span className="login-input-icon"><IconLock /></span>
+                    <input
+                      id="auth-password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="login-input"
+                      placeholder="••••••••"
+                      autoComplete={authTab === 'register' ? 'new-password' : 'current-password'}
+                      required
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="login-input-toggle"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <IconEyeOff /> : <IconEye />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <button type="submit" className="login-submit" disabled={authLoading}>
+                {authLoading && <span className="login-spinner" aria-hidden="true" />}
+                <span>
+                  {authTab === 'login' && (authLoading ? 'Signing in…' : 'Sign In')}
+                  {authTab === 'register' && (authLoading ? 'Creating account…' : 'Create Account')}
+                  {authTab === 'forgot' && (authLoading ? 'Sending…' : 'Send Reset Link')}
+                </span>
+              </button>
+            </form>
+
+            <div className="login-foot">
+              {authTab === 'login' && (
+                <p>New to CareerGraph? <button className="login-inline-link" onClick={() => { setAuthTab('register'); setAuthError(''); setAuthSuccess(''); }}>Create an account</button></p>
+              )}
+              {authTab === 'register' && (
+                <p>Already have an account? <button className="login-inline-link" onClick={() => { setAuthTab('login'); setAuthError(''); setAuthSuccess(''); }}>Sign in</button></p>
+              )}
+              {authTab === 'forgot' && (
+                <p><button className="login-inline-link" onClick={() => { setAuthTab('login'); setAuthError(''); setAuthSuccess(''); }}>← Back to Sign In</button></p>
+              )}
+            </div>
           </div>
         </div>
       </div>
