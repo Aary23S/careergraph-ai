@@ -73,12 +73,32 @@ class AIObservabilityService {
     return sum / this.qualityScores.length;
   }
 
-  getQueueSummary() {
+  async getQueueSummary() {
     let pending = 0;
     let processing = 0;
     let failed = 0;
     const details = {};
 
+    // 1. If using Redis, fetch from queue.service.js
+    if (env.aiQueueDriver === 'redis') {
+      try {
+        const { getQueueMetrics } = await import('../../queues/queue.service.js');
+        const metrics = await getQueueMetrics();
+        pending = (metrics.waiting || 0) + (metrics.delayed || 0);
+        processing = metrics.active || 0;
+        failed = metrics.failed || 0;
+        
+        details['redis_queue'] = {
+          pending,
+          processing: processing > 0,
+          failed
+        };
+      } catch (err) {
+        console.warn(`[Observability] Failed to read Redis queue stats: ${err.message}`);
+      }
+    }
+
+    // 2. Fallback / legacy in-memory providers
     for (const [name, getStats] of this.queueProviders.entries()) {
       try {
         const stats = getStats();
@@ -119,14 +139,14 @@ class AIObservabilityService {
     return 'HEALTHY';
   }
 
-  detectAnomalies() {
+  async detectAnomalies() {
     const anomalies = [];
     const p95 = this.getLatencyPercentile(95);
     const failureRate = this.metrics.requests_total > 5
       ? (this.metrics.requests_failed / this.metrics.requests_total)
       : 0;
 
-    const queue = this.getQueueSummary();
+    const queue = await this.getQueueSummary();
 
     if (p95 > 8000) {
       anomalies.push({ type: 'latency_spike', message: `P95 latency is highly elevated at ${(p95 / 1000).toFixed(2)}s` });
@@ -147,18 +167,20 @@ class AIObservabilityService {
     return anomalies;
   }
 
-  getSummaryReport() {
+  async getSummaryReport() {
     const p50 = this.getLatencyPercentile(50);
     const p95 = this.getLatencyPercentile(95);
     const state = this.calculateAIState();
+    const queue = await this.getQueueSummary();
+    const anomalies = await this.detectAnomalies();
 
     return {
       state,
       metrics: { ...this.metrics },
       latency: { p50, p95 },
       averageQuality: this.getAverageQuality(),
-      queue: this.getQueueSummary(),
-      anomalies: this.detectAnomalies()
+      queue,
+      anomalies
     };
   }
 }

@@ -66,7 +66,10 @@ const schema = Joi.object({
   SMTP_PORT: Joi.number().integer().default(587),
   SMTP_USER: Joi.string().allow('', null).default(''),
   SMTP_PASS: Joi.string().allow('', null).default(''),
-  SMTP_FROM: Joi.string().default('CareerGraph AI <noreply@example.com>')
+  SMTP_FROM: Joi.string().default('CareerGraph AI <noreply@example.com>'),
+  REDIS_ENABLED: Joi.boolean().default(false),
+  REDIS_URL: Joi.string().uri({ scheme: ['redis', 'rediss'] }).allow('', null).default('redis://localhost:6379'),
+  AI_QUEUE_DRIVER: Joi.string().valid('memory', 'redis').default('memory')
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -122,4 +125,7 @@ export const env = {
   smtpUser: value.SMTP_USER,
   smtpPass: value.SMTP_PASS,
   smtpFrom: value.SMTP_FROM,
+  redisEnabled: value.REDIS_ENABLED,
+  redisUrl: value.REDIS_URL,
+  aiQueueDriver: value.AI_QUEUE_DRIVER,
 };

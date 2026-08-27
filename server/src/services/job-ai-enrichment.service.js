@@ -4,6 +4,7 @@ import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
 import { aiObservability } from './ai/observability.service.js';
+import { aiQueue, generateJobId } from '../queues/ai.queue.js';
 
 // Define the structured schema matching database columns
 export const jobEnrichmentSchema = Joi.object({
@@ -45,32 +46,14 @@ Instructions:
 7. Return a valid JSON matching the schema format.`;
 }
 
-// In-Memory Background Processing Queue
-const enrichmentQueue = [];
-let queueProcessing = false;
+// In-Memory Background Processing Queue Fallbacks (kept simple for backward-comp observability stubs)
 let queueFailures = 0;
 
 aiObservability.registerQueueProvider('job_enrichment', () => ({
-  pending: enrichmentQueue.length,
-  processing: queueProcessing,
+  pending: 0,
+  processing: false,
   failed: queueFailures
 }));
-
-async function processQueue() {
-  if (queueProcessing) return;
-  queueProcessing = true;
-
-  while (enrichmentQueue.length > 0) {
-    const jobId = enrichmentQueue.shift();
-    try {
-      await executeEnrichment(jobId);
-    } catch (e) {
-      console.error(`[JobAiEnrichmentService] Error processing job ${jobId} queue item:`, e);
-    }
-  }
-
-  queueProcessing = false;
-}
 
 /**
  * Enqueues a Job ID for asynchronous AI enrichment.
@@ -116,8 +99,8 @@ export async function enqueueEnrichment(jobId) {
       });
     }
 
-    enrichmentQueue.push(jobId);
-    processQueue();
+    const stableJobId = generateJobId('job_enrichment', jobId, inputHash);
+    await aiQueue.add('job_enrichment', { entityId: jobId }, { jobId: stableJobId });
   } catch (err) {
     console.error(`[JobAiEnrichmentService] Failed to enqueue job ${jobId}:`, err);
   }
