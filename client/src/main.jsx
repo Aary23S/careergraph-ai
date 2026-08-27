@@ -54,6 +54,98 @@ const IconAlert = () => (
   </svg>
 );
 
+// Shared presentational icon set (dashboard + future page redesigns)
+const IconBriefcase = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2.5" y="6.5" width="15" height="10" rx="1.8" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M7 6.5V5a1.8 1.8 0 0 1 1.8-1.8h2.4A1.8 1.8 0 0 1 13 5v1.5" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M2.5 10.5h15" stroke="currentColor" strokeWidth="1.4" />
+  </svg>
+);
+
+const IconSend = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.5 2.5 9.2 11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M17.5 2.5 12 17.5 9.2 11 2.5 8.2 17.5 2.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconCalendarCheck = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2.5" y="4" width="15" height="13.5" rx="1.8" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M2.5 8h15M6 2.3v3M14 2.3v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M6.8 12.2 9 14.3l4.2-4.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconAward = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="7.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M7.5 11.3 6.2 17.5 10 15.3l3.8 2.2-1.3-6.2" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  </svg>
+);
+
+const IconUsers = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="7.2" cy="6.3" r="2.8" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M1.8 16.5c.75-2.9 3-4.3 5.4-4.3s4.65 1.4 5.4 4.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M12.8 4.2a2.8 2.8 0 0 1 0 5.5M14.3 12.5c2.15.4 3.55 1.7 4.1 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconClockAlert = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="9.5" cy="10.5" r="7" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M9.5 6.5v4.3l2.8 1.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="9.5" cy="10.5" r="7" stroke="currentColor" strokeWidth="1.4" />
+  </svg>
+);
+
+const IconBell = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 14.5V9a5 5 0 0 1 10 0v5.5l1.5 2H3.5l1.5-2Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M8 17a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconX = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 5l10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+const IconBarChart = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3.5 16.5v-5M9.5 16.5v-9M15.5 16.5v-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M2 16.5h16" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+// Pure presentational helper — formats a ISO date string as a short relative label.
+// Falls back to a locale date once the value is more than a week old.
+function formatRelativeTime(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '';
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.round(diffMs / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.round(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return date.toLocaleDateString();
+}
+
+// Dashboard "Recent Activity" feed mixes three record types from the API —
+// this maps each to a consistent icon/label/color for display only.
+const DASH_ACTIVITY_META = {
+  application_event: { label: 'Application', icon: IconBriefcase, chip: 'dash-chip--primary' },
+  outreach_event: { label: 'Outreach', icon: IconSend, chip: 'dash-chip--accent' },
+  notification: { label: 'Notification', icon: IconBell, chip: 'dash-chip--info' }
+};
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1336,10 +1428,13 @@ function App() {
 
         {/* DASHBOARD TAB */}
         {activeTab === 'dashboard' && (
-          <div>
-            <div className="page-header">
-              <h1 className="page-title">Dashboard Overview</h1>
-              <button className="btn btn-secondary" onClick={async () => {
+          <div className="dash-page">
+            <div className="dash-header">
+              <div>
+                <h1 className="dash-title">Dashboard Overview</h1>
+                <p className="dash-subtitle">Your career pipeline at a glance</p>
+              </div>
+              <button className="dash-digest-btn" onClick={async () => {
                 try {
                   await api.request('/dashboard/digest', { method: 'POST' });
                   alert('Daily email digest triggered! Look at the server terminal console output to inspect the generated digest body.');
@@ -1347,120 +1442,185 @@ function App() {
                   alert(err.message);
                 }
               }}>
+                <IconSend />
                 Trigger Daily Digest
               </button>
             </div>
 
-            <div className="metrics-grid">
-              <div className="metric-card">
-                <div className="metric-label">Total Jobs</div>
-                <div className="metric-value">{stats.totalJobs}</div>
+            <div className="dash-stats-grid">
+              <div className="dash-stat-card">
+                <span className="dash-stat-icon dash-stat-icon--primary"><IconBriefcase /></span>
+                <div>
+                  <div className="dash-stat-label">Total Jobs</div>
+                  <div className="dash-stat-value">{stats.totalJobs}</div>
+                </div>
               </div>
-              <div className="metric-card">
-                <div className="metric-label">Active Applications</div>
-                <div className="metric-value">{stats.applications}</div>
+              <div className="dash-stat-card">
+                <span className="dash-stat-icon dash-stat-icon--accent"><IconSend /></span>
+                <div>
+                  <div className="dash-stat-label">Active Applications</div>
+                  <div className="dash-stat-value">{stats.applications}</div>
+                </div>
               </div>
-              <div className="metric-card">
-                <div className="metric-label">Interviews Scheduled</div>
-                <div className="metric-value">{stats.interviews}</div>
+              <div className="dash-stat-card">
+                <span className="dash-stat-icon dash-stat-icon--info"><IconCalendarCheck /></span>
+                <div>
+                  <div className="dash-stat-label">Interviews Scheduled</div>
+                  <div className="dash-stat-value">{stats.interviews}</div>
+                </div>
               </div>
-              <div className="metric-card">
-                <div className="metric-label">Offers Received</div>
-                <div className="metric-value">{stats.offers}</div>
+              <div className="dash-stat-card">
+                <span className="dash-stat-icon dash-stat-icon--success"><IconAward /></span>
+                <div>
+                  <div className="dash-stat-label">Offers Received</div>
+                  <div className="dash-stat-value">{stats.offers}</div>
+                </div>
               </div>
-              <div className="metric-card">
-                <div className="metric-label">Total Connections</div>
-                <div className="metric-value">{stats.totalConnections}</div>
+              <div className="dash-stat-card">
+                <span className="dash-stat-icon dash-stat-icon--primary"><IconUsers /></span>
+                <div>
+                  <div className="dash-stat-label">Total Connections</div>
+                  <div className="dash-stat-value">{stats.totalConnections}</div>
+                </div>
               </div>
-              <div className="metric-card">
-                <div className="metric-label">Follow-ups Due</div>
-                <div className="metric-value" style={{ color: stats.followUpsDue > 0 ? 'var(--warning)' : '#fff' }}>
-                  {stats.followUpsDue}
+              <div className={`dash-stat-card ${stats.followUpsDue > 0 ? 'dash-stat-card--warn' : ''}`}>
+                <span className="dash-stat-icon dash-stat-icon--warning"><IconClockAlert /></span>
+                <div>
+                  <div className="dash-stat-label">Follow-ups Due</div>
+                  <div className="dash-stat-value">{stats.followUpsDue}</div>
                 </div>
               </div>
             </div>
 
-            <div className="dashboard-layout">
-              <div className="card-panel" style={{ gridColumn: 'span 2', marginBottom: '24px' }}>
-                <h2 className="card-title">Top Referral & Match Opportunities</h2>
+            <div className="dash-grid">
+              <div className="dash-card dash-card--wide">
+                <div className="dash-card-head">
+                  <h2 className="dash-card-title">Top Referral & Match Opportunities</h2>
+                </div>
                 {jobs.length === 0 ? (
-                  <div className="empty-state">No jobs tracked yet. Add job posts to see recommendations.</div>
+                  <div className="dash-empty">No jobs tracked yet. Add job posts to see recommendations.</div>
                 ) : (
-                  <div className="data-table-container">
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Job Title</th>
-                          <th>Company</th>
-                          <th>Match Score</th>
-                          <th>Opportunity Score</th>
-                          <th>Action Recommendation</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...jobs]
-                          .sort((a, b) => (b.opportunityScore || 0) - (a.opportunityScore || 0))
-                          .slice(0, 3)
-                          .map((job) => (
-                            <tr key={job.id}>
-                              <td style={{ fontWeight: 600 }}>{job.title}</td>
-                              <td>{job.companyName}</td>
-                              <td>
-                                <span className="badge badge-success">{job.matchScore || 0}%</span>
-                              </td>
-                              <td>
-                                <span className="badge badge-info">{job.opportunityScore || 0}%</span>
-                              </td>
-                              <td style={{ fontSize: '0.9rem' }}>{job.recommendedAction}</td>
-                            </tr>
-                          ))
-                        }
-                      </tbody>
-                    </table>
+                  <div className="dash-opportunity-list">
+                    {[...jobs]
+                      .sort((a, b) => (b.opportunityScore || 0) - (a.opportunityScore || 0))
+                      .slice(0, 3)
+                      .map((job) => (
+                        <div className="dash-opportunity-row" key={job.id}>
+                          <div className="dash-opportunity-info">
+                            <span className="dash-opportunity-title">{job.title}</span>
+                            <span className="dash-opportunity-company">{job.companyName}</span>
+                          </div>
+                          <div className="dash-score-bars">
+                            <div className="dash-score-bar">
+                              <div className="dash-score-bar-label">
+                                <span>Match</span><span>{job.matchScore || 0}%</span>
+                              </div>
+                              <div className="dash-score-track">
+                                <div className="dash-score-fill dash-score-fill--match" style={{ width: `${job.matchScore || 0}%` }} />
+                              </div>
+                            </div>
+                            <div className="dash-score-bar">
+                              <div className="dash-score-bar-label">
+                                <span>Opportunity</span><span>{job.opportunityScore || 0}%</span>
+                              </div>
+                              <div className="dash-score-track">
+                                <div className="dash-score-fill dash-score-fill--opportunity" style={{ width: `${job.opportunityScore || 0}%` }} />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="dash-opportunity-action">{job.recommendedAction}</div>
+                        </div>
+                      ))
+                    }
                   </div>
                 )}
               </div>
 
-              <div className="card-panel">
-                <h2 className="card-title">Recent Activity Logs</h2>
-                <div className="activity-list">
-                  {stats.recentActivity.length === 0 ? (
-                    <div className="empty-state">No recent activities logged yet.</div>
-                  ) : (
-                    stats.recentActivity.map((activity, idx) => (
-                      <div className="activity-item" key={idx}>
-                        <div className="item-header">
-                          <span>{activity.type.replace('_', ' ').toUpperCase()}</span>
-                          <span>{new Date(activity.occurredAt || activity.createdAt).toLocaleDateString()}</span>
+              <div className="dash-card dash-card--wide">
+                <div className="dash-card-head">
+                  <span className="dash-card-icon"><IconBarChart /></span>
+                  <h2 className="dash-card-title">Pipeline Snapshot</h2>
+                </div>
+                <div className="dash-pipeline">
+                  {[
+                    { label: 'New Jobs', value: stats.newJobs },
+                    { label: 'Saved', value: stats.savedJobs },
+                    { label: 'Applications', value: stats.applications },
+                    { label: 'Interviews', value: stats.interviews },
+                    { label: 'Offers', value: stats.offers }
+                  ].map((stage) => {
+                    const max = Math.max(1, stats.newJobs, stats.savedJobs, stats.applications, stats.interviews, stats.offers);
+                    return (
+                      <div className="dash-pipeline-row" key={stage.label}>
+                        <span className="dash-pipeline-label">{stage.label}</span>
+                        <div className="dash-pipeline-track">
+                          <div className="dash-pipeline-fill" style={{ width: `${(stage.value / max) * 100}%` }} />
                         </div>
-                        <div className="item-title">
-                          Status: {activity.status || activity.title}
-                        </div>
-                        <div className="item-desc">{activity.notes || activity.message}</div>
+                        <span className="dash-pipeline-value">{stage.value}</span>
                       </div>
-                    ))
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="dash-card">
+                <div className="dash-card-head">
+                  <h2 className="dash-card-title">Recent Activity</h2>
+                </div>
+                <div className="dash-activity-list">
+                  {stats.recentActivity.length === 0 ? (
+                    <div className="dash-empty">No recent activities logged yet.</div>
+                  ) : (
+                    stats.recentActivity.map((activity, idx) => {
+                      const meta = DASH_ACTIVITY_META[activity.type] || DASH_ACTIVITY_META.notification;
+                      const ActivityIcon = meta.icon;
+                      return (
+                        <div className="dash-activity-item" key={idx}>
+                          <span className={`dash-chip ${meta.chip}`}><ActivityIcon /></span>
+                          <div className="dash-activity-body">
+                            <div className="dash-activity-top">
+                              <span className="dash-activity-type">{meta.label}</span>
+                              <span className="dash-activity-time">{formatRelativeTime(activity.occurredAt || activity.createdAt)}</span>
+                            </div>
+                            <div className="dash-activity-title">{activity.status || activity.title}</div>
+                            {(activity.notes || activity.message) && (
+                              <div className="dash-activity-desc">{activity.notes || activity.message}</div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
 
-              <div className="card-panel">
-                <h2 className="card-title">Reminders & Notifications</h2>
-                <div className="notification-list">
+              <div className="dash-card">
+                <div className="dash-card-head">
+                  <span className="dash-card-icon"><IconBell /></span>
+                  <h2 className="dash-card-title">Reminders & Notifications</h2>
+                </div>
+                <div className="dash-notif-list">
                   {notifications.filter(n => !n.isRead).length === 0 ? (
-                    <div className="empty-state">No unread notifications.</div>
+                    <div className="dash-empty">No unread notifications.</div>
                   ) : (
                     notifications.filter(n => !n.isRead).map((notif) => (
-                      <div className="notification-item" key={notif.id}>
-                        <div className="item-header">
-                          <span className="badge badge-info">{notif.type}</span>
-                          <button className="btn-link" onClick={async () => {
-                            await api.markNotificationRead(notif.id);
-                            loadNotifications();
-                            loadDashboard();
-                          }}>Dismiss</button>
+                      <div className="dash-notif-item" key={notif.id}>
+                        <div className="dash-notif-top">
+                          <span className="dash-notif-type">{notif.type}</span>
+                          <button
+                            className="dash-notif-dismiss"
+                            aria-label="Dismiss notification"
+                            onClick={async () => {
+                              await api.markNotificationRead(notif.id);
+                              loadNotifications();
+                              loadDashboard();
+                            }}
+                          >
+                            <IconX />
+                          </button>
                         </div>
-                        <div className="item-title">{notif.title}</div>
-                        <p className="item-desc">{notif.message}</p>
+                        <div className="dash-notif-title">{notif.title}</div>
+                        <p className="dash-notif-desc">{notif.message}</p>
                       </div>
                     ))
                   )}
