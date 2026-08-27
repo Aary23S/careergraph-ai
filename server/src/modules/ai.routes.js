@@ -8,7 +8,11 @@ const router = Router();
 router.get('/health', async (req, res) => {
   try {
     const available = await aiService.healthCheck();
-    const summary = await aiObservability.getSummaryReport();
+    
+    const { updateCachedQueueMetrics } = await import('../queues/queue.service.js');
+    await updateCachedQueueMetrics();
+    
+    const summary = aiObservability.getSummaryReport();
     return res.json({
       success: true,
       data: {
@@ -44,7 +48,10 @@ router.get('/health', async (req, res) => {
 
 router.get('/metrics', async (req, res) => {
   try {
-    const summary = await aiObservability.getSummaryReport();
+    const { updateCachedQueueMetrics } = await import('../queues/queue.service.js');
+    await updateCachedQueueMetrics();
+    
+    const summary = aiObservability.getSummaryReport();
     return res.json({
       success: true,
       data: summary

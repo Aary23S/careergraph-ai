@@ -1,5 +1,15 @@
 import { env } from '../../config/env.js';
 
+let redisStats = { pending: 0, processing: 0, failed: 0 };
+
+export function updateObservabilityQueueStats(stats) {
+  redisStats = {
+    pending: stats.pending || 0,
+    processing: stats.processing || 0,
+    failed: stats.failed || 0
+  };
+}
+
 class AIObservabilityService {
   constructor() {
     this.metrics = {
@@ -73,29 +83,23 @@ class AIObservabilityService {
     return sum / this.qualityScores.length;
   }
 
-  async getQueueSummary() {
+  getQueueSummary() {
     let pending = 0;
     let processing = 0;
     let failed = 0;
     const details = {};
 
-    // 1. If using Redis, fetch from queue.service.js
+    // 1. If using Redis, fetch from cached stats
     if (env.aiQueueDriver === 'redis') {
-      try {
-        const { getQueueMetrics } = await import('../../queues/queue.service.js');
-        const metrics = await getQueueMetrics();
-        pending = (metrics.waiting || 0) + (metrics.delayed || 0);
-        processing = metrics.active || 0;
-        failed = metrics.failed || 0;
-        
-        details['redis_queue'] = {
-          pending,
-          processing: processing > 0,
-          failed
-        };
-      } catch (err) {
-        console.warn(`[Observability] Failed to read Redis queue stats: ${err.message}`);
-      }
+      pending = redisStats.pending;
+      processing = redisStats.processing;
+      failed = redisStats.failed;
+      
+      details['redis_queue'] = {
+        pending,
+        processing: processing > 0,
+        failed
+      };
     }
 
     // 2. Fallback / legacy in-memory providers
@@ -139,14 +143,14 @@ class AIObservabilityService {
     return 'HEALTHY';
   }
 
-  async detectAnomalies() {
+  detectAnomalies() {
     const anomalies = [];
     const p95 = this.getLatencyPercentile(95);
     const failureRate = this.metrics.requests_total > 5
       ? (this.metrics.requests_failed / this.metrics.requests_total)
       : 0;
 
-    const queue = await this.getQueueSummary();
+    const queue = this.getQueueSummary();
 
     if (p95 > 8000) {
       anomalies.push({ type: 'latency_spike', message: `P95 latency is highly elevated at ${(p95 / 1000).toFixed(2)}s` });
@@ -167,12 +171,12 @@ class AIObservabilityService {
     return anomalies;
   }
 
-  async getSummaryReport() {
+  getSummaryReport() {
     const p50 = this.getLatencyPercentile(50);
     const p95 = this.getLatencyPercentile(95);
     const state = this.calculateAIState();
-    const queue = await this.getQueueSummary();
-    const anomalies = await this.detectAnomalies();
+    const queue = this.getQueueSummary();
+    const anomalies = this.detectAnomalies();
 
     return {
       state,
