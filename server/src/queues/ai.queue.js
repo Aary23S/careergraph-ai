@@ -62,7 +62,7 @@ import Joi from 'joi';
 
 export const queueJobSchema = Joi.object({
   jobSchemaVersion: Joi.number().integer().required(),
-  jobType: Joi.string().valid('job_enrichment', 'resume_enrichment', 'connection_enrichment', 'embedding_generation').required(),
+  jobType: Joi.string().required(),
   entityId: Joi.string().required(),
   userId: Joi.string().allow('', null).optional(),
   inputHash: Joi.string().allow('', null).optional(),
