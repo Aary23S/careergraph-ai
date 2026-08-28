@@ -3,12 +3,25 @@ import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
 import { enqueueAIJob } from '../queues/ai.queue.js';
+import { mlServiceClient } from './ml-service.client.js';
+import { aiObservability } from './ai/observability.service.js';
 
 /**
  * Computes SHA-256 hash for a given string.
  */
 export function computeSha256(text) {
   return crypto.createHash('sha256').update(text || '').digest('hex');
+}
+
+/**
+ * Single source of truth for "which embedding model is currently active."
+ * Both generation (here) and search (semantic-search.service.js) must
+ * resolve the same string, since SemanticEmbedding rows are looked up by
+ * this exact value -- if they ever disagreed, embeddings generated via one
+ * path would simply never be found by the other.
+ */
+export function resolveEmbeddingModelName() {
+  return env.mlServiceEnabled ? env.mlServiceEmbeddingModel : (env.ollamaEmbeddingModel || 'mock');
 }
 
 /**
@@ -59,10 +72,61 @@ export function buildConnectionSemanticText(connection, enrichment) {
 }
 
 /**
+ * Generates an embedding vector for arbitrary text, trying the Python ML
+ * service first (Phase 4D) when enabled and falling back to the existing
+ * Node/Ollama/mock path (`aiService.generateEmbedding`) on any failure.
+ *
+ * This is the ONE place that decides "Python or Node" -- every caller that
+ * generates an embedding (stored-entity generation below, and semantic
+ * search's query-embedding generation) must go through this function, or
+ * query vectors and stored vectors can end up produced by different paths
+ * with different dimensions, silently breaking similarity search.
+ */
+export async function generateEmbeddingVector(text, modelName, { entityType, entityId } = {}) {
+  const requestId = crypto.randomUUID();
+  const start = Date.now();
+  let vector;
+  let source = 'node';
+
+  if (env.mlServiceEnabled) {
+    try {
+      const result = await mlServiceClient.embed(text, { model: modelName });
+      vector = result.embedding;
+      source = 'python';
+    } catch (err) {
+      console.warn(`[EmbeddingService] ML service unavailable (${err.code || 'UNKNOWN'}), falling back to Node path: ${err.message}`);
+    }
+  }
+
+  if (!vector) {
+    // aiService.generateEmbedding() records its own observability internally
+    // on success -- only record it ourselves below for the Python path,
+    // which bypasses aiService entirely, to avoid double-counting.
+    vector = await aiService.generateEmbedding(text, modelName);
+  } else {
+    aiObservability.recordEmbedding(Date.now() - start);
+  }
+
+  console.log(JSON.stringify({
+    requestId,
+    operation: 'embedding_generation',
+    entityType: entityType || null,
+    entityId: entityId || null,
+    source,
+    model: modelName,
+    dimension: vector.length,
+    latencyMs: Date.now() - start,
+    status: 'success'
+  }));
+
+  return vector;
+}
+
+/**
  * Retrieves the up-to-date embedding or generates it if stale or missing.
  */
 export async function getOrGenerateEmbedding({ userId, entityType, entityId, text }) {
-  const modelName = env.ollamaEmbeddingModel || 'mock';
+  const modelName = resolveEmbeddingModelName();
   const textHash = computeSha256(text);
 
   // 1. Check if identical embedding already exists
@@ -81,7 +145,7 @@ export async function getOrGenerateEmbedding({ userId, entityType, entityId, tex
   }
 
   // 2. Generate new vector
-  const vector = await aiService.generateEmbedding(text, modelName);
+  const vector = await generateEmbeddingVector(text, modelName, { entityType, entityId });
   const dimension = vector.length;
 
   // 3. Upsert record
@@ -103,7 +167,7 @@ export async function getOrGenerateEmbedding({ userId, entityType, entityId, tex
  * Backfill embeddings for connections.
  */
 export async function backfillConnectionsEmbedding({ userId, limit = 50, batchSize = 100, onlyMissing = true, priority = 30 }) {
-  const modelName = env.ollamaEmbeddingModel || 'mock';
+  const modelName = resolveEmbeddingModelName();
   let processed = 0;
   let skipped = 0;
   let failed = 0;
@@ -168,7 +232,7 @@ export async function backfillConnectionsEmbedding({ userId, limit = 50, batchSi
  * Backfill embeddings for jobs.
  */
 export async function backfillJobsEmbedding({ userId, limit = 50, batchSize = 100, onlyMissing = true, priority = 30 }) {
-  const modelName = env.ollamaEmbeddingModel || 'mock';
+  const modelName = resolveEmbeddingModelName();
   let processed = 0;
   let skipped = 0;
   let failed = 0;
@@ -233,7 +297,7 @@ export async function backfillJobsEmbedding({ userId, limit = 50, batchSize = 10
  * Backfill embeddings for resumes.
  */
 export async function backfillResumesEmbedding({ userId, limit = 50, batchSize = 100, onlyMissing = true, priority = 30 }) {
-  const modelName = env.ollamaEmbeddingModel || 'mock';
+  const modelName = resolveEmbeddingModelName();
   let processed = 0;
   let skipped = 0;
   let failed = 0;

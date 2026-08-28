@@ -8,6 +8,7 @@ import { aiService } from '../src/services/ai/ai.service.js';
 import { fileStorage } from '../src/lib/storage.js';
 import { executeResumeEnrichment } from '../src/services/resume-ai-enrichment.service.js';
 import { analyzeJobResumeFit } from '../src/services/resume-analysis.service.js';
+import { buildMinimalPdfBuffer } from './helpers/pdf-fixture.js';
 
 describe('Resume AI Enrichment & Intelligence Test Suite', () => {
   let app;
@@ -37,11 +38,12 @@ describe('Resume AI Enrichment & Intelligence Test Suite', () => {
     tokenB = resB.body.data.tokens.accessToken;
 
     // Create a mock active resume for User A
+    const resumeABuffer = buildMinimalPdfBuffer('PDF Content of Resume A');
     const stored = await fileStorage.save({
       originalname: 'resumeA.pdf',
-      buffer: Buffer.from('PDF Content of Resume A'),
+      buffer: resumeABuffer,
       mimetype: 'application/pdf',
-      size: 24
+      size: resumeABuffer.length
     });
 
     resumeA = await models.Resume.create({
@@ -49,7 +51,7 @@ describe('Resume AI Enrichment & Intelligence Test Suite', () => {
       fileName: 'resumeA.pdf',
       storageKey: stored.key,
       contentType: 'application/pdf',
-      sizeBytes: 24,
+      sizeBytes: resumeABuffer.length,
       isActive: true,
       version: 1
     });
@@ -109,11 +111,12 @@ describe('Resume AI Enrichment & Intelligence Test Suite', () => {
       const spy = jest.spyOn(aiService, 'generateStructured').mockRejectedValueOnce(new Error('AI request timeout exceeded'));
 
       // Create a separate resume to test failure scenario
+      const resumeFailBuffer = buildMinimalPdfBuffer('PDF Content of Resume Fail');
       const storedFail = await fileStorage.save({
         originalname: 'resumeFail.pdf',
-        buffer: Buffer.from('PDF Content of Resume Fail'),
+        buffer: resumeFailBuffer,
         mimetype: 'application/pdf',
-        size: 28
+        size: resumeFailBuffer.length
       });
 
       const resumeFail = await models.Resume.create({
@@ -121,7 +124,7 @@ describe('Resume AI Enrichment & Intelligence Test Suite', () => {
         fileName: 'resumeFail.pdf',
         storageKey: storedFail.key,
         contentType: 'application/pdf',
-        sizeBytes: 28,
+        sizeBytes: resumeFailBuffer.length,
         isActive: false,
         version: 2
       });

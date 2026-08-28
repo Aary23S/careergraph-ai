@@ -67,7 +67,9 @@ export const queueJobSchema = Joi.object({
   userId: Joi.string().allow('', null).optional(),
   inputHash: Joi.string().allow('', null).optional(),
   requestedAt: Joi.date().iso().optional(),
-  requestId: Joi.string().allow('', null).optional()
+  requestId: Joi.string().allow('', null).optional(),
+  entityType: Joi.string().allow('', null).optional(),
+  text: Joi.string().allow('', null).optional()
 }).unknown(true);
 
 /**
@@ -85,7 +87,9 @@ export async function enqueueAIJob(jobType, entityId, additionalData = {}, opts 
     userId: additionalData.userId || null,
     inputHash: additionalData.inputHash || null,
     requestedAt: new Date().toISOString(),
-    requestId: additionalData.requestId || `req-${Date.now()}`
+    requestId: additionalData.requestId || `req-${Date.now()}`,
+    entityType: additionalData.entityType || null,
+    text: additionalData.text || null
   };
 
   const { error, value } = queueJobSchema.validate(payload);

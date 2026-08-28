@@ -80,7 +80,11 @@ const schema = Joi.object({
   AI_OPERATOR_EMAILS: Joi.string().default('satardekaraary@gmail.com'),
   AI_WORKER_SHUTDOWN_TIMEOUT_MS: Joi.number().integer().min(0).default(30000),
   AI_WORKER_HEARTBEAT_INTERVAL_MS: Joi.number().integer().min(100).default(10000),
-  AI_WORKER_ID: Joi.string().allow('', null).optional()
+  AI_WORKER_ID: Joi.string().allow('', null).optional(),
+  ML_SERVICE_ENABLED: Joi.boolean().default(false),
+  ML_SERVICE_URL: Joi.string().uri().default('http://localhost:8000'),
+  ML_SERVICE_TIMEOUT_MS: Joi.number().integer().min(1).default(5000),
+  ML_SERVICE_EMBEDDING_MODEL: Joi.string().default('all-MiniLM-L6-v2')
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -150,4 +154,8 @@ export const env = {
   aiWorkerShutdownTimeoutMs: value.AI_WORKER_SHUTDOWN_TIMEOUT_MS,
   aiWorkerHeartbeatIntervalMs: value.AI_WORKER_HEARTBEAT_INTERVAL_MS,
   aiWorkerId: value.AI_WORKER_ID,
+  mlServiceEnabled: value.ML_SERVICE_ENABLED,
+  mlServiceUrl: value.ML_SERVICE_URL,
+  mlServiceTimeoutMs: value.ML_SERVICE_TIMEOUT_MS,
+  mlServiceEmbeddingModel: value.ML_SERVICE_EMBEDDING_MODEL,
 };
