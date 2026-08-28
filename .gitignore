@@ -26,3 +26,4 @@ ai-service/venv/
 **/.pytest_cache/
 *.pyc
 ai-service/mlartifacts/
+ai-service/datasets/

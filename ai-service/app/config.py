@@ -32,5 +32,14 @@ class Settings(BaseSettings):
     mlflow_tracking_uri: str = "http://localhost:5001"
     mlflow_experiment_prefix: str = "careergraph"
 
+    # Phase 4G: ML data pipeline. Read-only access to the CareerGraph
+    # Postgres database -- the pipeline never writes to it. Empty by default
+    # (the FastAPI app itself never needs this); required only when actually
+    # running `python -m app.pipelines.build_dataset`, which validates its
+    # presence explicitly rather than silently no-op'ing like the optional
+    # MLflow settings above.
+    database_url: str = ""
+    pipeline_batch_size: int = 500
+
 
 settings = Settings()

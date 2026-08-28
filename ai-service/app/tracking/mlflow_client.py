@@ -23,12 +23,13 @@ completely unaffected.
 import functools
 import json
 import os
-import subprocess
 import sys
 import tempfile
 from typing import Optional
 
 from app.config import settings
+from app.console_utf8 import ensure_utf8_console
+from app.git_info import get_git_commit
 from app.logging_config import log_event
 
 mlflow = None
@@ -38,7 +39,16 @@ _MlflowSdkClient = None
 def _ensure_mlflow_imported() -> None:
     """Imports `mlflow` on first call and never again. A no-op if `mlflow`
     or `_MlflowSdkClient` is already set -- including by a test's
-    monkeypatch, which this must not clobber."""
+    monkeypatch, which this must not clobber.
+
+    Also the actual shared choke point for the UTF-8 console fix: this
+    function runs regardless of which entrypoint (the FastAPI app or the
+    standalone `build_dataset` CLI) ends up needing MLflow, so it's the one
+    place that's guaranteed to run before `mlflow`'s own console prints can
+    hit Windows' cp1252-default encoding crash -- app/main.py also calls
+    ensure_utf8_console() directly at startup, but the CLI never imports
+    app.main at all, so relying on that alone would miss it there."""
+    ensure_utf8_console()
     global mlflow, _MlflowSdkClient
     if mlflow is not None or _MlflowSdkClient is not None:
         return
@@ -50,26 +60,6 @@ def _ensure_mlflow_imported() -> None:
         _MlflowSdkClient = _sdk_client
     except Exception as exc:  # pragma: no cover - defensive only, e.g. broken install
         log_event("mlflow_tracking_import", status="error", error=str(exc))
-
-
-@functools.lru_cache(maxsize=1)
-def _git_commit() -> str:
-    """Best-effort current commit SHA, cached for the process lifetime.
-    Mandatory metadata for reproducibility (section 12); "unknown" is a
-    safe fallback, never an error."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            cwd=os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-        )
-        if result.returncode == 0:
-            return result.stdout.strip()
-    except Exception:
-        pass
-    return "unknown"
 
 
 class MLflowTrackingClient:
@@ -103,7 +93,7 @@ class MLflowTrackingClient:
             mlflow.set_experiment(experiment_name)
             run = mlflow.start_run(run_name=run_name)
             self._active_run = run
-            self.log_tags({"gitCommit": _git_commit(), "pythonVersion": sys.version.split()[0]})
+            self.log_tags({"gitCommit": get_git_commit(), "pythonVersion": sys.version.split()[0]})
             return run
         except Exception as exc:
             log_event("mlflow_tracking_start_run", status="error", error=str(exc))
