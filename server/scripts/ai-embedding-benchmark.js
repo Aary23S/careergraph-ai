@@ -1,6 +1,24 @@
 import { env } from '../src/config/env.js';
 import { aiService } from '../src/services/ai/ai.service.js';
 import { mlServiceClient } from '../src/services/ml-service.client.js';
+import { connectDatabase, sequelize } from '../src/config/database.js';
+import { findRegistryMatch, recordEvaluation } from '../src/services/model-registry.service.js';
+
+async function recordBenchmarkEvaluation({ modelType, provider, modelString, report }) {
+  try {
+    const match = await findRegistryMatch({ modelType, provider, modelString });
+    if (!match) return;
+    await recordEvaluation(match.id, {
+      evaluationType: 'embedding_benchmark',
+      metrics: report,
+      overallScore: report.failures === 0 ? 1.0 : 0.0,
+      status: report.failures === 0 ? 'passed' : 'failed',
+    });
+    console.log(`  Recorded embedding_benchmark evaluation against registry model ${match.id}.`);
+  } catch (err) {
+    console.warn(`  Skipped recording registry evaluation for ${modelString}: ${err.message}`);
+  }
+}
 
 const testTexts = [
   'Senior Python Developer with AWS cloud design and distributed systems expertise.',
@@ -36,6 +54,7 @@ async function pullModelIfNeeded(modelName) {
 }
 
 async function runBenchmark() {
+  await connectDatabase();
   const models = ['nomic-embed-text', 'all-minilm'];
 
   // Force settings
@@ -135,6 +154,13 @@ async function runBenchmark() {
       failures: failureCount,
       status: failureCount === 0 ? 'Passed' : 'Failed'
     });
+
+    await recordBenchmarkEvaluation({
+      modelType: 'embedding',
+      provider: 'sentence-transformers',
+      modelString: `${resolvedModel}:1`,
+      report: { dimension: dimensions, avgLatencyMs: avgLatency, failures: failureCount },
+    });
   } else {
     console.log('\nSkipping Python ML service benchmark (ML_SERVICE_ENABLED=false).');
   }
@@ -143,6 +169,11 @@ async function runBenchmark() {
   console.log('📊 EMBEDDING BENCHMARK SUMMARY REPORTS');
   console.log('==================================================');
   console.table(finalReports);
+  await sequelize.close();
 }
 
-runBenchmark().catch(console.error);
+runBenchmark().catch(async (err) => {
+  console.error(err);
+  await sequelize.close().catch(() => {});
+  process.exitCode = 1;
+});

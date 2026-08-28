@@ -18,6 +18,7 @@ import aiRoutes from '../modules/ai.routes.js';
 import outreachAiRoutes from '../modules/outreach-ai.routes.js';
 import searchRoutes from '../modules/search.routes.js';
 import adminQueueRoutes from '../modules/admin-queue.routes.js';
+import modelRegistryRoutes from '../modules/model-registry.routes.js';
 
 const router = Router();
 
@@ -40,5 +41,6 @@ router.use('/incoming-jobs', incomingJobRoutes);
 router.use('/ai', aiRoutes);
 router.use('/search', searchRoutes);
 router.use('/admin/ai-queue', adminQueueRoutes);
+router.use('/admin/models', modelRegistryRoutes);
 
 export default router;

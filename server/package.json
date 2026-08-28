@@ -18,7 +18,12 @@
     "ai:benchmark": "node scripts/ai-benchmark.js",
     "ai:embedding:benchmark": "node scripts/ai-embedding-benchmark.js",
     "ai:evaluate": "node scripts/ai-evaluate.js",
-    "worker:ai": "node src/workers/ai.worker.js"
+    "worker:ai": "node src/workers/ai.worker.js",
+    "models:list": "node scripts/models-cli.js list",
+    "models:register": "node scripts/models-cli.js register",
+    "models:promote": "node scripts/models-cli.js promote",
+    "models:rollback": "node scripts/models-cli.js rollback",
+    "models:evaluate": "node scripts/models-cli.js evaluate"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

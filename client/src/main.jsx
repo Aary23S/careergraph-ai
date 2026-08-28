@@ -620,6 +620,8 @@ function App() {
   const [aiOpsData, setAiOpsData] = useState(null);
   const [loadingAiOps, setLoadingAiOps] = useState(false);
   const [adminQueueData, setAdminQueueData] = useState(null);
+  const [modelsData, setModelsData] = useState(null);
+  const [loadingModels, setLoadingModels] = useState(false);
 
   // Company directory states
   const [companies, setCompanies] = useState([]);
@@ -1335,13 +1337,110 @@ function App() {
       try {
         const queueRes = await api.request('/admin/ai-queue/status');
         setAdminQueueData(queueRes.data);
-      } catch (err) {
+      } catch {
         setAdminQueueData(null);
       }
     } catch (err) {
       console.warn('Failed to load AI Operations health data:', err.message);
     } finally {
       setLoadingAiOps(false);
+    }
+    await loadModels();
+  };
+
+  const loadModels = async () => {
+    setLoadingModels(true);
+    try {
+      const res = await api.request('/admin/models');
+      setModelsData(res.data);
+    } catch {
+      setModelsData(null);
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
+  const handleModelEvaluate = async (model) => {
+    const evaluationType = prompt('Evaluation type (e.g. generation_benchmark, embedding_benchmark):', `${model.modelType}_benchmark`);
+    if (!evaluationType) return;
+    const scoreInput = prompt('Overall score (0.0 - 1.0):', '0.9');
+    if (scoreInput === null) return;
+    const passed = confirm('Did this evaluation pass? OK = passed, Cancel = failed.');
+    try {
+      await api.request(`/admin/models/${model.id}/evaluate`, {
+        method: 'POST',
+        body: { evaluationType, overallScore: Number(scoreInput), status: passed ? 'passed' : 'failed' },
+      });
+      alert('Evaluation recorded.');
+      await loadModels();
+    } catch (err) {
+      alert(`Failed to record evaluation: ${err.message}`);
+    }
+  };
+
+  const handleModelPromote = async (model) => {
+    const environment = prompt('Promote to environment (development, staging, production):', 'staging');
+    if (!environment) return;
+    try {
+      await api.request(`/admin/models/${model.id}/promote`, {
+        method: 'POST',
+        body: { environment },
+      });
+      alert(`Promoted ${model.name}:${model.version} to ${environment}.`);
+      await loadModels();
+    } catch (err) {
+      if (err.message.includes('EMBEDDING_DIMENSION_MISMATCH') || err.message.toLowerCase().includes('dimension')) {
+        const confirmReindex = confirm(`${err.message}\n\nProceed anyway with an explicit re-index acknowledgement?`);
+        if (confirmReindex) {
+          try {
+            await api.request(`/admin/models/${model.id}/promote`, {
+              method: 'POST',
+              body: { environment, confirmReindex: true },
+            });
+            alert(`Promoted ${model.name}:${model.version} to ${environment} (re-index acknowledged).`);
+            await loadModels();
+          } catch (err2) {
+            alert(`Failed to promote: ${err2.message}`);
+          }
+        }
+      } else {
+        alert(`Failed to promote: ${err.message}`);
+      }
+    }
+  };
+
+  const handleModelRollback = async (model) => {
+    const environment = prompt('Roll back which environment (development, staging, production)?', 'production');
+    if (!environment) return;
+    if (!confirm(`Roll back the active ${model.modelType} assignment for ${environment} to the previous known-good model?`)) return;
+    try {
+      await api.request('/admin/models/rollback', {
+        method: 'POST',
+        body: { modelType: model.modelType, environment },
+      });
+      alert('Rollback completed.');
+      await loadModels();
+    } catch (err) {
+      alert(`Failed to roll back: ${err.message}`);
+    }
+  };
+
+  const handleModelArchive = async (model) => {
+    const nextStatus = model.status === 'production' ? 'deprecated' : model.status === 'deprecated' ? 'archived' : null;
+    if (!nextStatus) {
+      alert(`Model must be "production" or "deprecated" to archive (currently "${model.status}").`);
+      return;
+    }
+    if (!confirm(`Transition ${model.name}:${model.version} from "${model.status}" to "${nextStatus}"?`)) return;
+    try {
+      await api.request(`/admin/models/${model.id}/transition`, {
+        method: 'POST',
+        body: { targetStatus: nextStatus },
+      });
+      alert(`Model transitioned to ${nextStatus}.`);
+      await loadModels();
+    } catch (err) {
+      alert(`Failed to transition model: ${err.message}`);
     }
   };
 
@@ -1444,7 +1543,6 @@ function App() {
   };
 
   const handleConnectGmail = () => {
-    const token = localStorage.getItem('cg_access_token');
     if (!user || !user.id) {
       alert('Your user session has not loaded yet. Please wait a moment and try again.');
       return;
@@ -4578,9 +4676,9 @@ function App() {
                 <h1 className="aiops-title">AI Observability &amp; Operations</h1>
                 <p className="aiops-subtitle">Live provider health, queue throughput, and operator controls</p>
               </div>
-              <button className="aiops-btn aiops-btn--primary" onClick={loadAiOps} disabled={loadingAiOps}>
+              <button className="aiops-btn aiops-btn--primary" onClick={loadAiOps} disabled={loadingAiOps || loadingModels}>
                 <IconRefresh />
-                {loadingAiOps ? 'Refreshing...' : 'Refresh Health'}
+                {loadingAiOps || loadingModels ? 'Refreshing...' : 'Refresh Health'}
               </button>
             </div>
 
@@ -4843,6 +4941,76 @@ function App() {
                     </table>
                   </div>
                 </div>
+
+                {/* 6. Model Registry & Lifecycle (Phase 4E) */}
+                <div className="aiops-section-head">
+                  <span className="aiops-section-icon"><IconSliders /></span>
+                  <h2 className="aiops-section-title">Model Registry &amp; Lifecycle</h2>
+                </div>
+                {modelsData ? (
+                  <div className="aiops-panel aiops-panel--flush">
+                    <div className="data-table-container">
+                      <table className="data-table aiops-table">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Version</th>
+                            <th>Type</th>
+                            <th>Provider</th>
+                            <th>Status</th>
+                            <th>Latest Eval</th>
+                            <th>Assigned Envs</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {modelsData.length === 0 ? (
+                            <tr><td colSpan={8} className="aiops-cell-sub">No models registered yet. Use `npm run models:register -- --seed-defaults` to register current production models.</td></tr>
+                          ) : (
+                            modelsData.map((model) => (
+                              <tr key={model.id}>
+                                <td className="aiops-cell-strong">{model.name}</td>
+                                <td>{model.version}</td>
+                                <td>{model.modelType}</td>
+                                <td>{model.provider}</td>
+                                <td>
+                                  <span className={`badge badge-${model.status === 'production' ? 'success' : model.status === 'archived' ? 'danger' : model.status === 'deprecated' ? 'warning' : 'secondary'}`}>
+                                    {model.status}
+                                  </span>
+                                </td>
+                                <td>
+                                  {model.latestEvaluation ? (
+                                    <span className={`badge badge-${model.latestEvaluation.status === 'passed' ? 'success' : 'danger'}`}>
+                                      {model.latestEvaluation.status} {model.latestEvaluation.overallScore != null ? `(${Math.round(model.latestEvaluation.overallScore * 100)}%)` : ''}
+                                    </span>
+                                  ) : (
+                                    <span className="aiops-cell-sub">No evaluation</span>
+                                  )}
+                                </td>
+                                <td className="aiops-cell-sub">{model.currentEnvironments?.length ? model.currentEnvironments.join(', ') : '—'}</td>
+                                <td>
+                                  <div className="aiops-console-actions aiops-console-actions--compact">
+                                    <button className="aiops-btn aiops-btn--sm aiops-btn--neutral" onClick={() => handleModelEvaluate(model)}>Evaluate</button>
+                                    <button className="aiops-btn aiops-btn--sm aiops-btn--primary" onClick={() => handleModelPromote(model)}>Promote</button>
+                                    <button className="aiops-btn aiops-btn--sm aiops-btn--warning" onClick={() => handleModelRollback(model)}>Rollback</button>
+                                    <button className="aiops-btn aiops-btn--sm aiops-btn--danger" onClick={() => handleModelArchive(model)}>Archive</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="aiops-locked-panel">
+                    <span className="aiops-locked-icon"><IconLock /></span>
+                    <p>
+                      Model registry administration requires elevated permissions. Log in with an operator-whitelisted email.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -7236,7 +7404,7 @@ function App() {
 
                 {!editItem?.aiEnrichment ? (
                   <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
-                    No AI profile generated for this connection yet. Click "Run AI Enrichment" to analyze their profile.
+                    No AI profile generated for this connection yet. Click &quot;Run AI Enrichment&quot; to analyze their profile.
                   </div>
                 ) : editingConnectionAi ? (
                   /* Human corrections form */

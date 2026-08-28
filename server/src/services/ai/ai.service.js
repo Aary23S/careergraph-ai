@@ -5,6 +5,21 @@ import { GroqProvider } from './groq-provider.js';
 import { models } from '../../config/database.js';
 import { detectAndSanitizePromptInjection, validateClaims } from './guardrails.service.js';
 import { aiObservability } from './observability.service.js';
+import { findRegistryMatch } from '../model-registry.service.js';
+
+/**
+ * Best-effort, registry-enabled-only lookup so AI audit logs can be traced
+ * back to a specific model_registry row (Phase 4E). Never throws: a failed
+ * or empty lookup just leaves modelRegistryId/modelVersion null, and the
+ * existing provider/promptVersion/schemaVersion fields are unaffected.
+ */
+async function resolveAuditModelMeta(modelString) {
+  if (!env.modelRegistryEnabled) {
+    return { modelRegistryId: null, modelVersion: null };
+  }
+  const match = await findRegistryMatch({ modelType: 'generation', provider: env.aiProvider, modelString });
+  return match ? { modelRegistryId: match.id, modelVersion: match.version } : { modelRegistryId: null, modelVersion: null };
+}
 
 export class AIService {
   constructor() {
@@ -49,6 +64,7 @@ export class AIService {
 
     // 3I-3: Trace Correlation ID
     const correlationId = options.correlationId || crypto.randomUUID();
+    const auditModelMeta = await resolveAuditModelMeta(this.provider.modelName || 'mock');
 
     let attempt = 0;
     const maxRetries = env.aiMaxRetries || 0;
@@ -129,6 +145,7 @@ export class AIService {
               model: this.provider.modelName || 'mock',
               promptVersion: options.promptVersion || 1,
               schemaVersion: options.schemaVersion || 1,
+              ...auditModelMeta,
               latencyMs: latency,
               status: 'success',
               evaluationScore: value.confidence,
@@ -171,6 +188,7 @@ export class AIService {
         model: this.provider.modelName || 'mock',
         promptVersion: options.promptVersion || 1,
         schemaVersion: options.schemaVersion || 1,
+        ...auditModelMeta,
         latencyMs: latency,
         status: 'failed',
         evaluationScore: 0.0,
@@ -196,6 +214,7 @@ export class AIService {
 
     // 3I-3: Trace Correlation ID
     const correlationId = options.correlationId || crypto.randomUUID();
+    const auditModelMeta = await resolveAuditModelMeta(this.provider.modelName || 'mock');
 
     let attempt = 0;
     const maxRetries = env.aiMaxRetries || 0;
@@ -235,6 +254,7 @@ export class AIService {
             model: this.provider.modelName || 'mock',
             promptVersion: options.promptVersion || 1,
             schemaVersion: options.schemaVersion || 1,
+            ...auditModelMeta,
             latencyMs: latency,
             status: 'success',
             evaluationScore: 1.0,
@@ -275,6 +295,7 @@ export class AIService {
         model: this.provider.modelName || 'mock',
         promptVersion: options.promptVersion || 1,
         schemaVersion: options.schemaVersion || 1,
+        ...auditModelMeta,
         latencyMs: latency,
         status: 'failed',
         evaluationScore: 0.0,

@@ -3,6 +3,8 @@ import path from 'path';
 import Joi from 'joi';
 import { env } from '../src/config/env.js';
 import { aiService } from '../src/services/ai/ai.service.js';
+import { connectDatabase, sequelize } from '../src/config/database.js';
+import { findRegistryMatch, recordEvaluation } from '../src/services/model-registry.service.js';
 
 // Define the structured schema target
 const schema = Joi.object({
@@ -94,7 +96,27 @@ function evaluateExtraction(output, expected) {
   return score;
 }
 
+async function recordBenchmarkEvaluation(modelString, report) {
+  try {
+    const match = await findRegistryMatch({ modelType: 'generation', provider: 'ollama', modelString });
+    if (!match) return;
+    const gradeMatch = /^([\d.]+)/.exec(report.avgExtractionGrade || '');
+    const overallScore = gradeMatch ? Number(gradeMatch[1]) / 10 : null;
+    const status = report.failures === 0 && report.timeouts === 0 ? 'passed' : 'failed';
+    await recordEvaluation(match.id, {
+      evaluationType: 'generation_benchmark',
+      metrics: report,
+      overallScore,
+      status,
+    });
+    console.log(`  Recorded generation_benchmark evaluation against registry model ${match.id}.`);
+  } catch (err) {
+    console.warn(`  Skipped recording registry evaluation for ${modelString}: ${err.message}`);
+  }
+}
+
 async function runBenchmark() {
+  await connectDatabase();
   const models = ['qwen2.5-coder:7b', 'mistral:latest'];
   const fixturesDir = path.join(process.cwd(), 'tests', 'fixtures', 'ai');
 
@@ -174,6 +196,7 @@ async function runBenchmark() {
     };
 
     finalReports.push(report);
+    await recordBenchmarkEvaluation(model, report);
     console.log(`\nModel ${model} evaluation finished.\n`);
 
     // Unload model to free VRAM for the next model evaluation
@@ -193,6 +216,11 @@ async function runBenchmark() {
   console.log('📊 FINAL BENCHMARK SUMMARY REPORTS');
   console.log('==================================================');
   console.table(finalReports);
+  await sequelize.close();
 }
 
-runBenchmark().catch(console.error);
+runBenchmark().catch(async (err) => {
+  console.error(err);
+  await sequelize.close().catch(() => {});
+  process.exitCode = 1;
+});
