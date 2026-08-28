@@ -1,7 +1,11 @@
 import { models } from '../config/database.js';
 import { AppError } from '../lib/http.js';
 
-export const MODEL_TYPES = ['generation', 'embedding', 'reranker'];
+// 'ranking' added in Phase 4H for the career-opportunity-ranking model
+// (server/scripts/models-cli.js register --type=ranking, invoked from
+// ai-service/app/ml/training/registry_bridge.py). Purely additive --
+// existing generation/embedding/reranker behavior is unchanged.
+export const MODEL_TYPES = ['generation', 'embedding', 'reranker', 'ranking'];
 export const MODEL_STATUSES = ['candidate', 'staging', 'production', 'deprecated', 'archived'];
 export const ENVIRONMENTS = ['development', 'staging', 'production'];
 export const EVALUATION_STATUSES = ['passed', 'failed', 'error'];

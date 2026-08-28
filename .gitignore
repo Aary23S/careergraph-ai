@@ -27,3 +27,4 @@ ai-service/venv/
 *.pyc
 ai-service/mlartifacts/
 ai-service/datasets/
+ai-service/models/

@@ -73,6 +73,20 @@ describe('Model Registry & Lifecycle Management (Phase 4E)', () => {
         registry.registerModel({ name: 'bad-type', version: '1', modelType: 'summarizer', provider: 'ollama' })
       ).rejects.toMatchObject({ statusCode: 400, code: 'INVALID_MODEL_TYPE' });
     });
+
+    // Phase 4H: 'ranking' added to MODEL_TYPES for the career-opportunity-ranking
+    // model, registered from ai-service via server/scripts/models-cli.js.
+    test('accepts the ranking model type added in Phase 4H', async () => {
+      const model = await registry.registerModel({
+        name: 'career-opportunity-ranker',
+        version: '1',
+        modelType: 'ranking',
+        provider: 'careergraph-ml',
+        framework: 'scikit-learn',
+      });
+      expect(model.status).toBe('candidate');
+      expect(model.modelType).toBe('ranking');
+    });
   });
 
   describe('listing', () => {

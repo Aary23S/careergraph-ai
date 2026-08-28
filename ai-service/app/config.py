@@ -41,5 +41,15 @@ class Settings(BaseSettings):
     database_url: str = ""
     pipeline_batch_size: int = 500
 
+    # Phase 4H: career-opportunity-ranking model. `opportunity_ranker_models_dir`
+    # is where `python -m app.ml.training.train_opportunity_ranker` writes
+    # serialized model versions, and where the shadow-inference endpoint
+    # looks them up. The shadow endpoint itself is only mounted at all when
+    # this flag is true (default false) -- see app/main.py and
+    # app/api/opportunity_ranking.py. Never wired into any production
+    # ranking path; CareerGraph's deterministic ruleScore/finalScore remains
+    # authoritative regardless of this flag.
+    opportunity_ranker_shadow_enabled: bool = False
+    opportunity_ranker_models_dir: str = "models"
 
 settings = Settings()
