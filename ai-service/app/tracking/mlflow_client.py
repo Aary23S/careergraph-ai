@@ -20,7 +20,9 @@ about. Deferring the import until a tracking call actually happens (which
 only occurs when MLFLOW_ENABLED=true) keeps the default, disabled path
 completely unaffected.
 """
+import contextlib
 import functools
+import io
 import json
 import os
 import sys
@@ -90,8 +92,16 @@ class MLflowTrackingClient:
             return None
         experiment_name = f"{settings.mlflow_experiment_prefix}-{experiment_suffix}"
         try:
-            mlflow.set_experiment(experiment_name)
-            run = mlflow.start_run(run_name=run_name)
+            # mlflow's own SDK unconditionally prints "View run/experiment at:
+            # <url>" banners straight to stdout on start_run/end_run against
+            # an http(s) tracking URI -- discovered live (Phase 4H) when it
+            # corrupted a CLI's documented "stdout is exactly one JSON
+            # object" contract (train_opportunity_ranker.py). Suppressed
+            # here, the one shared choke point, rather than in every
+            # stdout-sensitive caller.
+            with contextlib.redirect_stdout(io.StringIO()):
+                mlflow.set_experiment(experiment_name)
+                run = mlflow.start_run(run_name=run_name)
             self._active_run = run
             self.log_tags({"gitCommit": get_git_commit(), "pythonVersion": sys.version.split()[0]})
             return run
@@ -159,7 +169,8 @@ class MLflowTrackingClient:
             self._active_run = None
             return False
         try:
-            mlflow.end_run(status=status)
+            with contextlib.redirect_stdout(io.StringIO()):
+                mlflow.end_run(status=status)
             return True
         except Exception as exc:
             log_event("mlflow_tracking_end_run", status="error", error=str(exc))

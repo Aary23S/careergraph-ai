@@ -41,3 +41,12 @@ app.include_router(health.router)
 app.include_router(embeddings.router)
 app.include_router(rerank.router)
 app.include_router(tracking.router)
+
+if settings.opportunity_ranker_shadow_enabled:
+    # Phase 4H: only mounted when explicitly turned on -- unlike the always-
+    # mounted routers above, this one is a scoring path with (theoretical)
+    # influence over a ranking decision, so it's a hard 404 when disabled,
+    # not just a soft "skipped" response body. See app/api/opportunity_ranking.py.
+    from app.api import opportunity_ranking
+
+    app.include_router(opportunity_ranking.router)
