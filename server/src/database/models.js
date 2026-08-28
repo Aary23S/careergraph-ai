@@ -77,6 +77,8 @@ export function initializeModels(sequelize) {
       skills: { type: DataTypes.JSON, defaultValue: [] },
       salaryPreference: { type: DataTypes.STRING, field: 'salary_preference' },
       bio: { type: DataTypes.TEXT },
+      education: { type: DataTypes.JSON, defaultValue: [] },
+      certifications: { type: DataTypes.JSON, defaultValue: [] },
     },
     { ...baseOptions, tableName: 'profiles' },
   );
@@ -535,6 +537,31 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'resume_ai_enrichments' }
   );
 
+  const JobMatchAnalysis = sequelize.define(
+    'JobMatchAnalysis',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      jobId: { type: DataTypes.UUID, allowNull: false, unique: true, field: 'job_id' },
+      resumeId: { type: DataTypes.UUID, allowNull: true, field: 'resume_id' },
+      provider: { type: DataTypes.STRING },
+      model: { type: DataTypes.STRING },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
+      inputHash: { type: DataTypes.STRING, allowNull: false, field: 'input_hash' },
+      ruleScore: { type: DataTypes.INTEGER, field: 'rule_score' },
+      finalScore: { type: DataTypes.INTEGER, field: 'final_score' },
+      compatibilityAssessment: { type: DataTypes.STRING, field: 'compatibility_assessment' },
+      matchedSkills: { type: DataTypes.JSON, field: 'matched_skills' },
+      missingSkills: { type: DataTypes.JSON, field: 'missing_skills' },
+      strengths: { type: DataTypes.JSON },
+      potentialGaps: { type: DataTypes.JSON, field: 'potential_gaps' },
+      analysisSummary: { type: DataTypes.TEXT, field: 'analysis_summary' },
+      latencyMs: { type: DataTypes.INTEGER, field: 'latency_ms' },
+      errorCode: { type: DataTypes.STRING, field: 'error_code' },
+      computedAt: { type: DataTypes.DATE, field: 'computed_at' },
+    },
+    { ...baseOptions, tableName: 'job_match_analyses' }
+  );
+
   const ConnectionAiEnrichment = sequelize.define(
     'ConnectionAiEnrichment',
     {
@@ -714,6 +741,11 @@ export function initializeModels(sequelize) {
   Job.hasOne(JobAiEnrichment, { foreignKey: 'job_id', as: 'aiEnrichment' });
   JobAiEnrichment.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
 
+  Job.hasOne(JobMatchAnalysis, { foreignKey: 'job_id', as: 'matchAnalysis' });
+  JobMatchAnalysis.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
+  Resume.hasMany(JobMatchAnalysis, { foreignKey: 'resume_id', as: 'matchAnalyses' });
+  JobMatchAnalysis.belongsTo(Resume, { foreignKey: 'resume_id', as: 'resume' });
+
   Resume.hasOne(ResumeAiEnrichment, { foreignKey: 'resume_id', as: 'aiEnrichment' });
   ResumeAiEnrichment.belongsTo(Resume, { foreignKey: 'resume_id', as: 'resume' });
 
@@ -760,6 +792,7 @@ export function initializeModels(sequelize) {
     JobDeduplicationLog,
     JobAiEnrichment,
     ResumeAiEnrichment,
+    JobMatchAnalysis,
     ConnectionAiEnrichment,
     OutreachAiDraft,
     SemanticEmbedding,

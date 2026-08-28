@@ -15,6 +15,7 @@ import {
   extractSkillsFromText,
 } from '../services/intelligence.service.js';
 import { getJobNetworkDetails } from '../services/job-network.service.js';
+import { enqueueJobMatchAnalysis } from '../services/job-match-analysis.service.js';
 
 const router = Router();
 
@@ -138,9 +139,27 @@ async function serializeJob(job, profile, userId) {
     }
   }
 
-  // Calculate matching intelligence on the fly
-  const matchScore = calculateMatchScore(mergedProfile, job);
-  
+  // Calculate matching intelligence on the fly (fallback, always fresh)
+  let matchScore = calculateMatchScore(mergedProfile, job);
+  let matchAnalysisExtras = {};
+
+  const persistedAnalysis = await models.JobMatchAnalysis.findOne({ where: { jobId: job.id, status: 'completed' } });
+  if (persistedAnalysis) {
+    const { computeInputHash } = await import('../services/job-match-analysis.service.js');
+    const currentHash = computeInputHash(job, activeResume?.aiEnrichment, profile);
+    if (persistedAnalysis.inputHash === currentHash) {
+      matchScore = persistedAnalysis.finalScore;
+      matchAnalysisExtras = {
+        compatibilityAssessment: persistedAnalysis.compatibilityAssessment,
+        analysisSummary: persistedAnalysis.analysisSummary,
+        matchAnalysisComputedAt: persistedAnalysis.computedAt,
+      };
+    } else {
+      const { enqueueJobMatchAnalysis } = await import('../services/job-match-analysis.service.js');
+      enqueueJobMatchAnalysis(job.id);
+    }
+  }
+
   // Find connections at this company
   let connections = [];
   if (job.company) {
@@ -186,6 +205,7 @@ async function serializeJob(job, profile, userId) {
     ...jobJson,
     companyName,
     matchScore,
+    ...matchAnalysisExtras,
     matchedSkills: jobSkills.filter(s => profileSkills.includes(s)),
     missingSkills: jobSkills.filter(s => !profileSkills.includes(s)),
     opportunityScore,
@@ -256,6 +276,7 @@ router.post(
 
       const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
       const serialized = await serializeJob(existingJob, profile, req.auth.userId);
+      enqueueJobMatchAnalysis(existingJob.id);
       ok(res, serialized, undefined, 200);
       return;
     }
@@ -281,6 +302,7 @@ router.post(
     const fullJob = await ensureJobOwnership(req.auth.userId, job.id);
     const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
     const serialized = await serializeJob(fullJob, profile, req.auth.userId);
+    enqueueJobMatchAnalysis(fullJob.id);
     created(res, serialized);
   }),
 );
@@ -355,6 +377,7 @@ router.post(
     const result = await ingestJob(req.auth.userId, req.body);
     const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
     const serialized = await serializeJob(result.job, profile, req.auth.userId);
+    enqueueJobMatchAnalysis(result.job.id);
     created(res, { status: result.status, job: serialized });
   })
 );
@@ -472,6 +495,7 @@ router.put(
     const refreshed = await ensureJobOwnership(req.auth.userId, job.id);
     const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
     const serialized = await serializeJob(refreshed, profile, req.auth.userId);
+    enqueueJobMatchAnalysis(refreshed.id);
     ok(res, serialized);
   }),
 );
@@ -532,18 +556,47 @@ router.get(
   '/:jobId/resume-analysis',
   asyncHandler(async (req, res) => {
     const job = await ensureJobOwnership(req.auth.userId, req.params.jobId);
-    
+
     const activeResume = await models.Resume.findOne({
-      where: { user_id: req.auth.userId, isActive: true }
+      where: { user_id: req.auth.userId, isActive: true },
+      include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }]
     });
 
     if (!activeResume) {
       throw new AppError(404, 'ACTIVE_RESUME_NOT_FOUND', 'No active resume found. Please upload and set a resume as active first.');
     }
 
-    const { analyzeJobResumeFit } = await import('../services/resume-analysis.service.js');
-    const analysis = await analyzeJobResumeFit(job.id, activeResume.id);
-    ok(res, analysis);
+    const { computeInputHash, executeJobMatchAnalysis } = await import('../services/job-match-analysis.service.js');
+    const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
+
+    let analysis = await models.JobMatchAnalysis.findOne({ where: { jobId: job.id } });
+    const isStale = !analysis
+      || analysis.status !== 'completed'
+      || (activeResume.aiEnrichment?.status === 'completed'
+        && analysis.inputHash !== computeInputHash(job, activeResume.aiEnrichment, profile));
+
+    if (isStale) {
+      await executeJobMatchAnalysis(job.id);
+      analysis = await models.JobMatchAnalysis.findOne({ where: { jobId: job.id } });
+    }
+
+    if (!analysis || analysis.status !== 'completed') {
+      const { analyzeJobResumeFit } = await import('../services/resume-analysis.service.js');
+      const fallback = await analyzeJobResumeFit(job.id, activeResume.id);
+      ok(res, fallback);
+      return;
+    }
+
+    ok(res, {
+      matchedSkills: analysis.matchedSkills || [],
+      missingSkills: analysis.missingSkills || [],
+      strengths: analysis.strengths || [],
+      potentialGaps: analysis.potentialGaps || [],
+      analysisSummary: analysis.analysisSummary || '',
+      compatibilityAssessment: analysis.compatibilityAssessment || 'unknown',
+      finalScore: analysis.finalScore,
+      computedAt: analysis.computedAt,
+    });
   }),
 );
 

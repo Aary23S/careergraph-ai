@@ -10,6 +10,44 @@ import { validate } from '../middleware/validate.js';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+const PROFILE_APPLY_FIELDS = ['skills', 'targetRoles', 'experience', 'bio', 'education', 'certifications'];
+
+const applyToProfileSchema = Joi.object({
+  fields: Joi.array().items(Joi.string().valid(...PROFILE_APPLY_FIELDS)).min(1).required(),
+});
+
+function parseYearMonth(value) {
+  if (!value) return null;
+  const match = String(value).trim().match(/^(\d{4})(?:-(\d{1,2}))?/);
+  if (!match) return null;
+  const year = parseInt(match[1], 10);
+  const month = match[2] ? parseInt(match[2], 10) : 1;
+  if (Number.isNaN(year)) return null;
+  return year * 12 + (month - 1);
+}
+
+function estimateYearsOfExperience(experienceEntries) {
+  if (!Array.isArray(experienceEntries) || experienceEntries.length === 0) return null;
+  const now = new Date();
+  const nowIndex = now.getFullYear() * 12 + now.getMonth();
+  let totalMonths = 0;
+  let counted = 0;
+
+  experienceEntries.forEach((entry) => {
+    const startIdx = parseYearMonth(entry.startDate);
+    if (startIdx === null) return;
+    const endIdx = entry.isCurrent ? nowIndex : (parseYearMonth(entry.endDate) ?? nowIndex);
+    const months = endIdx - startIdx;
+    if (months > 0) {
+      totalMonths += months;
+      counted += 1;
+    }
+  });
+
+  if (counted === 0) return null;
+  return Math.max(0, Math.round(totalMonths / 12));
+}
+
 async function ensureResumeOwnership(userId, resumeId) {
   const resume = await models.Resume.findOne({
     where: { id: resumeId, user_id: userId },
@@ -98,6 +136,10 @@ router.patch(
     await models.Resume.update({ isActive: false }, { where: { user_id: req.auth.userId } });
     resume.isActive = true;
     await resume.save();
+
+    const { refreshMatchAnalysisForTrackedJobs } = await import('../services/job-match-analysis.service.js');
+    refreshMatchAnalysisForTrackedJobs(req.auth.userId);
+
     ok(res, resume);
   }),
 );
@@ -185,6 +227,61 @@ router.put(
     await saveResumeCorrections(resume.id, req.body);
     const refreshed = await ensureResumeOwnership(req.auth.userId, resume.id);
     ok(res, refreshed);
+  }),
+);
+
+router.post(
+  '/:resumeId/apply-to-profile',
+  validate(applyToProfileSchema),
+  asyncHandler(async (req, res) => {
+    const resume = await ensureResumeOwnership(req.auth.userId, req.params.resumeId);
+    const enrichment = resume.aiEnrichment;
+    if (!enrichment || enrichment.status !== 'completed') {
+      throw new AppError(400, 'ENRICHMENT_NOT_READY', 'Resume AI extraction has not completed yet.');
+    }
+
+    const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
+    if (!profile) {
+      throw new AppError(400, 'PROFILE_REQUIRED', 'Save your profile with a name before applying resume data.');
+    }
+
+    const updates = {};
+
+    req.body.fields.forEach((field) => {
+      if (field === 'skills') {
+        const resumeSkills = enrichment.userCorrectedSkills || enrichment.skills || [];
+        const seen = new Set((profile.skills || []).map((s) => s.toLowerCase()));
+        const merged = [...(profile.skills || [])];
+        resumeSkills.forEach((skill) => {
+          if (!seen.has(skill.toLowerCase())) {
+            seen.add(skill.toLowerCase());
+            merged.push(skill);
+          }
+        });
+        updates.skills = merged;
+      } else if (field === 'targetRoles') {
+        const title = enrichment.userCorrectedProfessionalTitle || enrichment.professionalTitle;
+        if (title) {
+          const seen = new Set((profile.targetRoles || []).map((r) => r.toLowerCase()));
+          const merged = [...(profile.targetRoles || [])];
+          if (!seen.has(title.toLowerCase())) merged.push(title);
+          updates.targetRoles = merged;
+        }
+      } else if (field === 'experience') {
+        const years = estimateYearsOfExperience(enrichment.experience || []);
+        if (years !== null) updates.experience = String(years);
+      } else if (field === 'bio') {
+        const summary = enrichment.userCorrectedSummary || enrichment.summary;
+        if (summary) updates.bio = summary;
+      } else if (field === 'education') {
+        updates.education = enrichment.education || [];
+      } else if (field === 'certifications') {
+        updates.certifications = enrichment.certifications || [];
+      }
+    });
+
+    await profile.update(updates);
+    ok(res, profile);
   }),
 );
 

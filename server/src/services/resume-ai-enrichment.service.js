@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import Joi from 'joi';
 import { createRequire } from 'module';
+import mammoth from 'mammoth';
 import { models } from '../config/database.js';
 import { env } from '../config/env.js';
 import { aiService } from './ai/ai.service.js';
@@ -11,37 +12,67 @@ import { aiObservability } from './ai/observability.service.js';
 import { enqueueAIJob } from '../queues/ai.queue.js';
 
 const require = createRequire(import.meta.url);
-let pdf = require('pdf-parse');
-if (typeof pdf !== 'function' && pdf.default) {
-  pdf = pdf.default;
-}
+const { PDFParse } = require('pdf-parse');
+
+const DOCX_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 // Define the structured schema matching database columns
-export const resumeEnrichmentSchema = Joi.object({
-  professionalTitle: Joi.string().allow('', null).default(''),
-  careerLevel: Joi.string().valid('intern', 'entry', 'mid', 'senior', 'lead', 'principal', 'executive', 'unknown', '').default('unknown'),
-  skills: Joi.array().items(Joi.string()).default([]),
-  technicalDomains: Joi.array().items(Joi.string()).default([]),
-  experience: Joi.array().items(Joi.object({
+// Smaller/quantized models don't always conform to the nested-object shape for
+// array items and sometimes hand back a plain string instead (e.g. experience[0]
+// = "Acme Corp - Senior Engineer" rather than {company, title, ...}). Accepting
+// either shape and normalizing the string case avoids discarding an otherwise
+// valid extraction (skills/title/summary) over one malformed array.
+const experienceItemSchema = Joi.alternatives().try(
+  Joi.object({
     company: Joi.string().allow('', null).default(''),
     title: Joi.string().allow('', null).default(''),
     startDate: Joi.string().allow('', null).default(''),
     endDate: Joi.string().allow('', null).default(''),
     isCurrent: Joi.boolean().default(false),
     responsibilities: Joi.array().items(Joi.string()).default([])
-  })).default([]),
-  projects: Joi.array().items(Joi.object({
+  }),
+  Joi.string()
+).custom((value) => (
+  typeof value === 'string'
+    ? { company: '', title: value, startDate: '', endDate: '', isCurrent: false, responsibilities: [] }
+    : value
+));
+
+const projectItemSchema = Joi.alternatives().try(
+  Joi.object({
     name: Joi.string().allow('', null).default(''),
     description: Joi.string().allow('', null).default(''),
     technologies: Joi.array().items(Joi.string()).default([])
-  })).default([]),
-  education: Joi.array().items(Joi.object({
+  }),
+  Joi.string()
+).custom((value) => (
+  typeof value === 'string' ? { name: value, description: '', technologies: [] } : value
+));
+
+const educationItemSchema = Joi.alternatives().try(
+  Joi.object({
     institution: Joi.string().allow('', null).default(''),
     degree: Joi.string().allow('', null).default(''),
     field: Joi.string().allow('', null).default(''),
     startYear: Joi.string().allow('', null).default(''),
     endYear: Joi.string().allow('', null).default('')
-  })).default([]),
+  }),
+  Joi.string()
+).custom((value) => (
+  typeof value === 'string' ? { institution: value, degree: '', field: '', startYear: '', endYear: '' } : value
+));
+
+const CAREER_LEVELS = ['intern', 'entry', 'mid', 'senior', 'lead', 'principal', 'executive'];
+
+export const resumeEnrichmentSchema = Joi.object({
+  professionalTitle: Joi.string().allow('', null).default(''),
+  careerLevel: Joi.string().trim().lowercase().allow('', null).default('unknown')
+    .custom((value) => (CAREER_LEVELS.includes(value) ? value : 'unknown')),
+  skills: Joi.array().items(Joi.string()).default([]),
+  technicalDomains: Joi.array().items(Joi.string()).default([]),
+  experience: Joi.array().items(experienceItemSchema).default([]),
+  projects: Joi.array().items(projectItemSchema).default([]),
+  education: Joi.array().items(educationItemSchema).default([]),
   certifications: Joi.array().items(Joi.string()).default([]),
   achievements: Joi.array().items(Joi.string()).default([]),
   summary: Joi.string().allow('', null).default(''),
@@ -50,6 +81,12 @@ export const resumeEnrichmentSchema = Joi.object({
 
 const PROMPT_VERSION = 1;
 const SCHEMA_VERSION = 1;
+
+// Groq's on-demand tier caps at 8000 tokens/minute; an untruncated multi-page
+// resume can request 30k+ tokens and get rejected outright. Cap the prompt
+// text (not the evidence text used for guardrail claim-checking, which stays
+// full-length) the same way resume-analysis.service.js already does.
+const MAX_PROMPT_CHARS = 6000;
 
 /**
  * Clean and normalize raw text extracted from PDF.
@@ -71,16 +108,17 @@ export async function extractResumeText(resume) {
     const fullPath = path.join(fileStorage.basePath, resume.storageKey);
     const buffer = await fs.readFile(fullPath);
     if (resume.contentType === 'application/pdf') {
-      let pdfParser = pdf;
-      if (typeof pdfParser !== 'function' && pdfParser.default) {
-        pdfParser = pdfParser.default;
+      const parser = new PDFParse({ data: buffer });
+      try {
+        const result = await parser.getText();
+        return result.text || '';
+      } finally {
+        await parser.destroy();
       }
-      if (typeof pdfParser === 'function') {
-        const parsed = await pdfParser(buffer);
-        return parsed.text || '';
-      } else {
-        return buffer.toString('utf-8');
-      }
+    }
+    if (resume.contentType === DOCX_CONTENT_TYPE) {
+      const parsed = await mammoth.extractRawText({ buffer });
+      return parsed.value || '';
     }
     return buffer.toString('utf-8');
   } catch (err) {
@@ -212,7 +250,7 @@ export async function executeResumeEnrichment(resumeId) {
   try {
     const rawText = await extractResumeText(enrichment.resume);
     const normalized = normalizeResumeText(rawText);
-    const prompt = buildEnrichmentPrompt(normalized);
+    const prompt = buildEnrichmentPrompt(normalized.slice(0, MAX_PROMPT_CHARS));
     const parsed = await aiService.generateStructured(prompt, resumeEnrichmentSchema, {
       timeoutMs: 120000,
       operation: 'resume_enrichment',
@@ -242,6 +280,11 @@ export async function executeResumeEnrichment(resumeId) {
       latencyMs: latency,
       errorCode: null
     });
+
+    if (enrichment.resume.isActive) {
+      const { refreshMatchAnalysisForTrackedJobs } = await import('./job-match-analysis.service.js');
+      refreshMatchAnalysisForTrackedJobs(enrichment.resume.user_id);
+    }
   } catch (err) {
     queueFailures++;
     const latency = Date.now() - start;

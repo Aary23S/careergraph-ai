@@ -598,6 +598,11 @@ function App() {
   const [selectedResumeId, setSelectedResumeId] = useState(null);
   const [resumeAnalysis, setResumeAnalysis] = useState(null);
   const [loadingResumeAnalysis, setLoadingResumeAnalysis] = useState(false);
+  const [resumeExtraction, setResumeExtraction] = useState(null);
+  const [loadingResumeExtraction, setLoadingResumeExtraction] = useState(false);
+  const [applyFieldSelection, setApplyFieldSelection] = useState([]);
+  const [applyingToProfile, setApplyingToProfile] = useState(false);
+  const [applyResultMessage, setApplyResultMessage] = useState('');
 
   // Connection detail states
   const [activeConnectionId, setActiveConnectionId] = useState(null);
@@ -1184,6 +1189,55 @@ function App() {
       });
     } finally {
       setLoadingResumeAnalysis(false);
+    }
+  };
+
+  const loadResumeExtraction = async (resumeId) => {
+    setLoadingResumeExtraction(true);
+    setApplyResultMessage('');
+    try {
+      const data = await api.getResumeAiEnrichment(resumeId);
+      setResumeExtraction(data && data.id ? data : null);
+      setApplyFieldSelection([]);
+    } catch (e) {
+      console.error(e);
+      setResumeExtraction(null);
+    } finally {
+      setLoadingResumeExtraction(false);
+    }
+  };
+
+  const handleRetryResumeExtraction = async (resumeId) => {
+    setLoadingResumeExtraction(true);
+    try {
+      await api.retryResumeAiEnrichment(resumeId);
+      await loadResumeExtraction(resumeId);
+    } catch (e) {
+      console.error(e);
+      setLoadingResumeExtraction(false);
+    }
+  };
+
+  const toggleApplyField = (field) => {
+    setApplyFieldSelection((prev) =>
+      prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field]
+    );
+  };
+
+  const handleApplyResumeToProfile = async (resumeId) => {
+    if (applyFieldSelection.length === 0) return;
+    setApplyingToProfile(true);
+    setApplyResultMessage('');
+    try {
+      await api.applyResumeToProfile(resumeId, applyFieldSelection);
+      await loadProfile();
+      setApplyResultMessage('Applied to your profile.');
+      setApplyFieldSelection([]);
+    } catch (e) {
+      console.error(e);
+      setApplyResultMessage(e.message || 'Failed to apply resume data to profile.');
+    } finally {
+      setApplyingToProfile(false);
     }
   };
 
@@ -2090,7 +2144,7 @@ function App() {
                     <div
                       key={res.id}
                       className={`resume-card ${isSelected ? 'resume-card--selected' : ''}`}
-                      onClick={() => { setSelectedResumeId(res.id); setEditingAiEnrichment(false); }}
+                      onClick={() => { setSelectedResumeId(res.id); setEditingAiEnrichment(false); loadResumeExtraction(res.id); }}
                     >
                       <span className="resume-card-icon"><IconFile /></span>
                       <div className="resume-card-body">
@@ -2136,7 +2190,7 @@ function App() {
                             e.stopPropagation();
                             if (confirm('Delete this resume?')) {
                               await api.deleteResume(res.id);
-                              if (selectedResumeId === res.id) setSelectedResumeId(null);
+                              if (selectedResumeId === res.id) { setSelectedResumeId(null); setResumeExtraction(null); }
                               loadResumes();
                             }
                           }}
@@ -2147,6 +2201,165 @@ function App() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {selectedResumeId && (
+              <div className="resume-extract-panel">
+                <div className="resume-extract-head">
+                  <span className="resume-extract-icon"><IconZap /></span>
+                  <h2 className="resume-extract-title">AI-Extracted Details</h2>
+                </div>
+
+                {loadingResumeExtraction ? (
+                  <div className="resume-extract-notice">Loading extracted resume data...</div>
+                ) : !resumeExtraction ? (
+                  <div className="resume-extract-notice">
+                    No AI extraction available for this resume yet.
+                    <button
+                      className="resume-btn resume-btn--ghost"
+                      onClick={() => handleRetryResumeExtraction(selectedResumeId)}
+                    >
+                      <IconRefresh /> Run Extraction
+                    </button>
+                  </div>
+                ) : resumeExtraction.status === 'pending' || resumeExtraction.status === 'processing' ? (
+                  <div className="resume-extract-notice">
+                    Extraction status: <strong>{resumeExtraction.status}</strong>. This updates automatically once complete.
+                  </div>
+                ) : resumeExtraction.status === 'failed' ? (
+                  <div className="resume-extract-notice resume-extract-notice--danger">
+                    <p>Extraction failed{resumeExtraction.errorCode ? ` (${resumeExtraction.errorCode})` : ''}.</p>
+                    {resumeExtraction.rawResponse && (
+                      <p className="resume-extract-error-detail">{resumeExtraction.rawResponse}</p>
+                    )}
+                    <button
+                      className="resume-btn resume-btn--ghost"
+                      onClick={() => handleRetryResumeExtraction(selectedResumeId)}
+                    >
+                      <IconRefresh /> Retry Extraction
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="resume-extract-grid">
+                      <div className="resume-extract-section">
+                        <span className="resume-extract-label">Professional Title</span>
+                        <span className="resume-extract-value">
+                          {resumeExtraction.userCorrectedProfessionalTitle || resumeExtraction.professionalTitle || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="resume-extract-section">
+                        <span className="resume-extract-label">Career Level</span>
+                        <span className="resume-extract-value">
+                          {resumeExtraction.userCorrectedCareerLevel || resumeExtraction.careerLevel || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="resume-extract-section">
+                        <span className="resume-extract-label">Confidence</span>
+                        <span className="resume-extract-value">{Math.round((resumeExtraction.confidence || 0) * 100)}%</span>
+                      </div>
+                    </div>
+
+                    <div className="resume-extract-section">
+                      <span className="resume-extract-label">Skills ({(resumeExtraction.userCorrectedSkills || resumeExtraction.skills || []).length})</span>
+                      <div className="resume-extract-chips">
+                        {(resumeExtraction.userCorrectedSkills || resumeExtraction.skills || []).length === 0 ? (
+                          <span className="resume-extract-empty">None detected</span>
+                        ) : (
+                          (resumeExtraction.userCorrectedSkills || resumeExtraction.skills || []).map((s) => (
+                            <span key={s} className="badge badge-secondary">{s}</span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="resume-extract-section">
+                      <span className="resume-extract-label">Experience ({(resumeExtraction.experience || []).length})</span>
+                      {(resumeExtraction.experience || []).length === 0 ? (
+                        <span className="resume-extract-empty">None detected</span>
+                      ) : (
+                        <ul className="resume-extract-list">
+                          {resumeExtraction.experience.map((exp, idx) => (
+                            <li key={idx}>
+                              <strong>{exp.title || 'Role'}</strong> at {exp.company || 'Company'} ({exp.startDate || '?'} &ndash; {exp.isCurrent ? 'Present' : (exp.endDate || '?')})
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="resume-extract-section">
+                      <span className="resume-extract-label">Education ({(resumeExtraction.education || []).length})</span>
+                      {(resumeExtraction.education || []).length === 0 ? (
+                        <span className="resume-extract-empty">None detected</span>
+                      ) : (
+                        <ul className="resume-extract-list">
+                          {resumeExtraction.education.map((edu, idx) => (
+                            <li key={idx}>
+                              <strong>{edu.degree || 'Degree'}</strong>{edu.field ? ` in ${edu.field}` : ''} &mdash; {edu.institution || 'Institution'}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="resume-extract-section">
+                      <span className="resume-extract-label">Certifications ({(resumeExtraction.certifications || []).length})</span>
+                      <div className="resume-extract-chips">
+                        {(resumeExtraction.certifications || []).length === 0 ? (
+                          <span className="resume-extract-empty">None detected</span>
+                        ) : (
+                          resumeExtraction.certifications.map((c) => (
+                            <span key={c} className="badge badge-info">{c}</span>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="resume-extract-section">
+                      <span className="resume-extract-label">Summary</span>
+                      <p className="resume-extract-summary">
+                        {resumeExtraction.userCorrectedSummary || resumeExtraction.summary || 'No summary available.'}
+                      </p>
+                    </div>
+
+                    <div className="resume-apply-panel">
+                      <div className="resume-apply-head">
+                        <IconCheckCircle />
+                        <span>Apply extracted data to My Profile</span>
+                      </div>
+                      <p className="resume-apply-hint">Select which fields to merge into your profile. Nothing is changed until you apply.</p>
+                      <div className="resume-apply-fields">
+                        {[
+                          { key: 'skills', label: 'Skills' },
+                          { key: 'targetRoles', label: 'Target Roles (from title)' },
+                          { key: 'experience', label: 'Years of Experience' },
+                          { key: 'bio', label: 'Bio / Summary' },
+                          { key: 'education', label: 'Education' },
+                          { key: 'certifications', label: 'Certifications' },
+                        ].map((f) => (
+                          <label key={f.key} className="resume-apply-checkbox-row">
+                            <input
+                              type="checkbox"
+                              checked={applyFieldSelection.includes(f.key)}
+                              onChange={() => toggleApplyField(f.key)}
+                            />
+                            {f.label}
+                          </label>
+                        ))}
+                      </div>
+                      <button
+                        className="resume-btn resume-btn--primary"
+                        disabled={applyFieldSelection.length === 0 || applyingToProfile}
+                        onClick={() => handleApplyResumeToProfile(selectedResumeId)}
+                      >
+                        {applyingToProfile ? 'Applying...' : 'Apply Selected to My Profile'}
+                      </button>
+                      {applyResultMessage && <div className="resume-apply-result">{applyResultMessage}</div>}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -6351,6 +6564,11 @@ function App() {
                           <div className={`job-compat-value job-compat-value--${resumeAnalysis?.compatibilityAssessment === 'high' ? 'high' : resumeAnalysis?.compatibilityAssessment === 'medium' ? 'medium' : 'low'}`}>
                             {resumeAnalysis?.compatibilityAssessment || 'unknown'}
                           </div>
+                          {resumeAnalysis?.computedAt && (
+                            <div className="job-info-card-label" style={{ marginTop: '6px' }}>
+                              Last analyzed {formatRelativeTime(resumeAnalysis.computedAt)}
+                            </div>
+                          )}
                         </div>
                         <button
                           className="job-btn job-btn--ghost"

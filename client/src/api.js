@@ -201,6 +201,24 @@ class ApiClient {
     return `${API_BASE}/resumes/${resumeId}/download?token=${this.accessToken}`;
   }
 
+  async getResumeAiEnrichment(resumeId) {
+    const res = await this.request(`/resumes/${resumeId}/ai`);
+    return res.data;
+  }
+
+  async retryResumeAiEnrichment(resumeId) {
+    const res = await this.request(`/resumes/${resumeId}/ai-enrich/retry`, { method: 'POST' });
+    return res.data;
+  }
+
+  async applyResumeToProfile(resumeId, fields) {
+    const res = await this.request(`/resumes/${resumeId}/apply-to-profile`, {
+      method: 'POST',
+      body: { fields },
+    });
+    return res.data;
+  }
+
   // Connections
   async listConnections(params = {}) {
     const query = new URLSearchParams();

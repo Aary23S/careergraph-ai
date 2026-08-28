@@ -7,6 +7,7 @@ import { registerMemoryWorker, queueJobSchema } from '../queues/ai.queue.js';
 import { executeEnrichment as executeJobEnrichment } from '../services/job-ai-enrichment.service.js';
 import { executeEnrichment as executeConnectionEnrichment } from '../services/connection-ai-enrichment.service.js';
 import { executeResumeEnrichment } from '../services/resume-ai-enrichment.service.js';
+import { executeJobMatchAnalysis } from '../services/job-match-analysis.service.js';
 import { getOrGenerateEmbedding } from '../services/embedding.service.js';
 import { aiObservability } from '../services/ai/observability.service.js';
 
@@ -60,6 +61,9 @@ export async function handleJob(jobName, jobData) {
         break;
       case 'resume_enrichment':
         await executeResumeEnrichment(entityId);
+        break;
+      case 'job_match_analysis':
+        await executeJobMatchAnalysis(entityId);
         break;
       case 'embedding_generation':
         await getOrGenerateEmbedding({
