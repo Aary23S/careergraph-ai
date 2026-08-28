@@ -6597,6 +6597,22 @@ details[open] summary::before {
   transform: translateY(-1px);
 }
 
+.aiops-btn--neutral {
+  background: var(--surface-2, rgba(255, 255, 255, 0.06));
+  color: var(--text-primary, inherit);
+  border-color: var(--border, rgba(255, 255, 255, 0.12));
+}
+
+.aiops-btn--sm {
+  padding: 5px 10px;
+  font-size: 0.76rem;
+}
+
+.aiops-console-actions--compact {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
 .aiops-anomaly-box {
   background: var(--danger-bg);
   border: 1px solid rgba(240, 89, 108, 0.35);

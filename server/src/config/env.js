@@ -84,7 +84,9 @@ const schema = Joi.object({
   ML_SERVICE_ENABLED: Joi.boolean().default(false),
   ML_SERVICE_URL: Joi.string().uri().default('http://localhost:8000'),
   ML_SERVICE_TIMEOUT_MS: Joi.number().integer().min(1).default(5000),
-  ML_SERVICE_EMBEDDING_MODEL: Joi.string().default('all-MiniLM-L6-v2')
+  ML_SERVICE_EMBEDDING_MODEL: Joi.string().default('all-MiniLM-L6-v2'),
+  MODEL_REGISTRY_ENABLED: Joi.boolean().default(false),
+  MODEL_REGISTRY_DEFAULT_ENVIRONMENT: Joi.string().valid('development', 'staging', 'production').default('development'),
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -158,4 +160,6 @@ export const env = {
   mlServiceUrl: value.ML_SERVICE_URL,
   mlServiceTimeoutMs: value.ML_SERVICE_TIMEOUT_MS,
   mlServiceEmbeddingModel: value.ML_SERVICE_EMBEDDING_MODEL,
+  modelRegistryEnabled: value.MODEL_REGISTRY_ENABLED,
+  modelRegistryDefaultEnvironment: value.MODEL_REGISTRY_DEFAULT_ENVIRONMENT,
 };

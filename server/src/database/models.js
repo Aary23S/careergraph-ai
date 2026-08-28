@@ -653,8 +653,60 @@ export function initializeModels(sequelize) {
       status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'success' },
       evaluationScore: { type: DataTypes.FLOAT, allowNull: true, field: 'evaluation_score' },
       correlationId: { type: DataTypes.UUID, allowNull: true, field: 'correlation_id' },
+      modelRegistryId: { type: DataTypes.UUID, allowNull: true, field: 'model_registry_id' },
+      modelVersion: { type: DataTypes.STRING, allowNull: true, field: 'model_version' },
     },
     { ...baseOptions, tableName: 'ai_audit_logs' }
+  );
+
+  const ModelRegistry = sequelize.define(
+    'ModelRegistry',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      name: { type: DataTypes.STRING, allowNull: false },
+      version: { type: DataTypes.STRING, allowNull: false },
+      modelType: { type: DataTypes.STRING, allowNull: false, field: 'model_type' },
+      provider: { type: DataTypes.STRING, allowNull: false },
+      framework: { type: DataTypes.STRING, allowNull: true },
+      artifactUri: { type: DataTypes.STRING, allowNull: true, field: 'artifact_uri' },
+      metadata: { type: DataTypes.JSON, allowNull: true },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'candidate' },
+    },
+    {
+      ...baseOptions,
+      tableName: 'model_registry',
+      indexes: [
+        { unique: true, fields: ['provider', 'name', 'version', 'model_type'] },
+      ],
+    }
+  );
+
+  const ModelEvaluation = sequelize.define(
+    'ModelEvaluation',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      modelRegistryId: { type: DataTypes.UUID, allowNull: false, field: 'model_registry_id' },
+      evaluationType: { type: DataTypes.STRING, allowNull: false, field: 'evaluation_type' },
+      datasetVersion: { type: DataTypes.STRING, allowNull: true, field: 'dataset_version' },
+      metrics: { type: DataTypes.JSON, allowNull: true },
+      overallScore: { type: DataTypes.FLOAT, allowNull: true, field: 'overall_score' },
+      status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'completed' },
+      evaluatedAt: { type: DataTypes.DATE, allowNull: true, field: 'evaluated_at' },
+    },
+    { ...baseOptions, tableName: 'model_evaluations', updatedAt: false }
+  );
+
+  const ModelAssignment = sequelize.define(
+    'ModelAssignment',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      modelType: { type: DataTypes.STRING, allowNull: false, field: 'model_type' },
+      environment: { type: DataTypes.STRING, allowNull: false },
+      modelRegistryId: { type: DataTypes.UUID, allowNull: false, field: 'model_registry_id' },
+      assignedAt: { type: DataTypes.DATE, allowNull: false, field: 'assigned_at', defaultValue: DataTypes.NOW },
+      assignedBy: { type: DataTypes.STRING, allowNull: true, field: 'assigned_by' },
+    },
+    { ...baseOptions, tableName: 'model_assignments', timestamps: false }
   );
 
 
@@ -767,6 +819,12 @@ export function initializeModels(sequelize) {
   User.hasMany(AiAuditLog, { foreignKey: 'user_id', as: 'aiAuditLogs' });
   AiAuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+  ModelRegistry.hasMany(ModelEvaluation, { foreignKey: 'model_registry_id', as: 'evaluations' });
+  ModelEvaluation.belongsTo(ModelRegistry, { foreignKey: 'model_registry_id', as: 'model' });
+
+  ModelRegistry.hasMany(ModelAssignment, { foreignKey: 'model_registry_id', as: 'assignments' });
+  ModelAssignment.belongsTo(ModelRegistry, { foreignKey: 'model_registry_id', as: 'model' });
+
   return {
     User,
     RefreshToken,
@@ -797,5 +855,8 @@ export function initializeModels(sequelize) {
     OutreachAiDraft,
     SemanticEmbedding,
     AiAuditLog,
+    ModelRegistry,
+    ModelEvaluation,
+    ModelAssignment,
   };
 }

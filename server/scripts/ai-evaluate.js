@@ -6,6 +6,7 @@ import { aiService } from '../src/services/ai/ai.service.js';
 import { querySemanticMatches } from '../src/services/semantic-search.service.js';
 import { models, connectDatabase, sequelize } from '../src/config/database.js';
 import { evaluateExtraction, evaluateOutreach, evaluateSearch } from '../src/services/ai/evaluator.service.js';
+import { findRegistryMatch, recordEvaluation } from '../src/services/model-registry.service.js';
 
 // Load Joi schemas matching production AI enrichment validations
 const jobSchema = Joi.object({
@@ -315,6 +316,26 @@ async function run() {
         evaluationScore: res.metrics.fieldAccuracy || res.metrics.precisionAt5 || res.metrics.toneQuality || 1.0
       });
     }
+  }
+
+  // Connect this run to the model registry, if the evaluated model happens
+  // to be registered (Phase 4E section 6). Best-effort: a missing registry
+  // entry never fails the evaluation run itself.
+  try {
+    const registryMatch = await findRegistryMatch({ modelType: 'generation', provider: env.aiProvider, modelString: modelToUse });
+    if (registryMatch) {
+      const passRate = results.filter((r) => r.passed).length / results.length;
+      await recordEvaluation(registryMatch.id, {
+        evaluationType: 'ai_evaluate',
+        datasetVersion: 'evaluation-suite-v1',
+        overallScore: passRate,
+        status: hasRegression ? 'failed' : 'passed',
+        metrics: { passRate, totalCases: results.length, hasRegression },
+      });
+      console.log(`Recorded ai_evaluate evaluation against registry model ${registryMatch.id}.`);
+    }
+  } catch (err) {
+    console.warn(`Skipped recording registry evaluation: ${err.message}`);
   }
 
   await sequelize.close();
