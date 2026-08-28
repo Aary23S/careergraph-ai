@@ -5814,6 +5814,168 @@ details[open] summary::before {
   background: var(--danger-bg);
 }
 
+/* ---- AI Extracted Details + Apply-to-Profile panel ---- */
+
+.resume-extract-panel {
+  margin-top: 24px;
+  padding: 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.resume-extract-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.resume-extract-icon {
+  display: inline-flex;
+  color: var(--primary);
+}
+
+.resume-extract-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.resume-extract-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.resume-extract-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.resume-extract-notice--danger {
+  color: var(--danger);
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.resume-extract-error-detail {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: monospace;
+  word-break: break-word;
+}
+
+.resume-extract-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.resume-extract-section {
+  margin-bottom: 16px;
+}
+
+.resume-extract-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.resume-extract-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.resume-extract-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.resume-extract-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.resume-extract-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.resume-extract-summary {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.resume-apply-panel {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.resume-apply-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.resume-apply-head svg {
+  width: 16px;
+  height: 16px;
+  color: var(--success);
+}
+
+.resume-apply-hint {
+  margin: 0 0 14px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.resume-apply-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.resume-apply-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.resume-apply-result {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--success);
+}
+
 /* ---- Upload Resume modal ---- */
 
 .resume-modal-head {
