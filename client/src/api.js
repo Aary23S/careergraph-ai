@@ -5,6 +5,7 @@ class ApiClient {
     this.accessToken = localStorage.getItem('cg_access_token');
     this.refreshToken = localStorage.getItem('cg_refresh_token');
     this.onLogout = null;
+    this.refreshPromise = null;
   }
 
   setTokens(accessToken, refreshToken) {
@@ -75,7 +76,21 @@ class ApiClient {
     }
   }
 
+  // Concurrent 401s (e.g. several requests firing on page load) must not each
+  // fire their own /auth/refresh call: refresh tokens are single-use and
+  // rotated server-side, so only the first call would succeed and the rest
+  // would see an already-revoked token and force a spurious logout. Share
+  // one in-flight refresh across all callers instead.
   async tryRefresh() {
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.performRefresh().finally(() => {
+        this.refreshPromise = null;
+      });
+    }
+    return this.refreshPromise;
+  }
+
+  async performRefresh() {
     try {
       const response = await fetch(`${API_BASE}/auth/refresh`, {
         method: 'POST',

@@ -20,3 +20,8 @@ Thumbs.db
 .env.example
 *.md
 *docs/
+ai-service/.venv/
+ai-service/venv/
+**/__pycache__/
+**/.pytest_cache/
+*.pyc

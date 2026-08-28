@@ -1,6 +1,6 @@
 import { sequelize, models } from '../config/database.js';
-import { aiService } from './ai/ai.service.js';
 import { env } from '../config/env.js';
+import { resolveEmbeddingModelName, generateEmbeddingVector } from './embedding.service.js';
 
 let isVectorExtensionEnabled = null;
 
@@ -47,8 +47,8 @@ export async function querySemanticMatches({ userId, queryText, entityTypes, lim
     return [];
   }
 
-  const modelName = env.ollamaEmbeddingModel || 'mock';
-  const queryEmbedding = await aiService.generateEmbedding(queryText, modelName);
+  const modelName = resolveEmbeddingModelName();
+  const queryEmbedding = await generateEmbeddingVector(queryText, modelName);
 
   const hasVector = await checkVectorExtension();
 

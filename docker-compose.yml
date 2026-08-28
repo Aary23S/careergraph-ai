@@ -29,11 +29,29 @@ services:
       CORS_ORIGIN: http://localhost:5173
       JWT_ACCESS_SECRET: REMOVED_SECRET_JWT_ACCESS
       JWT_REFRESH_SECRET: REMOVED_SECRET_JWT_REFRESH=
+      # Phase 4D: Python AI/ML service (embeddings/reranking) -- off by
+      # default. Reached over the internal compose network, never the
+      # host-bound port below.
+      ML_SERVICE_ENABLED: "false"
+      ML_SERVICE_URL: http://ai-service:8000
     ports:
       - "5000:5000"
     depends_on:
       postgres:
         condition: service_healthy
+
+  ai-service:
+    build:
+      context: ./ai-service
+    container_name: careergraph-ai-service
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8000
+    ports:
+      # Host-side bound to localhost only -- this service must never be
+      # reachable from outside the machine (see ai-service/README.md).
+      - "127.0.0.1:8000:8000"
 
   frontend:
     build:

@@ -1,5 +1,6 @@
 import { env } from '../src/config/env.js';
 import { aiService } from '../src/services/ai/ai.service.js';
+import { mlServiceClient } from '../src/services/ml-service.client.js';
 
 const testTexts = [
   'Senior Python Developer with AWS cloud design and distributed systems expertise.',
@@ -96,6 +97,46 @@ async function runBenchmark() {
     } catch (e) {
       // Ignored
     }
+  }
+
+  // Phase 4D: Node (Ollama) vs Python ML service, side by side. Guarded by
+  // ML_SERVICE_ENABLED so this benchmark still runs standalone (Node-only)
+  // when the Python service isn't set up.
+  if (env.mlServiceEnabled) {
+    console.log(`\nEvaluating Python ML service (${env.mlServiceUrl})...`);
+    const latencies = [];
+    let dimensions = 0;
+    let failureCount = 0;
+    let resolvedModel = env.mlServiceEmbeddingModel;
+
+    for (const text of testTexts) {
+      const start = Date.now();
+      try {
+        const result = await mlServiceClient.embed(text, { model: env.mlServiceEmbeddingModel });
+        const latency = Date.now() - start;
+        latencies.push(latency);
+        dimensions = result.dimension;
+        resolvedModel = result.model;
+        console.log(`  ✅ Python embedding generated (${result.dimension} dims) in ${(latency / 1000).toFixed(3)}s`);
+      } catch (err) {
+        const latency = Date.now() - start;
+        latencies.push(latency);
+        failureCount++;
+        console.log(`  ❌ Python embedding failed after ${(latency / 1000).toFixed(3)}s: ${err.message}`);
+      }
+    }
+
+    const avgLatency = latencies.reduce((sum, val) => sum + val, 0) / latencies.length || 0;
+
+    finalReports.push({
+      model: `python:${resolvedModel}`,
+      dimension: dimensions || 'N/A',
+      avgLatencySec: `${(avgLatency / 1000).toFixed(3)}s`,
+      failures: failureCount,
+      status: failureCount === 0 ? 'Passed' : 'Failed'
+    });
+  } else {
+    console.log('\nSkipping Python ML service benchmark (ML_SERVICE_ENABLED=false).');
   }
 
   console.log('\n==================================================');
