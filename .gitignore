@@ -25,3 +25,4 @@ ai-service/venv/
 **/__pycache__/
 **/.pytest_cache/
 *.pyc
+ai-service/mlartifacts/

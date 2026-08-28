@@ -23,7 +23,8 @@
     "models:register": "node scripts/models-cli.js register",
     "models:promote": "node scripts/models-cli.js promote",
     "models:rollback": "node scripts/models-cli.js rollback",
-    "models:evaluate": "node scripts/models-cli.js evaluate"
+    "models:evaluate": "node scripts/models-cli.js evaluate",
+    "ai:mlflow:benchmark": "node scripts/ai-mlflow-benchmark.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

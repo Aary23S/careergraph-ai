@@ -6,11 +6,16 @@ services:
     environment:
       POSTGRES_DB: careergraph
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: [PASSWORD]
+      POSTGRES_PASSWORD: REMOVED_SECRET_POSTGRES
     ports:
       - "5432:5432"
     volumes:
       - careergraph_postgres_data:/var/lib/postgresql/data
+      # Phase 4F: creates a separate `mlflow` database on first init, kept
+      # logically isolated from CareerGraph's application tables. Only runs
+      # against a brand-new (empty) data volume -- see docs/mlflow-setup.md
+      # for the one-time manual fallback if your volume predates this file.
+      - ./db/init-mlflow-db.sql:/docker-entrypoint-initdb.d/init-mlflow-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d careergraph"]
       interval: 5s
@@ -34,6 +39,11 @@ services:
       # host-bound port below.
       ML_SERVICE_ENABLED: "false"
       ML_SERVICE_URL: http://ai-service:8000
+      # Phase 4F: MLflow experiment tracking -- off by default. Node never
+      # calls MLflow directly (see docs/experiment-tracking.md); this flag
+      # only controls whether ai-evaluate.js attempts to ask ai-service to
+      # log a run.
+      MLFLOW_ENABLED: "false"
     ports:
       - "5000:5000"
     depends_on:
@@ -48,10 +58,45 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: 8000
+      # Phase 4F: same flag family as above, consumed here by
+      # app/tracking/mlflow_client.py. Reached over the internal compose
+      # network at the `mlflow` service name, never the host-bound port.
+      MLFLOW_ENABLED: "false"
+      MLFLOW_TRACKING_URI: http://mlflow:5001
+      MLFLOW_EXPERIMENT_PREFIX: careergraph
     ports:
       # Host-side bound to localhost only -- this service must never be
       # reachable from outside the machine (see ai-service/README.md).
       - "127.0.0.1:8000:8000"
+
+  mlflow:
+    build:
+      # Reuses the ai-service image (already installs `mlflow` +
+      # `psycopg2-binary` via requirements.txt) rather than maintaining a
+      # second Dockerfile just to run `mlflow server`.
+      context: ./ai-service
+    container_name: careergraph-mlflow
+    restart: unless-stopped
+    command:
+      - mlflow
+      - server
+      - --backend-store-uri
+      - postgresql://postgres:REMOVED_SECRET_POSTGRES@postgres:5432/mlflow
+      - --default-artifact-root
+      - /mlartifacts
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5001"
+    volumes:
+      - careergraph_mlflow_artifacts:/mlartifacts
+    ports:
+      # Host-side bound to localhost only, same posture as ai-service --
+      # this is a local dev tool, not meant to be reachable externally.
+      - "127.0.0.1:5001:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
@@ -65,3 +110,4 @@ services:
 
 volumes:
   careergraph_postgres_data:
+  careergraph_mlflow_artifacts:
