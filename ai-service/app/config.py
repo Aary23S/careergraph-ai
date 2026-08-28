@@ -25,5 +25,12 @@ class Settings(BaseSettings):
     # instead of downloading/loading the real sentence-transformers model.
     use_fake_models: bool = False
 
+    # Phase 4F: MLflow experiment tracking -- optional, off by default. When
+    # false (or when the tracking server is unreachable), every method on
+    # MLflowTrackingClient becomes a no-op; AI inference never depends on this.
+    mlflow_enabled: bool = False
+    mlflow_tracking_uri: str = "http://localhost:5001"
+    mlflow_experiment_prefix: str = "careergraph"
+
 
 settings = Settings()

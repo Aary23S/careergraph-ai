@@ -4942,7 +4942,38 @@ function App() {
                   </div>
                 </div>
 
-                {/* 6. Model Registry & Lifecycle (Phase 4E) */}
+                {/* 6. MLflow experiment tracking status (Phase 4F) -- deep
+                    analysis stays in the MLflow UI itself; this is just a
+                    compact "is it up, what ran last" card. */}
+                <div className="aiops-section-head">
+                  <span className="aiops-section-icon"><IconBarChart /></span>
+                  <h2 className="aiops-section-title">MLflow Experiment Tracking</h2>
+                </div>
+                <div className="aiops-stat-grid">
+                  <div className="aiops-stat-card aiops-stat-card--accent">
+                    <span className="aiops-stat-label">MLflow</span>
+                    <div className="aiops-stat-badge-row">
+                      <span className={`badge badge-${aiOpsData.mlflow?.status === 'connected' ? 'success' : aiOpsData.mlflow?.status === 'disabled' ? 'secondary' : 'danger'} aiops-state-badge`}>
+                        {aiOpsData.mlflow?.status === 'connected' ? 'Connected' : aiOpsData.mlflow?.status === 'disabled' ? 'Disabled' : 'Unavailable'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="aiops-stat-card">
+                    <span className="aiops-stat-label">Last Experiment</span>
+                    <span className="aiops-stat-value aiops-stat-value--md">{aiOpsData.mlflow?.lastExperiment || '—'}</span>
+                  </div>
+                  <div className="aiops-stat-card">
+                    <span className="aiops-stat-label">Last Run</span>
+                    <span className="aiops-stat-value aiops-stat-value--md">{aiOpsData.mlflow?.lastRun ? aiOpsData.mlflow.lastRun.slice(0, 12) : '—'}</span>
+                    <span className="aiops-stat-value-sub">{aiOpsData.mlflow?.lastRunStatus || ''}</span>
+                  </div>
+                  <div className="aiops-stat-card">
+                    <span className="aiops-stat-label">Last Run Model</span>
+                    <span className="aiops-stat-value aiops-stat-value--md">{aiOpsData.mlflow?.lastRunModel || '—'}</span>
+                  </div>
+                </div>
+
+                {/* 7. Model Registry & Lifecycle (Phase 4E) */}
                 <div className="aiops-section-head">
                   <span className="aiops-section-icon"><IconSliders /></span>
                   <h2 className="aiops-section-title">Model Registry &amp; Lifecycle</h2>

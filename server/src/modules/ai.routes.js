@@ -3,17 +3,46 @@ import { aiService } from '../services/ai/ai.service.js';
 import { env } from '../config/env.js';
 import { aiObservability } from '../services/ai/observability.service.js';
 import { aiQueue } from '../queues/ai.queue.js';
+import { mlServiceClient } from '../services/ml-service.client.js';
 
 const router = Router();
+
+/**
+ * Best-effort MLflow status for the AI Ops "MLflow" card (Phase 4F section
+ * 15). Never throws -- an unreachable ai-service/MLflow just reports
+ * status "unavailable", same as the rest of this health endpoint's
+ * philosophy of degrading gracefully rather than failing the whole response.
+ */
+async function getMlflowStatusSummary() {
+  if (!env.mlflowEnabled) {
+    return { status: 'disabled' };
+  }
+  try {
+    const tracking = await mlServiceClient.getTrackingStatus();
+    if (!tracking.connected) {
+      return { status: 'unavailable', enabled: tracking.enabled };
+    }
+    return {
+      status: 'connected',
+      lastExperiment: tracking.lastRun?.experiment || null,
+      lastRun: tracking.lastRun?.runId || null,
+      lastRunStatus: tracking.lastRun?.status || null,
+      lastRunModel: tracking.lastRun?.model || null,
+    };
+  } catch {
+    return { status: 'unavailable' };
+  }
+}
 
 router.get('/health', async (req, res) => {
   try {
     const available = await aiService.healthCheck();
-    
+
     const { updateCachedQueueMetrics } = await import('../queues/queue.service.js');
     await updateCachedQueueMetrics();
-    
+
     const summary = aiObservability.getSummaryReport();
+    const mlflow = await getMlflowStatusSummary();
     return res.json({
       success: true,
       data: {
@@ -25,7 +54,8 @@ router.get('/health', async (req, res) => {
         queue: summary.queue,
         latency: summary.latency,
         averageQuality: summary.averageQuality,
-        anomalies: summary.anomalies
+        anomalies: summary.anomalies,
+        mlflow
       }
     });
   } catch (err) {
@@ -40,7 +70,8 @@ router.get('/health', async (req, res) => {
         queue: { pending: 0, processing: 0, failed: 0, details: {} },
         latency: { p50: 0, p95: 0 },
         averageQuality: 0.0,
-        anomalies: [{ type: 'health_check_failed', message: err.message }]
+        anomalies: [{ type: 'health_check_failed', message: err.message }],
+        mlflow: { status: env.mlflowEnabled ? 'unavailable' : 'disabled' }
       },
       error: err.message
     });

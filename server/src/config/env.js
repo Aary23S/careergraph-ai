@@ -87,6 +87,7 @@ const schema = Joi.object({
   ML_SERVICE_EMBEDDING_MODEL: Joi.string().default('all-MiniLM-L6-v2'),
   MODEL_REGISTRY_ENABLED: Joi.boolean().default(false),
   MODEL_REGISTRY_DEFAULT_ENVIRONMENT: Joi.string().valid('development', 'staging', 'production').default('development'),
+  MLFLOW_ENABLED: Joi.boolean().default(false),
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -162,4 +163,5 @@ export const env = {
   mlServiceEmbeddingModel: value.ML_SERVICE_EMBEDDING_MODEL,
   modelRegistryEnabled: value.MODEL_REGISTRY_ENABLED,
   modelRegistryDefaultEnvironment: value.MODEL_REGISTRY_DEFAULT_ENVIRONMENT,
+  mlflowEnabled: value.MLFLOW_ENABLED,
 };

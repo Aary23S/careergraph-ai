@@ -109,6 +109,57 @@ export class MLServiceClient {
     return { results: body.results, model: body.model };
   }
 
+  /**
+   * Phase 4F: one-shot MLflow run logging, proxied through the Python
+   * service (the only process that actually imports the `mlflow` SDK -- see
+   * ai-service/app/tracking/mlflow_client.py). The route itself always
+   * returns 200 with a `status` of "logged" or "skipped" -- MLflow being
+   * disabled or unreachable is not treated as an HTTP error there, so this
+   * method only throws on a genuine ai-service-unreachable/malformed-response
+   * case. Callers (ai-evaluate.js, ai-mlflow-benchmark.js) must still wrap
+   * this in try/catch and treat any failure as "skip logging, continue" --
+   * an experiment-tracking outage must never fail an evaluation run.
+   */
+  async logExperimentRun({ experiment, params, metrics, tags, artifacts, runName } = {}) {
+    const response = await fetchWithTimeout(
+      `${this.baseUrl}/v1/tracking/runs`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          experiment,
+          runName: runName || null,
+          params: params || {},
+          metrics: metrics || {},
+          tags: tags || {},
+          artifacts: artifacts || [],
+        }),
+      },
+      this.timeoutMs,
+    );
+
+    if (response.status === 422) {
+      throw new MLServiceError('BAD_REQUEST', 'ML service rejected the tracking run payload');
+    }
+    if (!response.ok) {
+      throw new MLServiceError(`HTTP_${response.status}`, `ML service tracking run request failed with status ${response.status}`);
+    }
+
+    const body = await this._parseJson(response);
+    if (typeof body.status !== 'string') {
+      throw new MLServiceError('BAD_RESPONSE', 'ML service returned a malformed tracking run response');
+    }
+    return body;
+  }
+
+  async getTrackingStatus() {
+    const response = await fetchWithTimeout(`${this.baseUrl}/v1/tracking/status`, { method: 'GET' }, this.timeoutMs);
+    if (!response.ok) {
+      throw new MLServiceError(`HTTP_${response.status}`, `ML service tracking status request failed with status ${response.status}`);
+    }
+    return this._parseJson(response);
+  }
+
   async _parseJson(response) {
     try {
       return await response.json();

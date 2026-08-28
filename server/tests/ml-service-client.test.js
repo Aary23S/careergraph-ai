@@ -118,4 +118,49 @@ describe('MLServiceClient', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
     await expect(client.healthCheck()).rejects.toMatchObject({ code: 'HTTP_503' });
   });
+
+  test('logExperimentRun() returns the parsed body on a "logged" response', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 'logged', runId: 'run-1', experiment: 'careergraph-embeddings' }),
+    });
+    const result = await client.logExperimentRun({ experiment: 'embeddings', metrics: { latency_ms: 10 } });
+    expect(result).toEqual({ status: 'logged', runId: 'run-1', experiment: 'careergraph-embeddings' });
+  });
+
+  test('logExperimentRun() returns the parsed body on a "skipped" response (not an error)', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: 'skipped', reason: 'mlflow_disabled_or_unavailable', runId: null, experiment: null }),
+    });
+    const result = await client.logExperimentRun({ experiment: 'embeddings' });
+    expect(result.status).toBe('skipped');
+  });
+
+  test('logExperimentRun() throws BAD_RESPONSE when the response has no status field', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
+    await expect(client.logExperimentRun({ experiment: 'embeddings' })).rejects.toMatchObject({ code: 'BAD_RESPONSE' });
+  });
+
+  test('logExperimentRun() throws UNAVAILABLE when ai-service is unreachable', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'));
+    await expect(client.logExperimentRun({ experiment: 'embeddings' })).rejects.toMatchObject({ code: 'UNAVAILABLE' });
+  });
+
+  test('getTrackingStatus() returns the parsed body on success', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ enabled: true, connected: true, lastRun: { experiment: 'careergraph-embeddings', runId: 'r1', status: 'FINISHED', model: 'x' } }),
+    });
+    const result = await client.getTrackingStatus();
+    expect(result.connected).toBe(true);
+  });
+
+  test('getTrackingStatus() throws HTTP_<status> on failure', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
+    await expect(client.getTrackingStatus()).rejects.toMatchObject({ code: 'HTTP_503' });
+  });
 });

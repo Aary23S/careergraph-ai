@@ -4,9 +4,11 @@ import Joi from 'joi';
 import { env } from '../src/config/env.js';
 import { aiService } from '../src/services/ai/ai.service.js';
 import { querySemanticMatches } from '../src/services/semantic-search.service.js';
+import { resolveEmbeddingModelName } from '../src/services/embedding.service.js';
 import { models, connectDatabase, sequelize } from '../src/config/database.js';
 import { evaluateExtraction, evaluateOutreach, evaluateSearch } from '../src/services/ai/evaluator.service.js';
 import { findRegistryMatch, recordEvaluation } from '../src/services/model-registry.service.js';
+import { logEvaluationResultsToMlflow } from '../src/services/mlflow-evaluation-logger.service.js';
 
 // Load Joi schemas matching production AI enrichment validations
 const jobSchema = Joi.object({
@@ -192,7 +194,11 @@ async function run() {
       entityId: tempConnection.id,
       embedding: mockVector,
       contentHash: 'mockhash',
-      embeddingModel: modelToUse === 'groq' ? 'bge-large-en-v1.5' : (env.ollamaEmbeddingModel || 'mock'),
+      // Must match exactly what querySemanticMatches() resolves the query
+      // embedding to below, or this seeded row is simply invisible to the
+      // search it's meant to test (pre-existing bug: comparing modelToUse,
+      // a model *name*, to the literal string 'groq' can never be true).
+      embeddingModel: resolveEmbeddingModelName(),
       embeddingDimension: 384
     });
 
@@ -336,6 +342,14 @@ async function run() {
     }
   } catch (err) {
     console.warn(`Skipped recording registry evaluation: ${err.message}`);
+  }
+
+  // Phase 4F: also log per-category runs to MLflow when enabled. No-ops
+  // entirely (zero network calls) when MLFLOW_ENABLED is false, and never
+  // throws -- a tracking-server outage must never fail this script.
+  const mlflowResult = await logEvaluationResultsToMlflow(results, { modelToUse });
+  if (mlflowResult.attempted) {
+    console.log(`MLflow: logged ${mlflowResult.logged.length} run(s), skipped ${mlflowResult.skipped.length}.`);
   }
 
   await sequelize.close();

@@ -1,8 +1,8 @@
 import { env } from '../src/config/env.js';
 import { aiService } from '../src/services/ai/ai.service.js';
-import { mlServiceClient } from '../src/services/ml-service.client.js';
 import { connectDatabase, sequelize } from '../src/config/database.js';
 import { findRegistryMatch, recordEvaluation } from '../src/services/model-registry.service.js';
+import { benchmarkPythonEmbeddings, DEFAULT_BENCHMARK_SENTENCES } from '../src/services/embedding-benchmark.util.js';
 
 async function recordBenchmarkEvaluation({ modelType, provider, modelString, report }) {
   try {
@@ -20,13 +20,7 @@ async function recordBenchmarkEvaluation({ modelType, provider, modelString, rep
   }
 }
 
-const testTexts = [
-  'Senior Python Developer with AWS cloud design and distributed systems expertise.',
-  'Technical Project Manager handling software releases and vendor operations.',
-  'React Frontend Engineer building premium dashboard user interfaces with CSS modules.',
-  'DevOps Specialist optimizing postgres database queries and CI/CD automation pipelines.',
-  'Junior Fullstack Intern learning Node.js development and database migrations.'
-];
+const testTexts = DEFAULT_BENCHMARK_SENTENCES;
 
 async function pullModelIfNeeded(modelName) {
   console.log(`Checking if model "${modelName}" is available...`);
@@ -123,43 +117,22 @@ async function runBenchmark() {
   // when the Python service isn't set up.
   if (env.mlServiceEnabled) {
     console.log(`\nEvaluating Python ML service (${env.mlServiceUrl})...`);
-    const latencies = [];
-    let dimensions = 0;
-    let failureCount = 0;
-    let resolvedModel = env.mlServiceEmbeddingModel;
-
-    for (const text of testTexts) {
-      const start = Date.now();
-      try {
-        const result = await mlServiceClient.embed(text, { model: env.mlServiceEmbeddingModel });
-        const latency = Date.now() - start;
-        latencies.push(latency);
-        dimensions = result.dimension;
-        resolvedModel = result.model;
-        console.log(`  ✅ Python embedding generated (${result.dimension} dims) in ${(latency / 1000).toFixed(3)}s`);
-      } catch (err) {
-        const latency = Date.now() - start;
-        latencies.push(latency);
-        failureCount++;
-        console.log(`  ❌ Python embedding failed after ${(latency / 1000).toFixed(3)}s: ${err.message}`);
-      }
-    }
-
-    const avgLatency = latencies.reduce((sum, val) => sum + val, 0) / latencies.length || 0;
+    const result = await benchmarkPythonEmbeddings(testTexts);
+    console.log(`  ${result.failures === 0 ? '✅' : '❌'} ${result.sampleCount - result.failures}/${result.sampleCount} embeddings generated (${result.dimension} dims), avg ${(result.avgLatencyMs / 1000).toFixed(3)}s`);
 
     finalReports.push({
-      model: `python:${resolvedModel}`,
-      dimension: dimensions || 'N/A',
-      avgLatencySec: `${(avgLatency / 1000).toFixed(3)}s`,
-      failures: failureCount,
-      status: failureCount === 0 ? 'Passed' : 'Failed'
+      model: `python:${result.model}`,
+      dimension: result.dimension || 'N/A',
+      avgLatencySec: `${(result.avgLatencyMs / 1000).toFixed(3)}s`,
+      failures: result.failures,
+      status: result.failures === 0 ? 'Passed' : 'Failed'
     });
 
     await recordBenchmarkEvaluation({
       modelType: 'embedding',
       provider: 'sentence-transformers',
-      modelString: `${resolvedModel}:1`,
-      report: { dimension: dimensions, avgLatencyMs: avgLatency, failures: failureCount },
+      modelString: `${result.model}:1`,
+      report: { dimension: result.dimension, avgLatencyMs: result.avgLatencyMs, failures: result.failures },
     });
   } else {
     console.log('\nSkipping Python ML service benchmark (ML_SERVICE_ENABLED=false).');
