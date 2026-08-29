@@ -105,7 +105,10 @@ def test_predict_endpoint_payload_size_limit():
     })
     response = client.post(
         "/v1/models/opportunity-ranker/predict",
-        headers={"content-length": str(len(large_payload))},
+        headers={
+            "content-length": str(len(large_payload)),
+            "content-type": "application/json"
+        },
         content=large_payload,
     )
     assert response.status_code == 413
