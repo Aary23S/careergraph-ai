@@ -9,7 +9,7 @@
     "build": "node --check src/app.js && node --check src/server.js && node --check src/start.js",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
+    "test": "node --experimental-vm-modules --max-old-space-size=4096 ./node_modules/jest/bin/jest.js --runInBand",
     "test:watch": "jest --watch",
     "db:migrate": "sequelize-cli db:migrate --config src/config/database-cli.cjs --migrations-path src/database/migrations",
     "db:migrate:undo": "sequelize-cli db:migrate:undo --config src/config/database-cli.cjs --migrations-path src/database/migrations",

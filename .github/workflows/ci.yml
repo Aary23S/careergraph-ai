@@ -47,8 +47,25 @@ jobs:
   test:
     needs: validate
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: careergraph_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
+
+      - name: Stop default system postgres service
+        run: sudo systemctl stop postgresql
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -62,7 +79,20 @@ jobs:
           cd server
           npm ci
 
+      - name: Run DB migrations
+        env:
+          DATABASE_URL: postgresql://postgres:password123@localhost:5432/careergraph_test
+          DATABASE_DIALECT: postgres
+          NODE_ENV: test
+        run: |
+          cd server
+          npm run db:migrate
+
       - name: Run Node tests
+        env:
+          DATABASE_URL: postgresql://postgres:password123@localhost:5432/careergraph_test
+          DATABASE_DIALECT: postgres
+          NODE_ENV: test
         run: |
           cd server
           npm test
@@ -103,6 +133,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Stop default system postgres service
+        run: sudo systemctl stop postgresql
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
