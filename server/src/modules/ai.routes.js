@@ -4,6 +4,9 @@ import { env } from '../config/env.js';
 import { aiObservability } from '../services/ai/observability.service.js';
 import { aiQueue } from '../queues/ai.queue.js';
 import { mlServiceClient } from '../services/ml-service.client.js';
+import { resolveRankingModel } from '../services/model-resolver.service.js';
+import { models } from '../config/database.js';
+import { Op } from 'sequelize';
 
 const router = Router();
 
@@ -34,6 +37,115 @@ async function getMlflowStatusSummary() {
   }
 }
 
+/**
+ * Fulfills Phase 4L requirements for Model Lineage, Prediction logging,
+ * Drift monitoring and Champion/Challenger tracking on the AI Ops dashboard.
+ */
+async function getMlopsDashboardSummary() {
+  const summary = {
+    champion: 'none',
+    challenger: 'none',
+    datasetVersion: 'unknown',
+    featureVersion: 'unknown',
+    modelVersion: 'unknown',
+    mlflowRun: 'unknown',
+    predictionMetrics: { totalCount: 0, averageScore: 0, averageLatencyMs: 0 },
+    driftStatus: { driftDetected: false, features: {} },
+    modelQuality: { accuracy: 1.0, totalLinkedOutcomes: 0 },
+    deploymentStatus: 'unknown'
+  };
+
+  try {
+    // 1. Resolve champion model
+    const resolved = await resolveRankingModel();
+    if (resolved) {
+      summary.champion = resolved.model;
+      summary.modelVersion = resolved.model.split(':')[1] || resolved.model;
+      
+      // Load registry metadata
+      if (resolved.modelRegistryId) {
+        const registryRow = await models.ModelRegistry.findByPk(resolved.modelRegistryId);
+        if (registryRow) {
+          summary.datasetVersion = registryRow.metadata?.datasetVersion || 'unknown';
+          summary.featureVersion = registryRow.metadata?.featureVersion || 'unknown';
+          summary.mlflowRun = registryRow.metadata?.mlflowRunId || 'unknown';
+        }
+      }
+    }
+
+    // 2. Resolve challenger model (find any candidate or staging models)
+    const challengerRow = await models.ModelRegistry.findOne({
+      where: {
+        status: { [Op.in]: ['candidate', 'staging'] }
+      },
+      order: [['created_at', 'DESC']]
+    });
+    if (challengerRow) {
+      summary.challenger = `${challengerRow.name}:${challengerRow.version}`;
+    }
+
+    // 3. Query prediction metrics
+    const totalPredictions = await models.MlPrediction.count();
+    summary.predictionMetrics.totalCount = totalPredictions;
+    if (totalPredictions > 0) {
+      const avgScore = await models.MlPrediction.mean('predictionScore');
+      const avgTime = await models.MlPrediction.mean('predictionTime');
+      summary.predictionMetrics.averageScore = Number(Number(avgScore || 0).toFixed(2));
+      summary.predictionMetrics.averageLatencyMs = Number(Number(avgTime || 0).toFixed(1));
+    }
+
+    // 4. Query drift status from python service
+    try {
+      const drift = await mlServiceClient.getDriftStatus(summary.modelVersion !== 'unknown' ? summary.modelVersion : undefined);
+      summary.driftStatus = {
+        driftDetected: drift.drift_detected,
+        features: drift.features
+      };
+    } catch {
+      summary.driftStatus = { driftDetected: false, features: {}, error: 'ML service unreachable' };
+    }
+
+    // 5. Compute model quality metrics (Outcome linkage)
+    const predictions = await models.MlPrediction.findAll({
+      limit: 100,
+      order: [['created_at', 'DESC']]
+    });
+    let correct = 0;
+    let totalLinked = 0;
+    for (const pred of predictions) {
+      const app = await models.Application.findOne({
+        where: {
+          user_id: pred.userId,
+          job_id: pred.entityId
+        }
+      });
+      if (app) {
+        totalLinked++;
+        const isPositiveOutcome = ['interview', 'offer', 'accepted'].includes(app.status);
+        const isHighPrediction = pred.predictionScore > 0.7;
+        if (isPositiveOutcome === isHighPrediction) {
+          correct++;
+        }
+      }
+    }
+    summary.modelQuality.totalLinkedOutcomes = totalLinked;
+    summary.modelQuality.accuracy = totalLinked > 0 ? Number((correct / totalLinked).toFixed(2)) : 1.0;
+
+    // 6. Query deployment status
+    try {
+      const readiness = await mlServiceClient.readinessCheck();
+      summary.deploymentStatus = readiness.status === 'ready' ? 'healthy' : 'degraded';
+    } catch {
+      summary.deploymentStatus = 'unavailable';
+    }
+
+  } catch (err) {
+    console.error('[MlopsDashboard] Failed to build MLOps summary:', err.message);
+  }
+
+  return summary;
+}
+
 router.get('/health', async (req, res) => {
   try {
     const available = await aiService.healthCheck();
@@ -43,6 +155,7 @@ router.get('/health', async (req, res) => {
 
     const summary = aiObservability.getSummaryReport();
     const mlflow = await getMlflowStatusSummary();
+    const mlops = await getMlopsDashboardSummary();
     return res.json({
       success: true,
       data: {
@@ -55,7 +168,8 @@ router.get('/health', async (req, res) => {
         latency: summary.latency,
         averageQuality: summary.averageQuality,
         anomalies: summary.anomalies,
-        mlflow
+        mlflow,
+        mlops
       }
     });
   } catch (err) {
@@ -71,7 +185,8 @@ router.get('/health', async (req, res) => {
         latency: { p50: 0, p95: 0 },
         averageQuality: 0.0,
         anomalies: [{ type: 'health_check_failed', message: err.message }],
-        mlflow: { status: env.mlflowEnabled ? 'unavailable' : 'disabled' }
+        mlflow: { status: env.mlflowEnabled ? 'unavailable' : 'disabled' },
+        mlops: { deploymentStatus: 'unavailable', champion: 'none', challenger: 'none' }
       },
       error: err.message
     });

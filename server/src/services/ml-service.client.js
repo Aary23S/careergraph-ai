@@ -199,6 +199,25 @@ export class MLServiceClient {
     };
   }
 
+  async getDriftStatus(modelVersion = null) {
+    const url = modelVersion 
+      ? `${this.baseUrl}/v1/models/opportunity-ranker/drift?modelVersion=${encodeURIComponent(modelVersion)}`
+      : `${this.baseUrl}/v1/models/opportunity-ranker/drift`;
+    const response = await fetchWithTimeout(url, { method: 'GET' }, this.timeoutMs);
+    if (!response.ok) {
+      throw new MLServiceError(`HTTP_${response.status}`, `ML service drift check failed with status ${response.status}`);
+    }
+    return this._parseJson(response);
+  }
+
+  async readinessCheck() {
+    const response = await fetchWithTimeout(`${this.baseUrl}/readiness`, { method: 'GET' }, this.timeoutMs);
+    if (!response.ok) {
+      throw new MLServiceError(`HTTP_${response.status}`, `ML service readiness check failed with status ${response.status}`);
+    }
+    return this._parseJson(response);
+  }
+
   async _parseJson(response) {
     try {
       return await response.json();
