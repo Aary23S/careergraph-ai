@@ -1,0 +1,221 @@
+name: CareerGraph AI/ML CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, staging ]
+  pull_request:
+    branches: [ main, master, staging ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Node dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Run Node Linting
+        run: |
+          cd server
+          npm run lint
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          cd ai-service
+          pip install -r requirements.txt
+
+      - name: Run Python Syntax Check
+        run: |
+          python -m py_compile ai-service/app/**/*.py
+
+  test:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Node dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Run Node tests
+        run: |
+          cd server
+          npm test
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          cd ai-service
+          pip install -r requirements.txt
+
+      - name: Run Python pytest
+        run: |
+          cd ai-service
+          python -m pytest
+
+  ai-evaluate:
+    needs: test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: careergraph_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Node dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Run DB migrations
+        env:
+          DATABASE_URL: postgresql://postgres:password123@localhost:5432/careergraph_test
+          DATABASE_DIALECT: postgres
+          NODE_ENV: test
+        run: |
+          cd server
+          npm run db:migrate
+
+      - name: Run AI Evaluation
+        env:
+          DATABASE_URL: postgresql://postgres:password123@localhost:5432/careergraph_test
+          DATABASE_DIALECT: postgres
+          NODE_ENV: test
+          AI_ENABLED: true
+          AI_PROVIDER: mock
+        run: |
+          cd server
+          npm run ai:evaluate
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install Node dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Run Node Build Check
+        run: |
+          cd server
+          npm run build
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          cd ai-service
+          pip install -r requirements.txt
+
+      - name: Run Python ML Pipeline (Development Mode)
+        run: |
+          cd ai-service
+          python -m app.ml.training.train_opportunity_ranker --mode development --no-register
+
+      - name: Run Feature Registry Schema Validation CLI
+        run: |
+          cd ai-service
+          python -m app.features.validate
+
+  security:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Node Audit check (Allowed warning level)
+        run: |
+          cd server
+          npm audit --audit-level=high || true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Python Safety Vulnerability Check (Allowed warnings)
+        run: |
+          pip install safety
+          safety check || true
+
+  docker-build:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Backend Docker Image
+        run: |
+          docker build -t careergraph-backend:latest ./server
+
+      - name: Build AI Service Docker Image
+        run: |
+          docker build -t careergraph-ai-service:latest ./ai-service
