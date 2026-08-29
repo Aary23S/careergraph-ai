@@ -81,7 +81,7 @@ jobs:
 
       - name: Run DB migrations
         env:
-          DATABASE_URL: postgresql://postgres:password123@localhost:5432/careergraph_test
+          DATABASE_URL: postgresql://postgres:REMOVED_SECRET_POSTGRES@localhost:5432/careergraph_test
           DATABASE_DIALECT: postgres
           NODE_ENV: test
         run: |
@@ -90,7 +90,7 @@ jobs:
 
       - name: Run Node tests
         env:
-          DATABASE_URL: postgresql://postgres:password123@localhost:5432/careergraph_test
+          DATABASE_URL: postgresql://postgres:REMOVED_SECRET_POSTGRES@localhost:5432/careergraph_test
           DATABASE_DIALECT: postgres
           NODE_ENV: test
         run: |
@@ -151,7 +151,7 @@ jobs:
 
       - name: Run DB migrations
         env:
-          DATABASE_URL: postgresql://postgres:password123@localhost:5432/careergraph_test
+          DATABASE_URL: postgresql://postgres:REMOVED_SECRET_POSTGRES@localhost:5432/careergraph_test
           DATABASE_DIALECT: postgres
           NODE_ENV: test
         run: |
@@ -160,7 +160,7 @@ jobs:
 
       - name: Run AI Evaluation
         env:
-          DATABASE_URL: postgresql://postgres:password123@localhost:5432/careergraph_test
+          DATABASE_URL: postgresql://postgres:REMOVED_SECRET_POSTGRES@localhost:5432/careergraph_test
           DATABASE_DIALECT: postgres
           NODE_ENV: test
           AI_ENABLED: true
