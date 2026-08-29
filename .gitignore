@@ -17,6 +17,7 @@ node_modules/
 Thumbs.db
 *.pdf
 *.txt
+!ai-service/requirements.txt
 .env.example
 *.md
 *docs/
