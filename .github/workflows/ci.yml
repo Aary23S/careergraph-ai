@@ -53,7 +53,7 @@ jobs:
         env:
           POSTGRES_DB: careergraph_test
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password123
+          POSTGRES_PASSWORD: aary234786
         ports:
           - 5432:5432
         options: >-
@@ -106,7 +106,7 @@ jobs:
         env:
           POSTGRES_DB: careergraph_test
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password123
+          POSTGRES_PASSWORD: aary234786
         ports:
           - 5432:5432
         options: >-
