@@ -52,6 +52,7 @@ def create_dummy_model(version: str, is_development_only: bool = False, checksum
     meta = {
         "featureSet": "opportunity-ranking",
         "featureVersion": "v1",
+        "datasetVersion": "v1",
         "featureSchemaChecksum": fset.schema_checksum,
         "isDevelopmentOnly": is_development_only,
         "checksum": actual_hash if checksum == "valid-hash" else checksum,
@@ -139,3 +140,33 @@ def test_readiness_endpoint_ready(monkeypatch):
     assert response.status_code == 200
     assert response.json()["status"] == "ready"
     assert response.json()["modelVersion"] == "v20260829T000000Z"
+
+
+def test_drift_endpoint(monkeypatch):
+    create_dummy_model("v20260829T000000Z", is_development_only=False)
+    monkeypatch.setattr("app.ml.training.model.load_model", lambda path: "fake-pipeline")
+    monkeypatch.setattr("app.ml.inference.predictor.resolve_active_production_model", lambda: {
+        "version": "v20260829T000000Z",
+        "status": "production",
+        "model_registry_id": "some-uuid",
+    })
+    
+    response = client.get("/v1/models/opportunity-ranker/drift")
+    assert response.status_code == 200
+    assert response.json()["status"] == "computed"
+    assert "drift_detected" in response.json()
+    assert "features" in response.json()
+
+
+def test_retrain_endpoint(monkeypatch):
+    monkeypatch.setattr("app.api.models.run_training", lambda **kwargs: {
+        "status": "trained",
+        "modelVersion": "v20260829T999999Z",
+        "checksum": "mock-checksum"
+    })
+    response = client.post("/v1/models/opportunity-ranker/retrain", json={"mode": "development"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "trained"
+    assert response.json()["modelVersion"] == "v20260829T999999Z"
+    assert response.json()["checksum"] == "mock-checksum"
+

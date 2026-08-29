@@ -709,6 +709,22 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'model_assignments', timestamps: false }
   );
 
+  const MlPrediction = sequelize.define(
+    'MlPrediction',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      entityType: { type: DataTypes.STRING, allowNull: false, field: 'entity_type' },
+      entityId: { type: DataTypes.UUID, allowNull: false, field: 'entity_id' },
+      modelRegistryId: { type: DataTypes.UUID, allowNull: true, field: 'model_registry_id' },
+      modelVersion: { type: DataTypes.STRING, allowNull: true, field: 'model_version' },
+      featureVersion: { type: DataTypes.STRING, allowNull: true, field: 'feature_version' },
+      predictionScore: { type: DataTypes.FLOAT, allowNull: false, field: 'prediction_score' },
+      predictionTime: { type: DataTypes.INTEGER, allowNull: true, field: 'prediction_time' },
+      requestId: { type: DataTypes.UUID, allowNull: true, field: 'request_id' },
+    },
+    { ...baseOptions, tableName: 'ml_predictions' }
+  );
+
 
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -825,6 +841,12 @@ export function initializeModels(sequelize) {
   ModelRegistry.hasMany(ModelAssignment, { foreignKey: 'model_registry_id', as: 'assignments' });
   ModelAssignment.belongsTo(ModelRegistry, { foreignKey: 'model_registry_id', as: 'model' });
 
+  User.hasMany(MlPrediction, { foreignKey: 'user_id', as: 'predictions' });
+  MlPrediction.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  ModelRegistry.hasMany(MlPrediction, { foreignKey: 'model_registry_id', as: 'predictions' });
+  MlPrediction.belongsTo(ModelRegistry, { foreignKey: 'model_registry_id', as: 'model' });
+
   return {
     User,
     RefreshToken,
@@ -858,5 +880,6 @@ export function initializeModels(sequelize) {
     ModelRegistry,
     ModelEvaluation,
     ModelAssignment,
+    MlPrediction,
   };
 }

@@ -161,6 +161,19 @@ export async function executeJobMatchAnalysis(jobId) {
           `modelRegistryId=${prediction.modelRegistryId}, ` +
           `latencyMs=${mlLatency}`
         );
+
+        // Persist to MlPrediction database table
+        await models.MlPrediction.create({
+          userId: job.user_id,
+          entityType: 'opportunity',
+          entityId: job.id,
+          modelRegistryId: prediction.modelRegistryId || null,
+          modelVersion: prediction.modelVersion || null,
+          featureVersion: prediction.featureVersion || null,
+          predictionScore: prediction.score,
+          predictionTime: mlLatency,
+          requestId: crypto.randomUUID()
+        });
       } catch (mlErr) {
         console.warn(`[JobMatchAnalysisService] Shadow inference FAILED (graceful fallback): ${mlErr.message}, code=${mlErr.code}`);
       }
