@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 
-from app.api import embeddings, health, rerank, tracking
+from app.api import embeddings, health, rerank, tracking, models as models_router
 from app.config import settings
 from app.console_utf8 import ensure_utf8_console
 from app.logging_config import configure_logging, log_event, request_id_ctx
@@ -15,6 +15,8 @@ configure_logging(settings.log_level)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log_event("startup", service=settings.service_name, version=settings.service_version)
+    from app.ml.inference.predictor import preload_models
+    preload_models(settings.opportunity_ranker_models_dir)
     yield
     log_event("shutdown", service=settings.service_name)
 
@@ -41,6 +43,7 @@ app.include_router(health.router)
 app.include_router(embeddings.router)
 app.include_router(rerank.router)
 app.include_router(tracking.router)
+app.include_router(models_router.router)
 
 if settings.opportunity_ranker_shadow_enabled:
     # Phase 4H: only mounted when explicitly turned on -- unlike the always-

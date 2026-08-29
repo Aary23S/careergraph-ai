@@ -1,19 +1,11 @@
-"""Phase 4H section 12 -- the stable prediction contract for the trained
-opportunity-ranking model.
-
-    input: feature values (by name, same names as FEATURE_COLUMNS) + an
-           optional explicit model version
-    output: {score, modelVersion, featureVersion, modelName, isDevelopmentOnly}
-
-Pure inference: this module never fits or mutates a model, only loads an
-already-serialized artifact and scores it.
-"""
 import json
 import os
+import threading
+from typing import Any, Dict, Optional
 
+from app.config import settings
 from app.ml.training import model
 from app.ml.training.constants import FEATURE_COLUMNS, MODEL_NAME
-from app.ml.training.features import to_frame
 
 
 class PredictorNotReadyError(RuntimeError):
@@ -36,31 +28,76 @@ def latest_model_version(models_dir="models", model_name=MODEL_NAME):
     return versions[-1] if versions else None
 
 
+def resolve_active_production_model() -> Optional[dict]:
+    """Queries DB to resolve the production model assignment for 'ranking' type."""
+    from app.pipelines.db import fetch_all
+    query = """
+        SELECT ma.model_registry_id, mr.name, mr.version, mr.status, mr.artifact_uri, mr.metadata
+        FROM model_assignments ma
+        JOIN model_registry mr ON mr.id = ma.model_registry_id
+        WHERE ma.model_type = 'ranking' AND ma.environment = 'production'
+        ORDER BY ma.assigned_at DESC
+        LIMIT 1
+    """
+    try:
+        rows = fetch_all(query)
+        if rows:
+            return rows[0]
+    except Exception as exc:
+        from app.logging_config import log_event
+        log_event("db_resolution_warning", error=str(exc))
+    return None
+
+
+def resolve_model_metadata_and_version(model_version: Optional[str] = None, models_dir: str = "models") -> dict:
+    db_model = None
+    if not model_version and settings.database_url:
+        db_model = resolve_active_production_model()
+        if db_model:
+            model_version = db_model["version"]
+
+    resolved_version = model_version or latest_model_version(models_dir)
+    if resolved_version is None:
+        raise PredictorNotReadyError(
+            f"No trained model found under {models_dir}/{MODEL_NAME}."
+        )
+
+    version_dir = os.path.join(models_dir, MODEL_NAME, resolved_version)
+    metadata_path = os.path.join(version_dir, "model-metadata.json")
+    metadata = {}
+    if os.path.exists(metadata_path):
+        with open(metadata_path, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+
+    return {
+        "modelVersion": resolved_version,
+        "metadata": metadata,
+        "db_model": db_model,
+    }
+
+
 class OpportunityRankerPredictor:
-    def __init__(self, models_dir="models", model_name=MODEL_NAME, model_version=None):
-        resolved_version = model_version or latest_model_version(models_dir, model_name)
-        if resolved_version is None:
-            raise PredictorNotReadyError(
-                f"No trained model found under {models_dir}/{model_name}. Run "
-                "`python -m app.ml.training.train_opportunity_ranker --mode development` "
-                "to produce one, or --mode real once enough labeled data exists "
-                "(see docs/opportunity-ranking.md)."
-            )
+    def __init__(self, models_dir="models", model_name=MODEL_NAME, model_version=None, resolved_meta=None):
+        if resolved_meta is None:
+            resolved_meta = resolve_model_metadata_and_version(model_version, models_dir)
+
+        resolved_version = resolved_meta["modelVersion"]
+        self.model_version = resolved_version
+        self.model_name = model_name
+        self.metadata = resolved_meta["metadata"]
+        self.db_model = resolved_meta["db_model"]
 
         version_dir = os.path.join(models_dir, model_name, resolved_version)
         model_path = os.path.join(version_dir, "model.joblib")
-        metadata_path = os.path.join(version_dir, "model-metadata.json")
         if not os.path.exists(model_path):
             raise PredictorNotReadyError(f"Model artifact missing: {model_path}")
 
-        self.model_version = resolved_version
-        self.model_name = model_name
+        # Loading model safely with observability
+        from app.logging_config import log_event
+        log_event("model_loading_start", version=resolved_version)
         self._pipeline = model.load_model(model_path)
+        log_event("model_loading_complete", version=resolved_version)
 
-        self.metadata = {}
-        if os.path.exists(metadata_path):
-            with open(metadata_path, "r", encoding="utf-8") as f:
-                self.metadata = json.load(f)
         self.feature_set_name = self.metadata.get("featureSet", "opportunity-ranking")
         self.feature_version = self.metadata.get("featureVersion", "v1")
         self.feature_schema_checksum = self.metadata.get("featureSchemaChecksum")
@@ -77,6 +114,25 @@ class OpportunityRankerPredictor:
             raise FeatureVersionMismatchError(
                 f"Model feature schema checksum mismatch: expected '{self.feature_schema_checksum}', "
                 f"but registry has '{fset.schema_checksum}'."
+            )
+
+        # Verify artifact checksum to prevent model tampering or corruption
+        computed_checksum = model.compute_artifact_checksum(model_path)
+        expected_checksum = self.metadata.get("checksum")
+        if expected_checksum and computed_checksum != expected_checksum:
+            raise FeatureVersionMismatchError(
+                f"Model artifact checksum invalid: expected {expected_checksum}, got {computed_checksum}."
+            )
+
+    def verify_production_readiness(self):
+        """Verifies if the loaded model registry status is production-ready."""
+        if self.is_development_only:
+            raise FeatureVersionMismatchError("MODEL_NOT_PRODUCTION_READY")
+
+        # If DB assignment model loaded, check status
+        if self.db_model and self.db_model.get("status") != "production":
+            raise FeatureVersionMismatchError(
+                f"Model resolved status is '{self.db_model.get('status')}', expected 'production'."
             )
 
     def predict(self, feature_values: dict) -> dict:
@@ -97,6 +153,7 @@ class OpportunityRankerPredictor:
                 f"Input features failed validation constraints: {', '.join(errors)}"
             )
 
+        from app.ml.training.features import to_frame
         row = {col: normalized_features.get(col) for col in FEATURE_COLUMNS}
         X = to_frame([row])
         score = float(model.predict_scores(self._pipeline, X)[0])
@@ -104,7 +161,40 @@ class OpportunityRankerPredictor:
             "score": round(score, 4),
             "modelVersion": self.model_version,
             "featureVersion": self.feature_version,
+            "featureSet": self.feature_set_name,
             "modelName": self.model_name,
             "isDevelopmentOnly": self.is_development_only,
         }
 
+
+# Thread-safe Cache Implementation
+_loaded_predictors = {}
+_predictors_lock = threading.Lock()
+
+
+def get_cached_predictor(models_dir: str = "models", model_version: Optional[str] = None) -> OpportunityRankerPredictor:
+    # Resolve the target model details first (outside cache lock to allow concurrent hits)
+    resolved_meta = resolve_model_metadata_and_version(model_version, models_dir)
+    resolved_version = resolved_meta["modelVersion"]
+
+    with _predictors_lock:
+        cache_key = (MODEL_NAME, resolved_version)
+        if cache_key not in _loaded_predictors:
+            _loaded_predictors[cache_key] = OpportunityRankerPredictor(
+                models_dir=models_dir,
+                model_name=MODEL_NAME,
+                model_version=resolved_version,
+                resolved_meta=resolved_meta
+            )
+        return _loaded_predictors[cache_key]
+
+
+def preload_models(models_dir: str = "models"):
+    """Preloads the latest or active production opportunity ranking model."""
+    from app.logging_config import log_event
+    log_event("model_preloading_start", models_dir=models_dir)
+    try:
+        predictor = get_cached_predictor(models_dir=models_dir)
+        log_event("model_preloading_complete", version=predictor.model_version)
+    except Exception as exc:
+        log_event("model_preloading_failed", error=str(exc))

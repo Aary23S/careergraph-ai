@@ -51,5 +51,9 @@ class Settings(BaseSettings):
     # authoritative regardless of this flag.
     opportunity_ranker_shadow_enabled: bool = False
     opportunity_ranker_models_dir: str = "models"
+    opportunity_ranker_max_batch_size: int = 100
+    opportunity_ranker_max_request_size_bytes: int = 1024 * 1024  # 1MB
+    opportunity_ranker_timeout_seconds: float = 10.0
+    opportunity_ranker_concurrency_limit: int = 5
 
 settings = Settings()

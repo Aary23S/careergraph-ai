@@ -5,7 +5,7 @@ import { sequelize, resetDatabase, models } from '../src/config/database.js';
 import { env } from '../src/config/env.js';
 import { aiService } from '../src/services/ai/ai.service.js';
 import * as registry from '../src/services/model-registry.service.js';
-import { resolveGenerationModel, resolveEmbeddingModel, resolveRerankerModel } from '../src/services/model-resolver.service.js';
+import { resolveGenerationModel, resolveEmbeddingModel, resolveRerankerModel, resolveRankingModel } from '../src/services/model-resolver.service.js';
 import { resolveEmbeddingModelName } from '../src/services/embedding.service.js';
 
 describe('Model Registry & Lifecycle Management (Phase 4E)', () => {
@@ -254,6 +254,10 @@ describe('Model Registry & Lifecycle Management (Phase 4E)', () => {
       const reranker = await resolveRerankerModel('production');
       expect(reranker.source).toBe('env');
       expect(reranker.model).toBe('cosine-similarity');
+
+      const ranking = await resolveRankingModel('production');
+      expect(ranking.source).toBe('env');
+      expect(ranking.model).toBe('career-opportunity-ranker');
     });
 
     test('registry enabled but no assignment for that environment: falls back instead of throwing', async () => {
@@ -276,6 +280,18 @@ describe('Model Registry & Lifecycle Management (Phase 4E)', () => {
       expect(result.source).toBe('registry');
       expect(result.modelRegistryId).toBe(model.id);
       expect(result.model).toBe('resolver-model:9');
+    });
+
+    test('registry enabled with ranking assignment: resolves the registered ranking model', async () => {
+      const model = await registry.registerModel({ name: 'resolver-rank-model', version: '2', modelType: 'ranking', provider: 'careergraph-ml' });
+      await registry.recordEvaluation(model.id, { evaluationType: 'x', status: 'passed', overallScore: 1 });
+      await registry.promoteModel(model.id, { environment: 'development', operatorEmail });
+
+      env.modelRegistryEnabled = true;
+      const result = await resolveRankingModel('development');
+      expect(result.source).toBe('registry');
+      expect(result.modelRegistryId).toBe(model.id);
+      expect(result.model).toBe('resolver-rank-model:2');
     });
   });
 

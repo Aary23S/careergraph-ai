@@ -160,6 +160,45 @@ export class MLServiceClient {
     return this._parseJson(response);
   }
 
+  async predictOpportunity(features, modelVersion = null) {
+    const response = await fetchWithTimeout(
+      `${this.baseUrl}/v1/models/opportunity-ranker/predict`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ features, modelVersion }),
+      },
+      this.timeoutMs,
+    );
+
+    if (response.status === 422) {
+      throw new MLServiceError('BAD_REQUEST', 'ML service rejected the prediction request payload');
+    }
+    if (!response.ok) {
+      const body = await this._parseJson(response).catch(() => ({}));
+      throw new MLServiceError(
+        body.status || `HTTP_${response.status}`,
+        body.reason || `ML service prediction request failed with status ${response.status}`
+      );
+    }
+
+    const body = await this._parseJson(response);
+    if (body.status !== 'scored' || !Array.isArray(body.predictions) || body.predictions.length === 0) {
+      throw new MLServiceError(body.status || 'BAD_RESPONSE', body.reason || 'ML service returned an invalid prediction response');
+    }
+
+    const pred = body.predictions[0];
+    return {
+      score: pred.score,
+      modelName: pred.modelName,
+      modelVersion: pred.modelVersion,
+      featureSet: pred.featureSet,
+      featureVersion: pred.featureVersion,
+      isDevelopmentOnly: pred.isDevelopmentOnly,
+      modelRegistryId: pred.modelRegistryId || null,
+    };
+  }
+
   async _parseJson(response) {
     try {
       return await response.json();

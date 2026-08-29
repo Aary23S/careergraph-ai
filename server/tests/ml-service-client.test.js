@@ -163,4 +163,49 @@ describe('MLServiceClient', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
     await expect(client.getTrackingStatus()).rejects.toMatchObject({ code: 'HTTP_503' });
   });
+
+  test('predictOpportunity() returns prediction details on success', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: 'scored',
+        predictions: [{
+          score: 0.85,
+          modelName: 'career-opportunity-ranker',
+          modelVersion: 'v1',
+          featureSet: 'opportunity-ranking',
+          featureVersion: 'v1',
+          isDevelopmentOnly: true,
+          modelRegistryId: 'reg-uuid-123'
+        }]
+      }),
+    });
+
+    const result = await client.predictOpportunity({ skill_overlap: 0.5 });
+    expect(result).toEqual({
+      score: 0.85,
+      modelName: 'career-opportunity-ranker',
+      modelVersion: 'v1',
+      featureSet: 'opportunity-ranking',
+      featureVersion: 'v1',
+      isDevelopmentOnly: true,
+      modelRegistryId: 'reg-uuid-123'
+    });
+  });
+
+  test('predictOpportunity() throws exception with code matching error status on failure', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        status: 'MODEL_NOT_PRODUCTION_READY',
+        reason: 'The model is development-only.'
+      }),
+    });
+    await expect(client.predictOpportunity({ skill_overlap: 0.5 })).rejects.toMatchObject({
+      code: 'MODEL_NOT_PRODUCTION_READY',
+      message: 'The model is development-only.'
+    });
+  });
 });
