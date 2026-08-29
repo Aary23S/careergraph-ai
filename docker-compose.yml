@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: careergraph
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ci_test_password
     ports:
       - "5432:5432"
     volumes:
@@ -30,10 +30,10 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5000
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/careergraph
+      DATABASE_URL: postgresql://postgres:ci_test_password@postgres:5432/careergraph
       CORS_ORIGIN: http://localhost:5173
-      JWT_ACCESS_SECRET: REMOVED_SECRET_JWT_ACCESS
-      JWT_REFRESH_SECRET: REMOVED_SECRET_JWT_REFRESH=
+      JWT_ACCESS_SECRET: ${{ secrets.CI_JWT_ACCESS_SECRET }}
+      JWT_REFRESH_SECRET: ${{ secrets.CI_JWT_REFRESH_SECRET }}
       # Phase 4D: Python AI/ML service (embeddings/reranking) -- off by
       # default. Reached over the internal compose network, never the
       # host-bound port below.
@@ -81,7 +81,7 @@ services:
       - mlflow
       - server
       - --backend-store-uri
-      - postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/mlflow
+      - postgresql://postgres:ci_test_password@postgres:5432/mlflow
       - --default-artifact-root
       - /mlartifacts
       - --host

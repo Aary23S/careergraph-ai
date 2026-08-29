@@ -166,8 +166,8 @@ jobs:
           AI_ENABLED: true
           AI_PROVIDER: mock
           CORS_ORIGIN: http://localhost:5173
-          JWT_ACCESS_SECRET: REMOVED_SECRET_JWT_ACCESS
-          JWT_REFRESH_SECRET: REMOVED_SECRET_JWT_REFRESH=
+          JWT_ACCESS_SECRET: ${{ secrets.CI_JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.CI_JWT_REFRESH_SECRET }}
         run: |
           cd server
           npm run ai:evaluate

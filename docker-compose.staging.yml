@@ -58,8 +58,8 @@ services:
       PORT: 5000
       DATABASE_URL: postgresql://staging_user:staging_password_999@postgres-staging:5432/careergraph_staging
       CORS_ORIGIN: http://localhost:5173
-      JWT_ACCESS_SECRET: stagingAccessSecretKey999StagingKey
-      JWT_REFRESH_SECRET: stagingRefreshSecretKey999StagingKey
+      JWT_ACCESS_SECRET: ${STAGING_JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${STAGING_JWT_REFRESH_SECRET}
       REDIS_ENABLED: "true"
       REDIS_URL: redis://redis-staging:6379
       AI_QUEUE_DRIVER: redis
