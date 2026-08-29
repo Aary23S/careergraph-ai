@@ -165,6 +165,9 @@ jobs:
           NODE_ENV: test
           AI_ENABLED: true
           AI_PROVIDER: mock
+          CORS_ORIGIN: http://localhost:5173
+          JWT_ACCESS_SECRET: REMOVED_SECRET_JWT_ACCESS
+          JWT_REFRESH_SECRET: REMOVED_SECRET_JWT_REFRESH=
         run: |
           cd server
           npm run ai:evaluate
