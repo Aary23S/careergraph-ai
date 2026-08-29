@@ -70,7 +70,8 @@ async function run() {
       const evalRes = evaluateExtraction(actual, tc.expected);
       passed = evalRes.passed;
       metrics = evalRes.metrics;
-    } catch {
+    } catch (err) {
+      console.error('Job enrichment error:', err);
       metrics = { jsonValidity: 0.0, schemaValidity: 0.0, fieldAccuracy: 0.0, precision: 0.0, recall: 0.0 };
     }
     results.push({
@@ -97,7 +98,8 @@ async function run() {
       const evalRes = evaluateExtraction(actual, tc.expected);
       passed = evalRes.passed;
       metrics = evalRes.metrics;
-    } catch {
+    } catch (err) {
+      console.error('Resume enrichment error:', err);
       metrics = { jsonValidity: 0.0, schemaValidity: 0.0, fieldAccuracy: 0.0, precision: 0.0, recall: 0.0 };
     }
     results.push({
@@ -124,7 +126,8 @@ async function run() {
       const evalRes = evaluateExtraction(actual, tc.expected);
       passed = evalRes.passed;
       metrics = evalRes.metrics;
-    } catch {
+    } catch (err) {
+      console.error('Connection enrichment error:', err);
       metrics = { jsonValidity: 0.0, schemaValidity: 0.0, fieldAccuracy: 0.0, precision: 0.0, recall: 0.0 };
     }
     results.push({
