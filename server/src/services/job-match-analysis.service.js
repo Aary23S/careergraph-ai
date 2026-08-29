@@ -4,6 +4,9 @@ import { env } from '../config/env.js';
 import { enqueueAIJob } from '../queues/ai.queue.js';
 import { calculateMatchScore } from './intelligence.service.js';
 import { analyzeJobResumeFit } from './resume-analysis.service.js';
+import { resolveRankingModel } from './model-resolver.service.js';
+import { mlServiceClient } from './ml-service.client.js';
+import { buildInferenceFeatures } from './ml-feature-builder.js';
 
 const TRACKED_JOBS_REFRESH_CAP = 20;
 
@@ -138,6 +141,30 @@ export async function executeJobMatchAnalysis(jobId) {
     const fit = await analyzeJobResumeFit(job.id, activeResume.id);
     const finalScore = blendScore(ruleScore, fit.compatibilityAssessment);
     const latency = Date.now() - start;
+
+    // Shadow ML inference
+    if (env.opportunityRankerShadowEnabled) {
+      try {
+        const mlStart = Date.now();
+        const resolvedModel = await resolveRankingModel();
+        const features = await buildInferenceFeatures(job.id, activeResume.id, job.user_id);
+        const prediction = await mlServiceClient.predictOpportunity(features, resolvedModel.modelVersion);
+        const mlLatency = Date.now() - mlStart;
+        
+        console.log(`[JobMatchAnalysisService] Shadow inference SUCCESS: ` +
+          `score=${prediction.score}, ` +
+          `modelName=${prediction.modelName}, ` +
+          `modelVersion=${prediction.modelVersion}, ` +
+          `featureSet=${prediction.featureSet}, ` +
+          `featureVersion=${prediction.featureVersion}, ` +
+          `isDevelopmentOnly=${prediction.isDevelopmentOnly}, ` +
+          `modelRegistryId=${prediction.modelRegistryId}, ` +
+          `latencyMs=${mlLatency}`
+        );
+      } catch (mlErr) {
+        console.warn(`[JobMatchAnalysisService] Shadow inference FAILED (graceful fallback): ${mlErr.message}, code=${mlErr.code}`);
+      }
+    }
 
     await analysis.update({
       status: 'completed',

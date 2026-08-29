@@ -85,6 +85,7 @@ const schema = Joi.object({
   ML_SERVICE_URL: Joi.string().uri().default('http://localhost:8000'),
   ML_SERVICE_TIMEOUT_MS: Joi.number().integer().min(1).default(5000),
   ML_SERVICE_EMBEDDING_MODEL: Joi.string().default('all-MiniLM-L6-v2'),
+  OPPORTUNITY_RANKER_SHADOW_ENABLED: Joi.boolean().default(false),
   MODEL_REGISTRY_ENABLED: Joi.boolean().default(false),
   MODEL_REGISTRY_DEFAULT_ENVIRONMENT: Joi.string().valid('development', 'staging', 'production').default('development'),
   MLFLOW_ENABLED: Joi.boolean().default(false),
@@ -164,4 +165,5 @@ export const env = {
   modelRegistryEnabled: value.MODEL_REGISTRY_ENABLED,
   modelRegistryDefaultEnvironment: value.MODEL_REGISTRY_DEFAULT_ENVIRONMENT,
   mlflowEnabled: value.MLFLOW_ENABLED,
+  opportunityRankerShadowEnabled: value.OPPORTUNITY_RANKER_SHADOW_ENABLED,
 };

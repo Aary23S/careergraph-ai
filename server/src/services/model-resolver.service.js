@@ -85,3 +85,16 @@ export async function resolveRerankerModel(environment) {
   };
   return resolveFromRegistry('reranker', defaultEnvironment(environment), fallback);
 }
+
+export async function resolveRankingModel(environment) {
+  const fallback = {
+    provider: 'careergraph-ml',
+    model: 'career-opportunity-ranker',
+    modelRegistryId: null,
+    modelName: 'career-opportunity-ranker',
+    modelVersion: null,
+    framework: 'scikit-learn',
+    dimension: null,
+  };
+  return resolveFromRegistry('ranking', defaultEnvironment(environment), fallback);
+}
