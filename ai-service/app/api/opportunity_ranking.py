@@ -18,7 +18,11 @@ ranking signal -- see docs/opportunity-ranking.md.
 from fastapi import APIRouter
 
 from app.config import settings
-from app.ml.inference.predictor import OpportunityRankerPredictor, PredictorNotReadyError
+from app.ml.inference.predictor import (
+    FeatureVersionMismatchError,
+    OpportunityRankerPredictor,
+    PredictorNotReadyError,
+)
 from app.schemas.opportunity_ranking import OpportunityScoreRequest, OpportunityScoreResponse
 
 router = APIRouter(prefix="/v1/ml/opportunity-ranking", tags=["opportunity-ranking-shadow"])
@@ -31,8 +35,10 @@ async def shadow_score(payload: OpportunityScoreRequest) -> OpportunityScoreResp
             models_dir=settings.opportunity_ranker_models_dir,
             model_version=payload.modelVersion,
         )
+        prediction = predictor.predict(payload.features)
+        return OpportunityScoreResponse(status="scored", **prediction)
     except PredictorNotReadyError as exc:
         return OpportunityScoreResponse(status="MODEL_NOT_READY", reason=str(exc))
+    except FeatureVersionMismatchError as exc:
+        return OpportunityScoreResponse(status="FEATURE_VERSION_MISMATCH", reason=str(exc))
 
-    prediction = predictor.predict(payload.features)
-    return OpportunityScoreResponse(status="scored", **prediction)

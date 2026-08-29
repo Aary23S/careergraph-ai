@@ -19,6 +19,8 @@ FEATURE_VERSION = "v1"
 def _normalize_terms(values):
     if not values:
         return set()
+    if isinstance(values, str):
+        return {values.strip().lower()}
     return {str(v).strip().lower() for v in values if v}
 
 

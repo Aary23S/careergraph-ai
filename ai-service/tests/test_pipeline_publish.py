@@ -74,7 +74,7 @@ def test_publish_logs_to_mlflow_with_only_the_three_safe_artifacts(tmp_path, moc
     call = mock_mlflow[0]
     assert call["experiment_suffix"] == "dataset-pipeline"
     artifact_names = {a["name"] for a in call["artifacts"]}
-    assert artifact_names == {"dataset-metadata.json", "feature-schema.json", "quality-report.json"}
+    assert artifact_names == {"dataset-metadata.json", "feature-schema.json", "quality-report.json", "baseline_stats.json"}
     # Never actual per-application row data (the two rows from
     # _sample_splits() have outcome_label 1 and 0, and no third value) --
     # feature-schema.json legitimately documents field *names* like

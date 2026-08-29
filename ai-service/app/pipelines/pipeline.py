@@ -115,6 +115,8 @@ def run_pipeline(
         quality_report = build_quality_report(final_rows)
         splits, cutoffs = split_stage.time_based_split(final_rows)
 
+        from app.features.registry import OPPORTUNITY_RANKING_V1
+
         checksum = versioning.compute_checksum(final_rows)
         metadata = versioning.build_metadata(
             dataset_name=dataset_name,
@@ -124,6 +126,9 @@ def run_pipeline(
             row_count=len(final_rows),
             checksum=checksum,
         )
+        metadata["featureSet"] = OPPORTUNITY_RANKING_V1.name
+        metadata["featureVersion"] = OPPORTUNITY_RANKING_V1.version
+        metadata["featureSchemaChecksum"] = OPPORTUNITY_RANKING_V1.schema_checksum
         # Explicit isoformat() rather than leaving raw datetime objects in
         # metadata -- matches build_metadata's own createdAt formatting, so
         # every timestamp in the published metadata is a consistent,
@@ -133,6 +138,7 @@ def run_pipeline(
             key: (value.isoformat() if hasattr(value, "isoformat") else value) for key, value in cutoffs.items()
         }
         metadata["mode"] = mode
+
 
         observability["duration_ms"] = (time.monotonic() - start) * 1000
 
