@@ -16,6 +16,7 @@ pipeline specifically.
 import json
 import os
 
+from app.features.builder import FeatureBuilder
 from app.pipelines.quality import EXPECTED_FIELDS
 from app.tracking.mlflow_client import log_complete_run
 
@@ -66,12 +67,22 @@ def publish_dataset(dataset_dir, dataset_name, dataset_version, splits, metadata
     os.makedirs(version_dir, exist_ok=True)
 
     row_count = 0
+    all_rows = []
     for split_name, rows in splits.items():
         path = os.path.join(version_dir, f"rows_{split_name}.jsonl")
         with open(path, "w", encoding="utf-8") as f:
             for row in rows:
                 f.write(json.dumps(_strip_audit_fields(row), default=str) + "\n")
         row_count += len(rows)
+        all_rows.extend(rows)
+
+    # Compute baseline feature statistics across all splits
+    builder = FeatureBuilder("opportunity-ranking", "v1")
+    feature_rows = [{k: v for k, v in r.items() if k in builder.feature_names} for r in all_rows]
+    stats = builder.calculate_statistics(feature_rows)
+
+    with open(os.path.join(version_dir, "baseline_stats.json"), "w", encoding="utf-8") as f:
+        json.dump(stats, f, indent=2, default=str)
 
     with open(os.path.join(version_dir, "dataset-metadata.json"), "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2, default=str)
@@ -82,12 +93,12 @@ def publish_dataset(dataset_dir, dataset_name, dataset_version, splits, metadata
     with open(os.path.join(version_dir, "quality-report.json"), "w", encoding="utf-8") as f:
         json.dump(quality_report, f, indent=2, default=str)
 
-    _log_to_mlflow(dataset_name, metadata, quality_report, observability)
+    _log_to_mlflow(dataset_name, metadata, quality_report, observability, stats)
 
     return version_dir
 
 
-def _log_to_mlflow(dataset_name, metadata, quality_report, observability):
+def _log_to_mlflow(dataset_name, metadata, quality_report, observability, stats):
     """Best-effort; log_complete_run already never raises (Phase 4F
     failure-isolation guarantee) -- this wrapper exists only to keep the
     dataset-metadata/feature-schema/quality-report dicts as the exact
@@ -100,6 +111,8 @@ def _log_to_mlflow(dataset_name, metadata, quality_report, observability):
             "datasetVersion": metadata["datasetVersion"],
             "sourceSchemaVersion": metadata["sourceSchemaVersion"],
             "featureVersion": metadata["featureVersion"],
+            "featureSet": metadata.get("featureSet"),
+            "featureSchemaChecksum": metadata.get("featureSchemaChecksum"),
         },
         metrics={
             "rowCount": metadata["rowCount"],
@@ -119,5 +132,7 @@ def _log_to_mlflow(dataset_name, metadata, quality_report, observability):
             {"name": "dataset-metadata.json", "content": metadata},
             {"name": "feature-schema.json", "content": {"fields": FEATURE_SCHEMA, "expectedFieldNames": EXPECTED_FIELDS}},
             {"name": "quality-report.json", "content": quality_report},
+            {"name": "baseline_stats.json", "content": stats},
         ],
     )
+

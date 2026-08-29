@@ -16,8 +16,8 @@ def test_transform_produces_expected_shape_with_no_connections_or_embeddings():
 def test_transform_masks_a_future_dated_job_enrichment():
     raw = make_raw_row(job_enrichment_created_at=BASE_TIME + timedelta(days=1))  # after application_created_at
     row = transform_row(raw, connections_by_user={}, embeddings_by_key={})
-    assert row["job_seniority"] is None
-    assert row["job_role_category"] is None
+    assert row["job_seniority"] == "__missing__"
+    assert row["job_role_category"] == "__missing__"
     # experience_compatibility depends on job_seniority -- must also be masked out, not silently wrong
     assert row["experience_compatibility"] is None
 
@@ -25,7 +25,7 @@ def test_transform_masks_a_future_dated_job_enrichment():
 def test_transform_masks_a_future_dated_resume_enrichment():
     raw = make_raw_row(resume_enrichment_created_at=BASE_TIME + timedelta(days=1))
     row = transform_row(raw, connections_by_user={}, embeddings_by_key={})
-    assert row["resume_career_level"] is None
+    assert row["resume_career_level"] == "__missing__"
     assert row["skill_overlap"] is None  # resume_skills was masked to None
 
 
