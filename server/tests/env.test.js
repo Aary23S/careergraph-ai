@@ -7,7 +7,7 @@ describe('environment validation', () => {
     const previousEnv = process.env.NODE_ENV;
 
     process.env.DATABASE_DIALECT = 'postgres';
-    process.env.DATABASE_URL = `postgresql://postgres:REMOVED_SECRET_POSTGRES@localhost:5432/careergraph_test`;
+    process.env.DATABASE_URL = `postgresql://postgres:ci_test_password@localhost:5432/careergraph_test`;
     process.env.NODE_ENV = 'test';
 
     await jest.isolateModulesAsync(async () => {

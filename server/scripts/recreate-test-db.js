@@ -2,11 +2,11 @@ import pg from 'pg';
 
 async function recreate() {
   const client = new pg.Client({
-    connectionString: 'postgresql://postgres:REMOVED_SECRET_POSTGRES@localhost:5432/postgres'
+    connectionString: 'postgresql://postgres:ci_test_password@localhost:5432/careergraph_test'
   });
   await client.connect();
   console.log('Connected to default postgres database.');
-  
+
   // Terminate backend processes
   try {
     await client.query(`
@@ -22,10 +22,10 @@ async function recreate() {
 
   await client.query('DROP DATABASE IF EXISTS careergraph_test;');
   console.log('Dropped database careergraph_test.');
-  
+
   await client.query('CREATE DATABASE careergraph_test;');
   console.log('Created database careergraph_test.');
-  
+
   await client.end();
 }
 

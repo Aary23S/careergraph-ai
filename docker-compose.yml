@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: careergraph
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: REMOVED_SECRET_POSTGRES
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -30,7 +30,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5000
-      DATABASE_URL: postgresql://postgres:REMOVED_SECRET_POSTGRES@postgres:5432/careergraph
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/careergraph
       CORS_ORIGIN: http://localhost:5173
       JWT_ACCESS_SECRET: REMOVED_SECRET_JWT_ACCESS
       JWT_REFRESH_SECRET: REMOVED_SECRET_JWT_REFRESH=
@@ -81,7 +81,7 @@ services:
       - mlflow
       - server
       - --backend-store-uri
-      - postgresql://postgres:REMOVED_SECRET_POSTGRES@postgres:5432/mlflow
+      - postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/mlflow
       - --default-artifact-root
       - /mlartifacts
       - --host
@@ -111,3 +111,4 @@ services:
 volumes:
   careergraph_postgres_data:
   careergraph_mlflow_artifacts:
+
