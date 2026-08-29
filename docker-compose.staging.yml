@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  postgres-staging:
+    image: postgres:16-alpine
+    container_name: careergraph-postgres-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: careergraph_staging
+      POSTGRES_USER: staging_user
+      POSTGRES_PASSWORD: staging_password_999
+    ports:
+      - "5433:5432"
+    volumes:
+      - careergraph_postgres_staging_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U staging_user -d careergraph_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis-staging:
+    image: redis:7-alpine
+    container_name: careergraph-redis-staging
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ai-service-staging:
+    build:
+      context: ./ai-service
+    container_name: careergraph-ai-service-staging
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8000
+      DATABASE_URL: postgresql://staging_user:staging_password_999@postgres-staging:5432/careergraph_staging
+      USE_FAKE_MODELS: "false"
+      MLFLOW_ENABLED: "false"
+    ports:
+      - "8002:8000"
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+
+  backend-staging:
+    build:
+      context: ./server
+    container_name: careergraph-backend-staging
+    restart: unless-stopped
+    environment:
+      NODE_ENV: staging
+      PORT: 5000
+      DATABASE_URL: postgresql://staging_user:staging_password_999@postgres-staging:5432/careergraph_staging
+      CORS_ORIGIN: http://localhost:5173
+      JWT_ACCESS_SECRET: stagingAccessSecretKey999StagingKey
+      JWT_REFRESH_SECRET: stagingRefreshSecretKey999StagingKey
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis-staging:6379
+      AI_QUEUE_DRIVER: redis
+      ML_SERVICE_ENABLED: "true"
+      ML_SERVICE_URL: http://ai-service-staging:8000
+      MODEL_REGISTRY_ENABLED: "true"
+      MODEL_REGISTRY_DEFAULT_ENVIRONMENT: staging
+    ports:
+      - "5002:5000"
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      redis-staging:
+        condition: service_healthy
+      ai-service-staging:
+        condition: service_started
+
+  worker-staging:
+    build:
+      context: ./server
+    container_name: careergraph-worker-staging
+    restart: unless-stopped
+    command: ["npm", "run", "worker:ai"]
+    environment:
+      NODE_ENV: staging
+      DATABASE_URL: postgresql://staging_user:staging_password_999@postgres-staging:5432/careergraph_staging
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://redis-staging:6379
+      AI_QUEUE_DRIVER: redis
+      ML_SERVICE_ENABLED: "true"
+      ML_SERVICE_URL: http://ai-service-staging:8000
+      MODEL_REGISTRY_ENABLED: "true"
+      MODEL_REGISTRY_DEFAULT_ENVIRONMENT: staging
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      redis-staging:
+        condition: service_healthy
+
+volumes:
+  careergraph_postgres_staging_data:
