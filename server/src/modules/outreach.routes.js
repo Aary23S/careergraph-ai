@@ -165,6 +165,15 @@ router.put(
   }),
 );
 
+router.delete(
+  '/:outreachId',
+  asyncHandler(async (req, res) => {
+    const outreach = await ensureOutreachOwnership(req.auth.userId, req.params.outreachId);
+    await outreach.destroy();
+    ok(res, { deleted: true });
+  }),
+);
+
 router.post(
   '/:outreachId/events',
   validate(eventSchema),

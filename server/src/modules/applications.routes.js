@@ -243,6 +243,15 @@ router.put(
   })
 );
 
+router.delete(
+  '/:applicationId',
+  asyncHandler(async (req, res) => {
+    const application = await ensureApplicationOwnership(req.auth.userId, req.params.applicationId);
+    await application.destroy();
+    ok(res, { deleted: true });
+  }),
+);
+
 router.patch(
   '/:applicationId/status',
   validate(statusSchema),

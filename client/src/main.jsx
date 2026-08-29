@@ -4595,6 +4595,19 @@ function App() {
                               >
                                 <IconEdit />
                               </button>
+                              <button
+                                className="app-icon-btn app-icon-btn--danger"
+                                aria-label="Delete application"
+                                title="Delete"
+                                onClick={async () => {
+                                  if (confirm('Delete this application? This cannot be undone.')) {
+                                    await api.deleteApplication(app.id);
+                                    loadApplications();
+                                  }
+                                }}
+                              >
+                                <IconTrash />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -4655,6 +4668,19 @@ function App() {
                                 }}
                               >
                                 <IconEdit />
+                              </button>
+                              <button
+                                className="outreach-icon-btn outreach-icon-btn--danger"
+                                aria-label="Delete outreach"
+                                title="Delete"
+                                onClick={async () => {
+                                  if (confirm('Delete this outreach record? This cannot be undone.')) {
+                                    await api.deleteOutreach(o.id);
+                                    loadOutreach();
+                                  }
+                                }}
+                              >
+                                <IconTrash />
                               </button>
                             </div>
                           </td>

@@ -441,6 +441,10 @@ class ApiClient {
     return res.data;
   }
 
+  async deleteApplication(applicationId) {
+    return this.request(`/applications/${applicationId}`, { method: 'DELETE' });
+  }
+
   // Outreach
   async listOutreach() {
     const res = await this.request('/outreach');
@@ -474,6 +478,10 @@ class ApiClient {
       body: { status, notes },
     });
     return res.data;
+  }
+
+  async deleteOutreach(outreachId) {
+    return this.request(`/outreach/${outreachId}`, { method: 'DELETE' });
   }
 
   // Notifications

@@ -6128,6 +6128,12 @@ details[open] summary::before {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.app-icon-btn--danger:hover {
+  color: var(--danger);
+  border-color: rgba(240, 89, 108, 0.35);
+  background: var(--danger-bg);
+}
+
 .app-modal-head {
   display: flex;
   align-items: center;
@@ -6280,6 +6286,12 @@ details[open] summary::before {
   color: var(--text-primary);
   border-color: var(--border-strong);
   background: rgba(255, 255, 255, 0.06);
+}
+
+.outreach-icon-btn--danger:hover {
+  color: var(--danger);
+  border-color: rgba(240, 89, 108, 0.35);
+  background: var(--danger-bg);
 }
 
 .outreach-modal {
