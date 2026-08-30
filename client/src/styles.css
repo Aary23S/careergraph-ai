@@ -218,15 +218,47 @@ h4 {
 
 .login-brand-mark {
   position: relative;
+  margin-bottom: 48px;
+  width: fit-content;
+}
+
+/* ---- Brand logo (icon + wordmark), shared by login screen and sidebar ---- */
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo svg {
+  flex-shrink: 0;
+}
+
+.brand-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  margin-bottom: 48px;
   background: linear-gradient(135deg, #fff 0%, var(--primary) 70%, var(--accent) 130%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  width: fit-content;
+}
+
+.brand-wordmark-badge {
+  font-family: var(--font-sans);
+  font-size: 0.58em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid #9184d9;
+  color: #9184d9;
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: #9184d9;
 }
 
 .login-brand-heading {
@@ -306,15 +338,12 @@ h4 {
 
 .login-card-mark {
   display: none;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
   margin-bottom: 24px;
-  background: linear-gradient(135deg, #fff 0%, var(--primary) 70%, var(--accent) 130%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   width: fit-content;
+}
+
+.login-card-mark .brand-wordmark {
+  font-size: 1.05rem;
 }
 
 .login-switch {
@@ -779,15 +808,12 @@ textarea.form-input {
 }
 
 .sidebar-logo {
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
   margin-bottom: 30px;
   padding: 0 8px;
-  background: linear-gradient(135deg, #fff 0%, var(--primary) 70%, var(--accent) 130%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+}
+
+.sidebar-logo .brand-wordmark {
+  font-size: 1.3rem;
 }
 
 .sidebar-nav {
@@ -1553,6 +1579,7 @@ details[open] summary::before {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
+  align-items: start;
 }
 
 .dash-card {
@@ -1572,6 +1599,34 @@ details[open] summary::before {
   align-items: center;
   gap: 10px;
   margin-bottom: 18px;
+}
+
+.dash-notif-count {
+  background: var(--info-bg);
+  color: var(--info);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-mark-all-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: var(--transition);
+}
+
+.dash-mark-all-btn:hover {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .dash-card-icon {
@@ -1735,6 +1790,17 @@ details[open] summary::before {
   gap: 12px;
 }
 
+.dash-activity-list,
+.dash-notif-list {
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.dash-notif-list {
+  gap: 6px;
+}
+
 .dash-activity-item {
   display: flex;
   gap: 12px;
@@ -1820,50 +1886,59 @@ details[open] summary::before {
 }
 
 .dash-notif-item {
-  padding: 14px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
   border-radius: var(--radius-sm);
   transition: var(--transition);
 }
 
 .dash-notif-item:hover {
-  border-color: var(--border-strong);
   background: rgba(255, 255, 255, 0.03);
 }
 
-.dash-notif-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
+.dash-notif-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
 }
 
-.dash-notif-type {
-  background: var(--info-bg);
-  color: var(--info);
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.dash-notif-dot--accent { background: var(--accent); }
+.dash-notif-dot--primary { background: var(--primary); }
+.dash-notif-dot--warning { background: var(--warning); }
+.dash-notif-dot--info { background: var(--info); }
+
+.dash-notif-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.dash-notif-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
 }
 
 .dash-notif-dismiss {
+  flex-shrink: 0;
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
+  margin-top: 2px;
   border-radius: 6px;
   display: flex;
   transition: var(--transition);
 }
 
 .dash-notif-dismiss svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 
 .dash-notif-dismiss:hover {
@@ -1872,16 +1947,29 @@ details[open] summary::before {
 }
 
 .dash-notif-title {
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   font-weight: 600;
   color: #fff;
-  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.dash-notif-time {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
 }
 
 .dash-notif-desc {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.4;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ==========================================================================

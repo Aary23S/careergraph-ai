@@ -54,6 +54,35 @@ const IconAlert = () => (
   </svg>
 );
 
+// Brand mark - abstract interlocking C·G monogram (Nocturne system).
+// Colors are fixed to the brand spec regardless of theme accent so the mark
+// stays consistent wherever it's placed.
+/* eslint-disable react/prop-types -- this codebase doesn't use the prop-types package */
+const LogoMark = ({ size = 32 }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="100" height="100" rx="26" fill="#12141f" />
+    <circle cx="38" cy="50" r="24" fill="none" stroke="#e9e9ed" strokeWidth="12" strokeLinecap="round"
+      pathLength="100" strokeDasharray="76 24" strokeDashoffset="12" />
+    <circle cx="62" cy="50" r="24" fill="none" stroke="#9184d9" strokeWidth="12" strokeLinecap="round"
+      pathLength="100" strokeDasharray="76 24" strokeDashoffset="62" />
+    <line x1="50" y1="50" x2="60" y2="50" stroke="#9184d9" strokeWidth="12" strokeLinecap="round" />
+    <circle cx="61" cy="50" r="6" fill="#9184d9" />
+  </svg>
+);
+
+const Logo = ({ iconSize = 30, withWordmark = true, withBadge = true, className = '' }) => (
+  <span className={`brand-logo ${className}`}>
+    <LogoMark size={iconSize} />
+    {withWordmark && (
+      <span className="brand-wordmark">
+        CareerGraph
+        {withBadge && <span className="brand-wordmark-badge">AI</span>}
+      </span>
+    )}
+  </span>
+);
+/* eslint-enable react/prop-types */
+
 // Shared presentational icon set (dashboard + future page redesigns)
 const IconBriefcase = () => (
   <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -376,6 +405,17 @@ const DASH_ACTIVITY_META = {
   outreach_event: { label: 'Outreach', icon: IconSend, chip: 'dash-chip--accent' },
   notification: { label: 'Notification', icon: IconBell, chip: 'dash-chip--info' }
 };
+
+// Notification.type values -> a short label + dot color for the compact
+// dashboard reminders panel (raw snake_case types like "job_alert" aren't
+// user-facing text).
+const DASH_NOTIF_META = {
+  job_alert: { label: 'Job Alert', dot: 'dash-notif-dot--accent' },
+  application_update: { label: 'Application', dot: 'dash-notif-dot--primary' },
+  follow_up_due: { label: 'Follow-up', dot: 'dash-notif-dot--warning' },
+  referral_opportunity: { label: 'Referral', dot: 'dash-notif-dot--info' }
+};
+const DASH_NOTIF_META_DEFAULT = { label: 'Update', dot: 'dash-notif-dot--info' };
 
 // Pure presentational helper — first-letter initials for an avatar chip, e.g. "Jane Doe" -> "JD"
 function getInitials(name) {
@@ -1599,6 +1639,16 @@ function App() {
     }
   };
 
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      await api.markAllNotificationsRead();
+      loadNotifications();
+      loadDashboard();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const loadJobNetwork = async (jobId, filters = jobNetworkFilters) => {
     setJobNetworkLoading(true);
     try {
@@ -1742,7 +1792,7 @@ function App() {
       <div className="login-screen">
         <div className="login-brand" aria-hidden="true">
           <div className="login-brand-glow" />
-          <div className="login-brand-mark">CareerGraph</div>
+          <div className="login-brand-mark"><Logo iconSize={36} /></div>
           <h2 className="login-brand-heading">Your career, tracked like a real pipeline.</h2>
           <p className="login-brand-sub">
             One workspace for your network, applications, and outreach — with AI doing the busywork.
@@ -1756,7 +1806,7 @@ function App() {
 
         <div className="login-panel">
           <div className="login-card">
-            <div className="login-card-mark">CareerGraph</div>
+            <div className="login-card-mark"><Logo iconSize={26} /></div>
 
             {authTab !== 'forgot' && (
               <div className="login-switch" role="tablist" aria-label="Authentication mode">
@@ -1899,7 +1949,7 @@ function App() {
     <div className="app-container">
       {/* Sidebar Navigation */}
       <aside className="sidebar">
-        <div className="sidebar-logo">CareerGraph</div>
+        <div className="sidebar-logo"><Logo iconSize={30} /></div>
         <nav className="sidebar-nav">
           <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
             Dashboard
@@ -2110,36 +2160,55 @@ function App() {
               </div>
 
               <div className="dash-card">
-                <div className="dash-card-head">
-                  <span className="dash-card-icon"><IconBell /></span>
-                  <h2 className="dash-card-title">Reminders & Notifications</h2>
-                </div>
-                <div className="dash-notif-list">
-                  {notifications.filter(n => !n.isRead).length === 0 ? (
-                    <div className="dash-empty">No unread notifications.</div>
-                  ) : (
-                    notifications.filter(n => !n.isRead).map((notif) => (
-                      <div className="dash-notif-item" key={notif.id}>
-                        <div className="dash-notif-top">
-                          <span className="dash-notif-type">{notif.type}</span>
-                          <button
-                            className="dash-notif-dismiss"
-                            aria-label="Dismiss notification"
-                            onClick={async () => {
-                              await api.markNotificationRead(notif.id);
-                              loadNotifications();
-                              loadDashboard();
-                            }}
-                          >
-                            <IconX />
+                {(() => {
+                  const unread = notifications.filter(n => !n.isRead);
+                  return (
+                    <>
+                      <div className="dash-card-head">
+                        <span className="dash-card-icon"><IconBell /></span>
+                        <h2 className="dash-card-title">Reminders & Notifications</h2>
+                        {unread.length > 0 && <span className="dash-notif-count">{unread.length}</span>}
+                        {unread.length > 0 && (
+                          <button type="button" className="dash-mark-all-btn" onClick={handleMarkAllNotificationsRead}>
+                            Mark all read
                           </button>
-                        </div>
-                        <div className="dash-notif-title">{notif.title}</div>
-                        <p className="dash-notif-desc">{notif.message}</p>
+                        )}
                       </div>
-                    ))
-                  )}
-                </div>
+                      <div className="dash-notif-list">
+                        {unread.length === 0 ? (
+                          <div className="dash-empty">No unread notifications.</div>
+                        ) : (
+                          unread.map((notif) => {
+                            const meta = DASH_NOTIF_META[notif.type] || DASH_NOTIF_META_DEFAULT;
+                            return (
+                              <div className="dash-notif-item" key={notif.id}>
+                                <span className={`dash-notif-dot ${meta.dot}`} title={meta.label} />
+                                <div className="dash-notif-body">
+                                  <div className="dash-notif-row">
+                                    <span className="dash-notif-title" title={notif.title}>{notif.title}</span>
+                                    <span className="dash-notif-time">{formatRelativeTime(notif.createdAt)}</span>
+                                  </div>
+                                  <p className="dash-notif-desc" title={notif.message}>{notif.message}</p>
+                                </div>
+                                <button
+                                  className="dash-notif-dismiss"
+                                  aria-label="Dismiss notification"
+                                  onClick={async () => {
+                                    await api.markNotificationRead(notif.id);
+                                    loadNotifications();
+                                    loadDashboard();
+                                  }}
+                                >
+                                  <IconX />
+                                </button>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>

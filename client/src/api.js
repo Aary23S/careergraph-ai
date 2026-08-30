@@ -502,6 +502,13 @@ class ApiClient {
     return res.data;
   }
 
+  async markAllNotificationsRead() {
+    const res = await this.request('/notifications/read-all', {
+      method: 'PATCH',
+    });
+    return res.data;
+  }
+
   // Dashboard
   async getDashboardStats() {
     const res = await this.request('/dashboard');

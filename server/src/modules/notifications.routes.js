@@ -19,6 +19,17 @@ router.get(
 );
 
 router.patch(
+  '/read-all',
+  asyncHandler(async (req, res) => {
+    await models.Notification.update(
+      { isRead: true },
+      { where: { user_id: req.auth.userId, isRead: false } },
+    );
+    ok(res, { success: true });
+  }),
+);
+
+router.patch(
   '/:notificationId/read',
   asyncHandler(async (req, res) => {
     const notification = await models.Notification.findOne({
