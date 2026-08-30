@@ -143,6 +143,21 @@ const IconRefresh = () => (
   </svg>
 );
 
+const IconGraduationCap = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 7.5 10 4l8 3.5-8 3.5-8-3.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    <path d="M5.5 9.2v3.3c0 1.2 2 2.2 4.5 2.2s4.5-1 4.5-2.2V9.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M17.5 7.5v4.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const IconLink = () => (
+  <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8.2 11.8a3 3 0 0 0 4.2.2l2.3-2.3a3 3 0 0 0-4.2-4.2l-1.3 1.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M11.8 8.2a3 3 0 0 0-4.2-.2L5.3 10.3a3 3 0 0 0 4.2 4.2l1.3-1.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const IconBuilding = () => (
   <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
     <rect x="4" y="2.5" width="9" height="15" rx="1" stroke="currentColor" strokeWidth="1.4" />
@@ -381,6 +396,9 @@ const CONN_ROLE_PALETTE = [
 // Values not listed here (unexpected/legacy data) sort after all known levels.
 const CONN_SENIORITY_ORDER = ['founder', 'executive', 'director', 'manager', 'lead', 'senior', 'mid', 'junior', 'intern', 'unknown'];
 
+// Mirrors CAREER_LEVELS in server/src/services/resume-ai-enrichment.service.js.
+const CAREER_LEVELS = ['intern', 'entry', 'mid', 'senior', 'lead', 'principal', 'executive'];
+
 // Maps an Application's status value to a badge color variant — display only.
 const APPLICATION_STATUS_VARIANT = {
   saved: 'badge-secondary',
@@ -549,8 +567,11 @@ function App() {
   const [profile, setProfile] = useState({
     name: '', phone: '', location: '', targetRoles: [],
     targetCompanies: [], preferredLocations: [], remotePreference: '',
-    experience: '', skills: [], salaryPreference: '', bio: ''
+    experience: '', skills: [], salaryPreference: '', bio: '',
+    professionalTitle: '', careerLevel: '', education: [], certifications: [],
+    links: { linkedin: '', github: '', portfolio: '' }
   });
+  const [skillDraft, setSkillDraft] = useState('');
   const [resumes, setResumes] = useState([]);
   const [connections, setConnections] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -1656,6 +1677,60 @@ function App() {
     }
   };
 
+  const addSkillFromDraft = () => {
+    const value = skillDraft.trim();
+    if (!value) return;
+    const existing = new Set((profile.skills || []).map((s) => s.toLowerCase()));
+    if (!existing.has(value.toLowerCase())) {
+      setProfile({ ...profile, skills: [...(profile.skills || []), value] });
+    }
+    setSkillDraft('');
+  };
+
+  const removeSkillAt = (idx) => {
+    setProfile({ ...profile, skills: (profile.skills || []).filter((_, i) => i !== idx) });
+  };
+
+  const handleSkillDraftKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addSkillFromDraft();
+    } else if (e.key === 'Backspace' && !skillDraft && (profile.skills || []).length > 0) {
+      removeSkillAt(profile.skills.length - 1);
+    }
+  };
+
+  const addEducationEntry = () => {
+    setProfile({
+      ...profile,
+      education: [...(profile.education || []), { institution: '', degree: '', field: '', startYear: '', endYear: '' }]
+    });
+  };
+  const updateEducationEntry = (idx, field, value) => {
+    const next = [...(profile.education || [])];
+    next[idx] = { ...next[idx], [field]: value };
+    setProfile({ ...profile, education: next });
+  };
+  const removeEducationEntry = (idx) => {
+    setProfile({ ...profile, education: (profile.education || []).filter((_, i) => i !== idx) });
+  };
+
+  const addCertificationEntry = () => {
+    setProfile({
+      ...profile,
+      certifications: [...(profile.certifications || []), { name: '', issuer: '', issueDate: '' }]
+    });
+  };
+  const updateCertificationEntry = (idx, field, value) => {
+    const next = [...(profile.certifications || [])];
+    const current = typeof next[idx] === 'string' ? { name: next[idx] } : (next[idx] || {});
+    next[idx] = { ...current, [field]: value };
+    setProfile({ ...profile, certifications: next });
+  };
+  const removeCertificationEntry = (idx) => {
+    setProfile({ ...profile, certifications: (profile.certifications || []).filter((_, i) => i !== idx) });
+  };
+
   if (!isAuthenticated) {
     const authCopy = {
       login: { title: 'Welcome back', subtitle: 'Sign in to pick up your job search where you left off.' },
@@ -2081,6 +2156,36 @@ function App() {
               </div>
             </div>
 
+            {(() => {
+              const syncedResume = resumes.find((r) => r.id === profile.syncedResumeId);
+              return syncedResume ? (
+                <div className="profile-sync-banner">
+                  <IconCheckCircle />
+                  <div className="profile-sync-banner-body">
+                    <strong>Synced from {syncedResume.fileName}</strong>
+                    <span>
+                      {profile.resumeConfidence != null ? `Confidence ${Math.round(profile.resumeConfidence * 100)}% · ` : ''}
+                      {profile.lastResumeSyncedAt ? `Last synced ${formatRelativeTime(profile.lastResumeSyncedAt)}` : ''}
+                    </span>
+                  </div>
+                  <button type="button" className="profile-sync-banner-action" onClick={() => setActiveTab('resumes')}>
+                    View Resume
+                  </button>
+                </div>
+              ) : (
+                <div className="profile-sync-banner profile-sync-banner--empty">
+                  <IconRefresh />
+                  <div className="profile-sync-banner-body">
+                    <strong>No resume synced yet</strong>
+                    <span>Upload a resume and run extraction to auto-fill this profile.</span>
+                  </div>
+                  <button type="button" className="profile-sync-banner-action" onClick={() => setActiveTab('resumes')}>
+                    Go to Resume Files
+                  </button>
+                </div>
+              );
+            })()}
+
             <form onSubmit={handleProfileSave} className="profile-form">
               <div className="profile-section">
                 <div className="profile-section-head">
@@ -2135,6 +2240,38 @@ function App() {
 
               <div className="profile-section">
                 <div className="profile-section-head">
+                  <span className="profile-section-icon"><IconBriefcase /></span>
+                  <h2 className="profile-section-title">Professional Identity</h2>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Professional Title</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Backend Engineer"
+                      value={profile.professionalTitle || ''}
+                      onChange={(e) => setProfile({ ...profile, professionalTitle: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Career Level</label>
+                    <select
+                      className="form-input"
+                      value={profile.careerLevel || ''}
+                      onChange={(e) => setProfile({ ...profile, careerLevel: e.target.value })}
+                    >
+                      <option value="">Not set</option>
+                      {CAREER_LEVELS.map((level) => (
+                        <option key={level} value={level}>{level.charAt(0).toUpperCase() + level.slice(1)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="profile-section">
+                <div className="profile-section-head">
                   <span className="profile-section-icon"><IconTarget /></span>
                   <h2 className="profile-section-title">Career Targets</h2>
                 </div>
@@ -2157,13 +2294,32 @@ function App() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Skills (Comma-separated)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={profile.skills}
-                    onChange={(e) => setProfile({ ...profile, skills: e.target.value })}
-                  />
+                  <label className="form-label">Skills</label>
+                  <div className="skill-tag-field">
+                    {(profile.skills || []).map((skill, idx) => (
+                      <span className="skill-tag" key={`${skill}-${idx}`}>
+                        {skill}
+                        <button
+                          type="button"
+                          className="skill-tag-remove"
+                          aria-label={`Remove ${skill}`}
+                          onClick={() => removeSkillAt(idx)}
+                        >
+                          <IconX />
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      type="text"
+                      className="skill-tag-input"
+                      placeholder={(profile.skills || []).length === 0 ? 'Type a skill and press Enter…' : 'Add another…'}
+                      value={skillDraft}
+                      onChange={(e) => setSkillDraft(e.target.value)}
+                      onKeyDown={handleSkillDraftKeyDown}
+                      onBlur={addSkillFromDraft}
+                    />
+                  </div>
+                  <p className="form-hint">Press Enter or comma to add a skill. Backspace removes the last one.</p>
                 </div>
               </div>
 
@@ -2192,6 +2348,178 @@ function App() {
                       onChange={(e) => setProfile({ ...profile, salaryPreference: e.target.value })}
                     />
                   </div>
+                </div>
+              </div>
+
+              <div className="profile-section">
+                <div className="profile-section-head">
+                  <span className="profile-section-icon"><IconGraduationCap /></span>
+                  <h2 className="profile-section-title">Education</h2>
+                </div>
+                {(profile.education || []).length === 0 && (
+                  <div className="profile-list-empty">No education entries yet.</div>
+                )}
+                {(profile.education || []).map((edu, idx) => (
+                  <div className="profile-list-row" key={idx}>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label">Institution</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={edu.institution || ''}
+                          onChange={(e) => updateEducationEntry(idx, 'institution', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Degree</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={edu.degree || ''}
+                          onChange={(e) => updateEducationEntry(idx, 'degree', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label">Field of Study</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={edu.field || ''}
+                          onChange={(e) => updateEducationEntry(idx, 'field', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Start – End Year</label>
+                        <div className="profile-list-row-inline">
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="Start"
+                            value={edu.startYear || ''}
+                            onChange={(e) => updateEducationEntry(idx, 'startYear', e.target.value)}
+                          />
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="End"
+                            value={edu.endYear || ''}
+                            onChange={(e) => updateEducationEntry(idx, 'endYear', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="profile-list-row-remove"
+                      aria-label="Remove education entry"
+                      onClick={() => removeEducationEntry(idx)}
+                    >
+                      <IconX /> Remove
+                    </button>
+                  </div>
+                ))}
+                <button type="button" className="profile-list-add-btn" onClick={addEducationEntry}>
+                  + Add Education
+                </button>
+              </div>
+
+              <div className="profile-section">
+                <div className="profile-section-head">
+                  <span className="profile-section-icon"><IconAward /></span>
+                  <h2 className="profile-section-title">Certifications</h2>
+                </div>
+                {(profile.certifications || []).length === 0 && (
+                  <div className="profile-list-empty">No certifications added yet.</div>
+                )}
+                {(profile.certifications || []).map((cert, idx) => {
+                  const c = typeof cert === 'string' ? { name: cert } : cert;
+                  return (
+                    <div className="profile-list-row" key={idx}>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label className="form-label">Name</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={c.name || ''}
+                            onChange={(e) => updateCertificationEntry(idx, 'name', e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Issuer</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={c.issuer || ''}
+                            onChange={(e) => updateCertificationEntry(idx, 'issuer', e.target.value)}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Issue Date</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g. 2023"
+                            value={c.issueDate || ''}
+                            onChange={(e) => updateCertificationEntry(idx, 'issueDate', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="profile-list-row-remove"
+                        aria-label="Remove certification"
+                        onClick={() => removeCertificationEntry(idx)}
+                      >
+                        <IconX /> Remove
+                      </button>
+                    </div>
+                  );
+                })}
+                <button type="button" className="profile-list-add-btn" onClick={addCertificationEntry}>
+                  + Add Certification
+                </button>
+              </div>
+
+              <div className="profile-section">
+                <div className="profile-section-head">
+                  <span className="profile-section-icon"><IconLink /></span>
+                  <h2 className="profile-section-title">Online Presence</h2>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">LinkedIn</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="linkedin.com/in/..."
+                      value={profile.links?.linkedin || ''}
+                      onChange={(e) => setProfile({ ...profile, links: { ...profile.links, linkedin: e.target.value } })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">GitHub</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="github.com/..."
+                      value={profile.links?.github || ''}
+                      onChange={(e) => setProfile({ ...profile, links: { ...profile.links, github: e.target.value } })}
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Portfolio</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="yourname.dev"
+                    value={profile.links?.portfolio || ''}
+                    onChange={(e) => setProfile({ ...profile, links: { ...profile.links, portfolio: e.target.value } })}
+                  />
                 </div>
               </div>
 
@@ -2340,6 +2668,17 @@ function App() {
                   </div>
                 ) : (
                   <>
+                    {resumeExtraction.needsReview && (
+                      <div className="resume-extract-notice resume-extract-notice--warning">
+                        ⚠ Low-confidence extraction — please review these details before relying on them.
+                      </div>
+                    )}
+                    {profile.syncedResumeId === selectedResumeId && (
+                      <div className="resume-synced-badge">
+                        <IconCheckCircle /> Already auto-synced to your profile
+                      </div>
+                    )}
+
                     <div className="resume-extract-grid">
                       <div className="resume-extract-section">
                         <span className="resume-extract-label">Professional Title</span>
@@ -2354,10 +2693,44 @@ function App() {
                         </span>
                       </div>
                       <div className="resume-extract-section">
+                        <span className="resume-extract-label">Total Experience</span>
+                        <span className="resume-extract-value">
+                          {resumeExtraction.totalExperienceYears != null ? `${resumeExtraction.totalExperienceYears} yr` : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="resume-extract-section">
                         <span className="resume-extract-label">Confidence</span>
                         <span className="resume-extract-value">{Math.round((resumeExtraction.confidence || 0) * 100)}%</span>
                       </div>
                     </div>
+
+                    {resumeExtraction.contactInfo && (
+                      <div className="resume-extract-section">
+                        <span className="resume-extract-label">Contact Info</span>
+                        <div className="resume-extract-contact-grid">
+                          {resumeExtraction.contactInfo.email && (
+                            <span className="resume-extract-contact-item">{resumeExtraction.contactInfo.email}</span>
+                          )}
+                          {resumeExtraction.contactInfo.phone && (
+                            <span className="resume-extract-contact-item">{resumeExtraction.contactInfo.phone}</span>
+                          )}
+                          {resumeExtraction.contactInfo.linkedin && (
+                            <span className="resume-extract-contact-item">{resumeExtraction.contactInfo.linkedin}</span>
+                          )}
+                          {resumeExtraction.contactInfo.github && (
+                            <span className="resume-extract-contact-item">{resumeExtraction.contactInfo.github}</span>
+                          )}
+                          {resumeExtraction.contactInfo.portfolio && (
+                            <span className="resume-extract-contact-item">{resumeExtraction.contactInfo.portfolio}</span>
+                          )}
+                          {!resumeExtraction.contactInfo.email && !resumeExtraction.contactInfo.phone &&
+                            !resumeExtraction.contactInfo.linkedin && !resumeExtraction.contactInfo.github &&
+                            !resumeExtraction.contactInfo.portfolio && (
+                              <span className="resume-extract-empty">None detected</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="resume-extract-section">
                       <span className="resume-extract-label">Skills ({(resumeExtraction.userCorrectedSkills || resumeExtraction.skills || []).length})</span>
@@ -2404,15 +2777,22 @@ function App() {
 
                     <div className="resume-extract-section">
                       <span className="resume-extract-label">Certifications ({(resumeExtraction.certifications || []).length})</span>
-                      <div className="resume-extract-chips">
-                        {(resumeExtraction.certifications || []).length === 0 ? (
-                          <span className="resume-extract-empty">None detected</span>
-                        ) : (
-                          resumeExtraction.certifications.map((c) => (
-                            <span key={c} className="badge badge-info">{c}</span>
-                          ))
-                        )}
-                      </div>
+                      {(resumeExtraction.certifications || []).length === 0 ? (
+                        <span className="resume-extract-empty">None detected</span>
+                      ) : (
+                        <ul className="resume-extract-list">
+                          {resumeExtraction.certifications.map((cert, idx) => {
+                            const c = typeof cert === 'string' ? { name: cert } : cert;
+                            return (
+                              <li key={idx}>
+                                <strong>{c.name || 'Certification'}</strong>
+                                {c.issuer ? ` — ${c.issuer}` : ''}
+                                {c.issueDate ? ` (${c.issueDate})` : ''}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                     </div>
 
                     <div className="resume-extract-section">
@@ -2432,10 +2812,13 @@ function App() {
                         {[
                           { key: 'skills', label: 'Skills' },
                           { key: 'targetRoles', label: 'Target Roles (from title)' },
+                          { key: 'professionalTitle', label: 'Professional Title' },
+                          { key: 'careerLevel', label: 'Career Level' },
                           { key: 'experience', label: 'Years of Experience' },
                           { key: 'bio', label: 'Bio / Summary' },
                           { key: 'education', label: 'Education' },
                           { key: 'certifications', label: 'Certifications' },
+                          { key: 'contactInfo', label: 'Contact Links' },
                         ].map((f) => (
                           <label key={f.key} className="resume-apply-checkbox-row">
                             <input
@@ -4061,35 +4444,51 @@ function App() {
                     {gmailStatus?.connected ? (
                       <>
                         <div className="job-integration-info">
-                          <div className="job-integration-status job-integration-status--connected">
-                            <IconCheckCircle /> Connected: {gmailStatus.email}
-                          </div>
+                          {gmailStatus.status === 'expired' ? (
+                            <div className="job-integration-status job-integration-status--warning">
+                              <IconClockAlert /> Connection expired: {gmailStatus.email}
+                            </div>
+                          ) : (
+                            <div className="job-integration-status job-integration-status--connected">
+                              <IconCheckCircle /> Connected: {gmailStatus.email}
+                            </div>
+                          )}
                           <div className="job-integration-meta">
                             Label: CareerGraph/LinkedInJobs &bull; Last Sync: {gmailStatus.lastSyncAt ? new Date(gmailStatus.lastSyncAt).toLocaleString() : 'Never'}
                           </div>
                         </div>
                         <div className="job-integration-actions">
-                          <button
-                            className="job-btn job-btn--primary"
-                            disabled={gmailSyncing}
-                            onClick={async () => {
-                              setGmailSyncing(true);
-                              try {
-                                const res = await api.request('/integrations/gmail/jobs/sync', { method: 'POST' });
-                                alert(`Gmail Sync Complete!\nEmails Processed: ${res.data.emailsProcessed}\nJobs Found: ${res.data.jobsFound}\nCreated: ${res.data.created}\nUpdated: ${res.data.updated}\nDuplicates: ${res.data.duplicates}\nFailed: ${res.data.failed}`);
-                                loadGmailStatus();
-                                loadJobs();
-                                loadIngestionMonitor();
-                              } catch (err) {
-                                alert(err.message);
-                              } finally {
-                                setGmailSyncing(false);
-                              }
-                            }}
-                          >
-                            <IconRefresh />
-                            {gmailSyncing ? 'Syncing...' : 'Sync Now'}
-                          </button>
+                          {gmailStatus.status === 'expired' ? (
+                            <button className="job-btn job-btn--primary" onClick={handleConnectGmail}>
+                              <IconPlug />
+                              Reconnect Gmail
+                            </button>
+                          ) : (
+                            <button
+                              className="job-btn job-btn--primary"
+                              disabled={gmailSyncing}
+                              onClick={async () => {
+                                setGmailSyncing(true);
+                                try {
+                                  const res = await api.request('/integrations/gmail/jobs/sync', { method: 'POST' });
+                                  alert(`Gmail Sync Complete!\nEmails Processed: ${res.data.emailsProcessed}\nJobs Found: ${res.data.jobsFound}\nCreated: ${res.data.created}\nUpdated: ${res.data.updated}\nDuplicates: ${res.data.duplicates}\nFailed: ${res.data.failed}`);
+                                  loadGmailStatus();
+                                  loadJobs();
+                                  loadIngestionMonitor();
+                                } catch (err) {
+                                  if (err.code === 'GMAIL_REAUTH_REQUIRED') {
+                                    loadGmailStatus();
+                                  }
+                                  alert(err.message);
+                                } finally {
+                                  setGmailSyncing(false);
+                                }
+                              }}
+                            >
+                              <IconRefresh />
+                              {gmailSyncing ? 'Syncing...' : 'Sync Now'}
+                            </button>
+                          )}
                           <button
                             className="job-icon-btn job-icon-btn--danger"
                             aria-label="Disconnect Gmail"

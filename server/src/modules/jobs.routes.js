@@ -12,7 +12,7 @@ import {
   calculateReferralScore,
   calculateOpportunityScore,
   determineActionRecommendation,
-  extractSkillsFromText,
+  computeSkillGapAnalysis,
 } from '../services/intelligence.service.js';
 import { getJobNetworkDetails } from '../services/job-network.service.js';
 import { enqueueJobMatchAnalysis } from '../services/job-match-analysis.service.js';
@@ -139,8 +139,13 @@ async function serializeJob(job, profile, userId) {
     }
   }
 
+  const jobEnrichment = job.aiEnrichment || await models.JobAiEnrichment.findOne({ where: { jobId: job.id } });
+
   // Calculate matching intelligence on the fly (fallback, always fresh)
-  let matchScore = calculateMatchScore(mergedProfile, job);
+  let matchScore = calculateMatchScore(mergedProfile, job, {
+    resumeEnrichment: activeResume?.aiEnrichment,
+    jobEnrichment,
+  });
   let matchAnalysisExtras = {};
 
   const persistedAnalysis = await models.JobMatchAnalysis.findOne({ where: { jobId: job.id, status: 'completed' } });
@@ -191,9 +196,7 @@ async function serializeJob(job, profile, userId) {
   const opportunityScore = calculateOpportunityScore(matchScore, maxReferralScore);
   const recommendedAction = determineActionRecommendation(matchScore, scoredContacts[0] || null);
 
-  const jobText = `${job.title || ''} ${job.description || ''}`;
-  const jobSkills = extractSkillsFromText(jobText);
-  const profileSkills = (profile?.skills || []).map(s => s.toLowerCase());
+  const { matchedSkills, missingSkills } = computeSkillGapAnalysis(profile, job, activeResume?.aiEnrichment, jobEnrichment);
 
   // Fetch associated Application with timeline events
   const app = await models.Application.findOne({
@@ -206,8 +209,8 @@ async function serializeJob(job, profile, userId) {
     companyName,
     matchScore,
     ...matchAnalysisExtras,
-    matchedSkills: jobSkills.filter(s => profileSkills.includes(s)),
-    missingSkills: jobSkills.filter(s => !profileSkills.includes(s)),
+    matchedSkills,
+    missingSkills,
     opportunityScore,
     recommendedContacts: scoredContacts,
     recommendedAction,

@@ -10,6 +10,8 @@ import { aiService } from './ai/ai.service.js';
 import { fileStorage } from '../lib/storage.js';
 import { aiObservability } from './ai/observability.service.js';
 import { enqueueAIJob } from '../queues/ai.queue.js';
+import { canonicalizeSkillList } from '../lib/skills-taxonomy.js';
+import { estimateYearsOfExperience } from '../lib/experience.util.js';
 
 const require = createRequire(import.meta.url);
 const { PDFParse } = require('pdf-parse');
@@ -62,7 +64,22 @@ const educationItemSchema = Joi.alternatives().try(
   typeof value === 'string' ? { institution: value, degree: '', field: '', startYear: '', endYear: '' } : value
 ));
 
-const CAREER_LEVELS = ['intern', 'entry', 'mid', 'senior', 'lead', 'principal', 'executive'];
+const certificationItemSchema = Joi.alternatives().try(
+  Joi.object({
+    name: Joi.string().allow('', null).default(''),
+    issuer: Joi.string().allow('', null).default(''),
+    issueDate: Joi.string().allow('', null).default(''),
+    expiryDate: Joi.string().allow('', null).default(''),
+    credentialId: Joi.string().allow('', null).default('')
+  }),
+  Joi.string()
+).custom((value) => (
+  typeof value === 'string'
+    ? { name: value, issuer: '', issueDate: '', expiryDate: '', credentialId: '' }
+    : value
+));
+
+export const CAREER_LEVELS = ['intern', 'entry', 'mid', 'senior', 'lead', 'principal', 'executive'];
 
 export const resumeEnrichmentSchema = Joi.object({
   professionalTitle: Joi.string().allow('', null).default(''),
@@ -73,20 +90,60 @@ export const resumeEnrichmentSchema = Joi.object({
   experience: Joi.array().items(experienceItemSchema).default([]),
   projects: Joi.array().items(projectItemSchema).default([]),
   education: Joi.array().items(educationItemSchema).default([]),
-  certifications: Joi.array().items(Joi.string()).default([]),
+  certifications: Joi.array().items(certificationItemSchema).default([]),
   achievements: Joi.array().items(Joi.string()).default([]),
   summary: Joi.string().allow('', null).default(''),
   confidence: Joi.number().min(0).max(1).default(1.0)
 });
 
-const PROMPT_VERSION = 1;
-const SCHEMA_VERSION = 1;
+const PROMPT_VERSION = 2;
+const SCHEMA_VERSION = 2;
 
 // Groq's on-demand tier caps at 8000 tokens/minute; an untruncated multi-page
-// resume can request 30k+ tokens and get rejected outright. Cap the prompt
-// text (not the evidence text used for guardrail claim-checking, which stays
-// full-length) the same way resume-analysis.service.js already does.
+// resume can request 30k+ tokens and get rejected outright. Ollama (local) has
+// no such cap, so it gets a much larger budget; the mock provider (tests) gets
+// no truncation at all so fixtures aren't silently clipped.
 const MAX_PROMPT_CHARS = 6000;
+
+export function resolvePromptCharBudget(provider) {
+  if (provider === 'groq') return env.aiResumePromptCharBudgetGroq;
+  if (provider === 'ollama') return env.aiResumePromptCharBudgetOllama;
+  if (provider === 'mock') return env.aiResumePromptCharBudgetMock;
+  return MAX_PROMPT_CHARS;
+}
+
+// Cuts at the last newline at/before maxChars so truncation never breaks
+// mid-line (which can otherwise nudge a smaller model into malformed JSON).
+export function truncateResumeText(text, maxChars) {
+  if (!text || maxChars <= 0 || text.length <= maxChars) return text || '';
+  const window = text.slice(0, maxChars);
+  const lastNewline = window.lastIndexOf('\n');
+  if (lastNewline > maxChars * 0.5) return window.slice(0, lastNewline);
+  return window;
+}
+
+const EMAIL_REGEX = /[\w.+-]+@[\w-]+\.[\w.-]+/;
+const PHONE_REGEX = /(?:\+?\d{1,3}[\s.-]?)?\(?\d{3,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}/;
+const LINKEDIN_REGEX = /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[\w-]+\/?/i;
+const GITHUB_REGEX = /(?:https?:\/\/)?(?:www\.)?github\.com\/[\w-]+\/?/i;
+const PORTFOLIO_REGEX = /(?:https?:\/\/)?(?:www\.)?[\w-]+\.(?:dev|me|io|com|in)\/[\w-]*/i;
+
+// Deterministic regex pass instead of asking the LLM — contact details are
+// either present verbatim in the text or not; an LLM can hallucinate or
+// truncate them, a regex over the full untruncated text cannot.
+export function extractContactInfo(rawText) {
+  const text = rawText || '';
+  const email = text.match(EMAIL_REGEX)?.[0] || null;
+  const phone = text.match(PHONE_REGEX)?.[0] || null;
+  const linkedin = text.match(LINKEDIN_REGEX)?.[0] || null;
+  const github = text.match(GITHUB_REGEX)?.[0] || null;
+  let portfolio = null;
+  if (!linkedin && !github) {
+    const candidate = text.match(PORTFOLIO_REGEX)?.[0];
+    if (candidate && !EMAIL_REGEX.test(candidate)) portfolio = candidate;
+  }
+  return { email, phone, linkedin, github, portfolio, otherLinks: [] };
+}
 
 /**
  * Clean and normalize raw text extracted from PDF.
@@ -131,13 +188,13 @@ function buildEnrichmentPrompt(text) {
   return `Analyze this resume and output JSON matching the keys exactly:
 {
   "professionalTitle": "Backend Developer",
-  "careerLevel": "entry/mid/senior/lead/principal/executive",
+  "careerLevel": "intern/entry/mid/senior/lead/principal/executive",
   "skills": ["JavaScript", "Node.js"],
   "technicalDomains": ["backend", "web"],
   "experience": [{"company": "A", "title": "B", "startDate": "YYYY-MM", "endDate": "YYYY-MM/present", "isCurrent": false, "responsibilities": ["C"]}],
   "projects": [{"name": "D", "description": "E", "technologies": ["F"]}],
   "education": [{"institution": "G", "degree": "H", "field": "I", "startYear": "YYYY", "endYear": "YYYY"}],
-  "certifications": ["J"],
+  "certifications": [{"name": "AWS Certified Solutions Architect", "issuer": "Amazon", "issueDate": "2023"}],
   "achievements": ["K"],
   "summary": "Short summary",
   "confidence": 1.0
@@ -177,7 +234,8 @@ export async function enqueueResumeEnrichment(resumeId) {
     let enrichment = await models.ResumeAiEnrichment.findOne({ where: { resumeId } });
     
     if (enrichment) {
-      if (enrichment.inputHash === inputHash && ['completed', 'skipped'].includes(enrichment.status)) {
+      const isStale = enrichment.schemaVersion !== SCHEMA_VERSION || enrichment.promptVersion !== PROMPT_VERSION;
+      if (!isStale && enrichment.inputHash === inputHash && ['completed', 'skipped'].includes(enrichment.status)) {
         return;
       }
       await enrichment.update({
@@ -250,7 +308,8 @@ export async function executeResumeEnrichment(resumeId) {
   try {
     const rawText = await extractResumeText(enrichment.resume);
     const normalized = normalizeResumeText(rawText);
-    const prompt = buildEnrichmentPrompt(normalized.slice(0, MAX_PROMPT_CHARS));
+    const promptBudget = resolvePromptCharBudget(env.aiProvider);
+    const prompt = buildEnrichmentPrompt(truncateResumeText(normalized, promptBudget));
     const parsed = await aiService.generateStructured(prompt, resumeEnrichmentSchema, {
       timeoutMs: 120000,
       operation: 'resume_enrichment',
@@ -263,25 +322,42 @@ export async function executeResumeEnrichment(resumeId) {
     });
     const latency = Date.now() - start;
 
+    const confidence = parsed.confidence || 1.0;
+    const experience = parsed.experience || [];
+    const totalExperienceYears = estimateYearsOfExperience(experience);
+    const hasParseableStart = experience.some((entry) => entry?.startDate);
+    const needsReview = confidence < 0.6 || (experience.length > 0 && !hasParseableStart);
+
     await enrichment.update({
       status: 'completed',
       professionalTitle: parsed.professionalTitle || null,
       careerLevel: parsed.careerLevel || 'unknown',
       skills: parsed.skills || [],
+      canonicalSkills: canonicalizeSkillList(parsed.skills || []),
       technicalDomains: parsed.technicalDomains || [],
-      experience: parsed.experience || [],
+      experience,
       projects: parsed.projects || [],
       education: parsed.education || [],
       certifications: parsed.certifications || [],
       achievements: parsed.achievements || [],
       summary: parsed.summary || null,
-      confidence: parsed.confidence || 1.0,
+      confidence,
+      contactInfo: extractContactInfo(normalized),
+      totalExperienceYears,
+      needsReview,
       rawResponse: JSON.stringify(parsed),
       latencyMs: latency,
-      errorCode: null
+      errorCode: null,
+      promptVersion: PROMPT_VERSION,
+      schemaVersion: SCHEMA_VERSION
     });
 
     if (enrichment.resume.isActive) {
+      const { syncProfileFromResumeEnrichment } = await import('./profile-resume-sync.service.js');
+      await syncProfileFromResumeEnrichment(enrichment.resume.user_id, enrichment).catch((syncErr) => {
+        console.error(`[ResumeAiEnrichmentService] Profile auto-sync failed for resume ${resumeId}:`, syncErr);
+      });
+
       const { refreshMatchAnalysisForTrackedJobs } = await import('./job-match-analysis.service.js');
       refreshMatchAnalysisForTrackedJobs(enrichment.resume.user_id);
     }

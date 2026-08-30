@@ -6,7 +6,8 @@ import {
   calculateMatchScore,
   calculateReferralScore,
   calculateOpportunityScore,
-  determineActionRecommendation
+  determineActionRecommendation,
+  computeSkillGapAnalysis
 } from '../src/services/intelligence.service.js';
 
 describe('CareerGraph Intelligence Services Tests', () => {
@@ -118,6 +119,174 @@ describe('CareerGraph Intelligence Services Tests', () => {
 
       const lowMatchNoConn = determineActionRecommendation(40, null);
       expect(lowMatchNoConn).toContain('Build new connections');
+    });
+  });
+
+  describe('2b. Resume-driven match scoring (calculateMatchScore options)', () => {
+    it('falls back to the legacy algorithm when no resumeEnrichment is passed', () => {
+      const profile = {
+        skills: ['React', 'JavaScript'],
+        targetRoles: ['Software Engineer'],
+        remotePreference: 'remote',
+        preferredLocations: [],
+        experience: '4 years'
+      };
+      const job = { title: 'Software Engineer', description: 'React developer.', location: 'Remote' };
+
+      const withoutOptions = calculateMatchScore(profile, job);
+      const withEmptyOptions = calculateMatchScore(profile, job, {});
+      const withIncompleteEnrichment = calculateMatchScore(profile, job, {
+        resumeEnrichment: { status: 'processing' }
+      });
+
+      expect(withoutOptions).toBe(withEmptyOptions);
+      expect(withoutOptions).toBe(withIncompleteEnrichment);
+    });
+
+    it('scores a perfect resume/job match at exactly 100', () => {
+      const profile = {
+        skills: ['PostgreSQL'],
+        targetRoles: ['Senior Backend Engineer'],
+        remotePreference: 'remote',
+        preferredLocations: []
+      };
+      const resumeEnrichment = {
+        status: 'completed',
+        skills: ['React', 'Node.js'],
+        technicalDomains: ['backend'],
+        careerLevel: 'senior',
+        totalExperienceYears: 5,
+        projects: [{ name: 'App', technologies: ['React', 'Node.js'] }],
+        certifications: [{ name: 'React Developer Certification' }]
+      };
+      const jobEnrichment = {
+        requiredSkills: ['React', 'Node.js'],
+        preferredSkills: ['PostgreSQL'],
+        domain: ['backend'],
+        seniority: 'senior'
+      };
+      const job = {
+        title: 'Senior Backend Engineer',
+        description: 'React and Node.js role.',
+        location: 'Remote',
+        experienceMin: 3,
+        experienceMax: 7
+      };
+
+      const score = calculateMatchScore(profile, job, { resumeEnrichment, jobEnrichment });
+      expect(score).toBe(100);
+    });
+
+    it('redistributes the preferred-skills weight into required-skills when no preferred list exists', () => {
+      const profile = { skills: [], targetRoles: [], preferredLocations: [] };
+      const job = { title: 'Widget Role', description: 'No skill keywords here.' };
+      const resumeEnrichment = { status: 'completed', skills: ['React'] };
+
+      const noPreferred = calculateMatchScore(profile, job, {
+        resumeEnrichment,
+        jobEnrichment: { requiredSkills: ['React'] }
+      });
+      const withUnmatchedPreferred = calculateMatchScore(profile, job, {
+        resumeEnrichment,
+        jobEnrichment: { requiredSkills: ['React'], preferredSkills: ['Foo'] }
+      });
+
+      expect(noPreferred).toBe(40);
+      expect(withUnmatchedPreferred).toBe(30);
+    });
+
+    it('absorbs the domain-overlap weight into location when domain data is unavailable', () => {
+      const profile = { skills: [], targetRoles: [], remotePreference: 'remote', preferredLocations: [] };
+      const job = { title: 'Widget Role', description: 'No skill keywords here.', location: 'Remote' };
+      const resumeEnrichment = { status: 'completed', skills: [] };
+
+      const withDomain = calculateMatchScore(profile, job, {
+        resumeEnrichment: { ...resumeEnrichment, technicalDomains: ['backend'] },
+        jobEnrichment: { domain: ['backend'] }
+      });
+      const withoutDomain = calculateMatchScore(profile, job, {
+        resumeEnrichment,
+        jobEnrichment: {}
+      });
+
+      expect(withDomain).toBe(20); // 10 domain + 10 location
+      expect(withoutDomain).toBe(20); // 0 domain + 20 location (fully absorbed, not dropped)
+    });
+
+    it('degrades the seniority/years bucket gracefully when only one sub-signal is available', () => {
+      const profile = { skills: [], targetRoles: [], preferredLocations: [] };
+      const job = { title: 'Widget Coordinator', description: 'Manage widgets.' };
+
+      const rankOnly = calculateMatchScore(profile, job, {
+        resumeEnrichment: { status: 'completed', skills: [], careerLevel: 'senior' },
+        jobEnrichment: { seniority: 'senior' }
+      });
+      const neitherAvailable = calculateMatchScore(profile, job, {
+        resumeEnrichment: { status: 'completed', skills: [], totalExperienceYears: 5 },
+        jobEnrichment: {}
+      });
+      const jobWithYearsRange = { ...job, experienceMin: 3, experienceMax: 7 };
+      const yearsOnly = calculateMatchScore(profile, jobWithYearsRange, {
+        resumeEnrichment: { status: 'completed', skills: [], totalExperienceYears: 5 },
+        jobEnrichment: {}
+      });
+
+      expect(rankOnly).toBe(15);
+      // No job.experienceMin means yearsRatio can't be computed either, so this
+      // isn't "one sub-signal" but confirms neither-available degrades to 0, not a crash.
+      expect(neitherAvailable).toBe(0);
+      expect(yearsOnly).toBe(15);
+    });
+
+    it('credits a required skill demonstrated in a project even when absent from the flat skills list', () => {
+      const profile = { skills: [], targetRoles: [], preferredLocations: [] };
+      const job = { title: 'Widget Role', description: 'No skill keywords here.' };
+      const score = calculateMatchScore(profile, job, {
+        resumeEnrichment: {
+          status: 'completed',
+          skills: [],
+          projects: [{ name: 'App', technologies: ['Kubernetes'] }]
+        },
+        jobEnrichment: { requiredSkills: ['Kubernetes'] }
+      });
+      expect(score).toBe(5);
+    });
+
+    it('scores certification relevance via token overlap with the job title/required skills', () => {
+      const profile = { skills: [], targetRoles: [], preferredLocations: [] };
+      const job = { title: 'React Engineer', description: '' };
+      const score = calculateMatchScore(profile, job, {
+        resumeEnrichment: {
+          status: 'completed',
+          skills: [],
+          certifications: [{ name: 'React Developer Certification' }]
+        },
+        jobEnrichment: {}
+      });
+      expect(score).toBe(5);
+    });
+  });
+
+  describe('2c. computeSkillGapAnalysis', () => {
+    it('uses canonicalized resume/job skills when a completed resume enrichment is available', () => {
+      const profile = { skills: [] };
+      const job = { title: 'Backend Engineer', description: '' };
+      const { matchedSkills, missingSkills } = computeSkillGapAnalysis(
+        profile,
+        job,
+        { status: 'completed', skills: ['React'] },
+        { requiredSkills: ['React', 'Node.js'] }
+      );
+      expect(matchedSkills).toContain('React');
+      expect(missingSkills).toContain('Node.js');
+    });
+
+    it('falls back to the legacy hardcoded-list comparison without a completed resume enrichment', () => {
+      const profile = { skills: ['react'] };
+      const job = { title: 'Backend Engineer using React and SQL', description: '' };
+      const { matchedSkills, missingSkills } = computeSkillGapAnalysis(profile, job, null, null);
+      expect(matchedSkills).toContain('react');
+      expect(missingSkills).toContain('sql');
     });
   });
 

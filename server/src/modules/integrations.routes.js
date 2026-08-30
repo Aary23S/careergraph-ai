@@ -49,12 +49,25 @@ router.get(
       // Encrypt the refresh token
       const encrypted = encryptSecret(tokens.refresh_token);
 
-      // Save integration to database
-      await models.GmailIntegration.upsert({
-        user_id: userId,
-        email: emailAddress,
-        encryptedRefreshToken: encrypted
-      });
+      // Save integration to database. A plain upsert() targets the primary
+      // key (id) for its ON CONFLICT clause, not user_id — since id is always
+      // a fresh UUID here, that would always INSERT a new row rather than
+      // updating the existing one. Look it up explicitly instead.
+      const existingIntegration = await models.GmailIntegration.findOne({ where: { user_id: userId } });
+      if (existingIntegration) {
+        await existingIntegration.update({
+          emailAddress,
+          encryptedRefreshToken: encrypted,
+          status: 'active'
+        });
+      } else {
+        await models.GmailIntegration.create({
+          user_id: userId,
+          emailAddress,
+          encryptedRefreshToken: encrypted,
+          status: 'active'
+        });
+      }
 
       res.redirect(`http://localhost:5173/?gmail_connected=true&email=${encodeURIComponent(emailAddress)}`);
     } catch (err) {
@@ -79,8 +92,9 @@ router.get(
 
     ok(res, {
       connected: true,
-      email: integration.email,
-      lastSyncAt: integration.lastSyncAt
+      email: integration.emailAddress,
+      lastSyncAt: integration.lastSyncAt,
+      status: integration.status
     });
   })
 );

@@ -84,18 +84,28 @@ router.post(
 
     const user = await models.User.findByPk(userId);
     const profile = await models.Profile.findOne({ where: { user_id: userId } });
+    const activeResume = await models.Resume.findOne({
+      where: { user_id: userId, isActive: true },
+      include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }],
+    });
 
     // 1. Fetch active jobs & calculate opportunity scores
     const jobs = await models.Job.findAll({
       where: { user_id: userId, isArchived: false },
-      include: [{ model: models.Company, as: 'company' }],
+      include: [
+        { model: models.Company, as: 'company' },
+        { model: models.JobAiEnrichment, as: 'aiEnrichment' },
+      ],
     });
 
     const activeConnections = await models.Connection.findAll({ where: { user_id: userId } });
 
     const scoredJobs = await Promise.all(
       jobs.map(async (job) => {
-        const matchScore = calculateMatchScore(profile, job);
+        const matchScore = calculateMatchScore(profile, job, {
+          resumeEnrichment: activeResume?.aiEnrichment,
+          jobEnrichment: job.aiEnrichment,
+        });
         
         // Find connections for this company
         const companyName = job.company?.name || '';

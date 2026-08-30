@@ -4,8 +4,34 @@ import { models } from '../config/database.js';
 import { asyncHandler, ok } from '../lib/http.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { CAREER_LEVELS } from '../services/resume-ai-enrichment.service.js';
 
 const router = Router();
+
+const educationItemSchema = Joi.object({
+  institution: Joi.string().allow('', null),
+  degree: Joi.string().allow('', null),
+  field: Joi.string().allow('', null),
+  startYear: Joi.string().allow('', null),
+  endYear: Joi.string().allow('', null),
+});
+
+const certificationItemSchema = Joi.alternatives().try(
+  Joi.object({
+    name: Joi.string().allow('', null),
+    issuer: Joi.string().allow('', null),
+    issueDate: Joi.string().allow('', null),
+    expiryDate: Joi.string().allow('', null),
+    credentialId: Joi.string().allow('', null),
+  }),
+  Joi.string(),
+);
+
+const linksSchema = Joi.object({
+  linkedin: Joi.string().allow('', null),
+  github: Joi.string().allow('', null),
+  portfolio: Joi.string().allow('', null),
+});
 
 const profileSchema = Joi.object({
   name: Joi.string().trim().min(2).required(),
@@ -19,6 +45,11 @@ const profileSchema = Joi.object({
   skills: Joi.array().items(Joi.string()).default([]),
   salaryPreference: Joi.string().allow('', null),
   bio: Joi.string().allow('', null),
+  professionalTitle: Joi.string().allow('', null),
+  careerLevel: Joi.string().valid('', ...CAREER_LEVELS).allow(null),
+  education: Joi.array().items(educationItemSchema).default([]),
+  certifications: Joi.array().items(certificationItemSchema).default([]),
+  links: linksSchema.default({}),
 });
 
 router.use(requireAuth);
@@ -70,6 +101,11 @@ router.delete(
       skills: [],
       salaryPreference: null,
       bio: null,
+      professionalTitle: null,
+      careerLevel: null,
+      education: [],
+      certifications: [],
+      links: {},
     });
     ok(res, profile);
   }),

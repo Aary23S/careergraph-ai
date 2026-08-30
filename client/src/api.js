@@ -61,7 +61,12 @@ class ApiClient {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Request failed with status ${response.status}`);
+        // Server error responses nest the message under `error.message`
+        // ({success:false, error:{code, message}}), not at the top level.
+        const message = errorData.error?.message || errorData.message || `Request failed with status ${response.status}`;
+        const error = new Error(message);
+        error.code = errorData.error?.code;
+        throw error;
       }
 
       // If it's a file download, we might handle it differently or just return JSON

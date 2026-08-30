@@ -5,6 +5,11 @@ import { LinkedInEmailJobSource } from './linkedin-email-job-source.js';
 import { ingestJobsBatch } from './job-ingestion.service.js';
 import { decryptSecret } from '../lib/crypto.js';
 import { env } from '../config/env.js';
+import { AppError } from '../lib/http.js';
+
+function isInvalidGrantError(err) {
+  return err?.response?.data?.error === 'invalid_grant' || /invalid_grant/i.test(err?.message || '');
+}
 
 /**
  * Programmatically syncs Gmail LinkedIn alert emails and ingests jobs for a user.
@@ -31,14 +36,32 @@ export async function syncGmailJobs(userId) {
     return summary;
   }
 
-  const refreshToken = decryptSecret(integration.encryptedRefreshToken);
-  const authClient = getAuthenticatedClient(refreshToken);
+  let authClient;
+  let messages;
+  try {
+    const refreshToken = decryptSecret(integration.encryptedRefreshToken);
+    authClient = getAuthenticatedClient(refreshToken);
 
-  const label = env.gmailJobLabel || 'CareerGraph/LinkedInJobs';
-  const queryStr = `label:"${label}" OR label:"${label.replace(/\//g, '-')}" OR label:"${label.toLowerCase()}" OR label:"${label.toLowerCase().replace(/\//g, '-')}"`;
-  const { messages } = await listMessages(authClient, queryStr);
+    const label = env.gmailJobLabel || 'CareerGraph/LinkedInJobs';
+    const queryStr = `label:"${label}" OR label:"${label.replace(/\//g, '-')}" OR label:"${label.toLowerCase()}" OR label:"${label.toLowerCase().replace(/\//g, '-')}"`;
+    ({ messages } = await listMessages(authClient, queryStr));
+  } catch (err) {
+    if (isInvalidGrantError(err)) {
+      await integration.update({ status: 'expired' });
+      // 400, not 401: this is the linked Gmail account's OAuth token, unrelated
+      // to the caller's own CareerGraph session — a 401 here would trigger the
+      // API client's access-token refresh/logout flow for the wrong reason.
+      throw new AppError(
+        400,
+        'GMAIL_REAUTH_REQUIRED',
+        'Your Gmail connection has expired or been revoked. Please reconnect Gmail in Integrations.'
+      );
+    }
+    throw err;
+  }
 
   if (!messages || messages.length === 0) {
+    await integration.update({ lastSyncAt: new Date(), status: 'active' });
     return summary;
   }
 
@@ -92,7 +115,8 @@ export async function syncGmailJobs(userId) {
 
   // Update integration last sync timestamp
   await integration.update({
-    lastSyncAt: new Date()
+    lastSyncAt: new Date(),
+    status: 'active'
   });
 
   return summary;

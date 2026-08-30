@@ -5,28 +5,88 @@ import { env } from '../config/env.js';
 let activeQueue = null;
 let memoryWorkerHandler = null;
 
-// Memory queue fallback provider
+// Memory queue fallback provider. Unlike the real BullMQ+Redis queue (which
+// enforces `concurrency`/`limiter` in ai.worker.js), this in-process queue
+// previously fired every enqueued job ~immediately with no concurrency or
+// rate limiting at all — so a batch ingestion (e.g. a Gmail sync pulling in
+// many LinkedIn job emails at once) would fire one AI request per job nearly
+// simultaneously, blowing straight through the AI provider's own rate limit
+// (e.g. Groq's tokens-per-minute cap) and burning through every job's retry
+// budget instantly since none of the concurrent requests ever waited for the
+// provider's rate-limit window to clear. This scheduler enforces the same
+// `AI_WORKER_CONCURRENCY` / `AI_QUEUE_RATE_LIMIT_MAX` per
+// `AI_QUEUE_RATE_LIMIT_DURATION` config the Redis path already respects.
 class MemoryQueueFallback {
+  constructor() {
+    this._pending = [];
+    this._active = 0;
+    this._dispatchTimestamps = [];
+    this._scheduled = false;
+  }
+
   async add(name, data, opts = {}) {
     const jobId = opts.jobId || `mem-${Date.now()}`;
     console.log(`[MemoryQueue] Enqueued memory job: ${name} (id: ${jobId})`);
-    
-    // Defer processing to next event tick
-    setTimeout(async () => {
-      if (memoryWorkerHandler) {
-        try {
-          await memoryWorkerHandler({ name, data, id: jobId });
-        } catch (err) {
-          console.error(`[MemoryQueue] Fallback execution failed for job ${name}:`, err.message);
-        }
-      }
-    }, 50);
-
+    this._pending.push({ name, data, id: jobId });
+    this._scheduleDispatch(0);
     return { id: jobId };
   }
 
+  _scheduleDispatch(delayMs) {
+    if (this._scheduled) return;
+    this._scheduled = true;
+    setTimeout(() => {
+      this._scheduled = false;
+      this._dispatch();
+    }, delayMs);
+  }
+
+  _dispatch() {
+    const maxConcurrent = Math.max(1, env.aiWorkerConcurrency || 1);
+    const rateMax = Math.max(1, env.aiQueueRateLimitMax || 10);
+    const rateDuration = Math.max(1, env.aiQueueRateLimitDuration || 60000);
+
+    const now = Date.now();
+    this._dispatchTimestamps = this._dispatchTimestamps.filter((t) => now - t < rateDuration);
+
+    while (
+      this._pending.length > 0 &&
+      this._active < maxConcurrent &&
+      this._dispatchTimestamps.length < rateMax
+    ) {
+      const job = this._pending.shift();
+      this._dispatchTimestamps.push(Date.now());
+      this._active++;
+      this._runJob(job);
+    }
+
+    if (this._pending.length === 0) return;
+
+    // Still work left: figure out why, and re-check once that condition clears.
+    // A freed concurrency slot re-triggers dispatch itself (see _runJob), so
+    // this only needs to cover the rate-limit-window case.
+    if (this._dispatchTimestamps.length >= rateMax) {
+      const oldest = this._dispatchTimestamps[0];
+      const waitMs = Math.max(50, rateDuration - (now - oldest) + 25);
+      this._scheduleDispatch(waitMs);
+    }
+  }
+
+  async _runJob(job) {
+    try {
+      if (memoryWorkerHandler) {
+        await memoryWorkerHandler(job);
+      }
+    } catch (err) {
+      console.error(`[MemoryQueue] Fallback execution failed for job ${job.name}:`, err.message);
+    } finally {
+      this._active--;
+      this._dispatch();
+    }
+  }
+
   async getJobCounts() {
-    return { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0 };
+    return { waiting: this._pending.length, active: this._active, completed: 0, failed: 0, delayed: 0 };
   }
 }
 

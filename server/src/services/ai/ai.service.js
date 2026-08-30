@@ -7,6 +7,26 @@ import { detectAndSanitizePromptInjection, validateClaims } from './guardrails.s
 import { aiObservability } from './observability.service.js';
 import { findRegistryMatch } from '../model-registry.service.js';
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Retries previously fired back-to-back with zero delay, which is actively
+// counterproductive against a rate-limit (429) failure: it burns the whole
+// retry budget in milliseconds without ever giving the provider's rate-limit
+// window a chance to clear. When the provider's own error message includes a
+// "try again in Xs" hint (e.g. Groq's tokens-per-minute limit response), honor
+// it directly; otherwise fall back to exponential backoff off AI_JOB_BACKOFF_MS.
+function computeRetryDelayMs(err, attempt) {
+  const message = err?.message || '';
+  const hintMatch = message.match(/try again in\s*([\d.]+)\s*s/i);
+  if (hintMatch) {
+    return Math.ceil(parseFloat(hintMatch[1]) * 1000) + 250;
+  }
+  const baseDelayMs = env.aiJobBackoffMs || 1000;
+  return baseDelayMs * Math.pow(2, Math.max(0, attempt - 1));
+}
+
 /**
  * Best-effort, registry-enabled-only lookup so AI audit logs can be traced
  * back to a specific model_registry row (Phase 4E). Never throws: a failed
@@ -164,6 +184,7 @@ export class AIService {
         if (attempt > maxRetries) {
           break;
         }
+        await sleep(computeRetryDelayMs(err, attempt));
       }
     }
 
@@ -270,6 +291,7 @@ export class AIService {
         if (attempt > maxRetries) {
           break;
         }
+        await sleep(computeRetryDelayMs(err, attempt));
       }
     }
 
@@ -340,6 +362,7 @@ export class AIService {
         if (attempt > maxRetries) {
           break;
         }
+        await sleep(computeRetryDelayMs(err, attempt));
       }
     }
 

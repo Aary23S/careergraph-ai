@@ -104,7 +104,9 @@ export async function enqueueJobMatchAnalysis(jobId) {
  */
 export async function executeJobMatchAnalysis(jobId) {
   let analysis = await models.JobMatchAnalysis.findOne({ where: { jobId } });
-  const job = await models.Job.findByPk(jobId);
+  const job = await models.Job.findByPk(jobId, {
+    include: [{ model: models.JobAiEnrichment, as: 'aiEnrichment' }],
+  });
   if (!job) return;
 
   const profile = await models.Profile.findOne({ where: { user_id: job.user_id } });
@@ -137,7 +139,10 @@ export async function executeJobMatchAnalysis(jobId) {
   const start = Date.now();
 
   try {
-    const ruleScore = calculateMatchScore(profile, job);
+    const ruleScore = calculateMatchScore(profile, job, {
+      resumeEnrichment: activeResume.aiEnrichment,
+      jobEnrichment: job.aiEnrichment,
+    });
     const fit = await analyzeJobResumeFit(job.id, activeResume.id);
     const finalScore = blendScore(ruleScore, fit.compatibilityAssessment);
     const latency = Date.now() - start;

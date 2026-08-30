@@ -6,47 +6,27 @@ import { fileStorage } from '../lib/storage.js';
 import { AppError, asyncHandler, created, ok } from '../lib/http.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { estimateYearsOfExperience } from '../lib/experience.util.js';
+import { mergeStringListCaseInsensitive, mergeStructuredListByKey, educationSignature, certificationSignature } from '../lib/profile-merge.util.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-const PROFILE_APPLY_FIELDS = ['skills', 'targetRoles', 'experience', 'bio', 'education', 'certifications'];
+const PROFILE_APPLY_FIELDS = [
+  'skills',
+  'targetRoles',
+  'experience',
+  'bio',
+  'education',
+  'certifications',
+  'professionalTitle',
+  'careerLevel',
+  'contactInfo',
+];
 
 const applyToProfileSchema = Joi.object({
   fields: Joi.array().items(Joi.string().valid(...PROFILE_APPLY_FIELDS)).min(1).required(),
 });
-
-function parseYearMonth(value) {
-  if (!value) return null;
-  const match = String(value).trim().match(/^(\d{4})(?:-(\d{1,2}))?/);
-  if (!match) return null;
-  const year = parseInt(match[1], 10);
-  const month = match[2] ? parseInt(match[2], 10) : 1;
-  if (Number.isNaN(year)) return null;
-  return year * 12 + (month - 1);
-}
-
-function estimateYearsOfExperience(experienceEntries) {
-  if (!Array.isArray(experienceEntries) || experienceEntries.length === 0) return null;
-  const now = new Date();
-  const nowIndex = now.getFullYear() * 12 + now.getMonth();
-  let totalMonths = 0;
-  let counted = 0;
-
-  experienceEntries.forEach((entry) => {
-    const startIdx = parseYearMonth(entry.startDate);
-    if (startIdx === null) return;
-    const endIdx = entry.isCurrent ? nowIndex : (parseYearMonth(entry.endDate) ?? nowIndex);
-    const months = endIdx - startIdx;
-    if (months > 0) {
-      totalMonths += months;
-      counted += 1;
-    }
-  });
-
-  if (counted === 0) return null;
-  return Math.max(0, Math.round(totalMonths / 12));
-}
 
 async function ensureResumeOwnership(userId, resumeId) {
   const resume = await models.Resume.findOne({
@@ -136,6 +116,13 @@ router.patch(
     await models.Resume.update({ isActive: false }, { where: { user_id: req.auth.userId } });
     resume.isActive = true;
     await resume.save();
+
+    if (resume.aiEnrichment?.status === 'completed') {
+      const { syncProfileFromResumeEnrichment } = await import('../services/profile-resume-sync.service.js');
+      await syncProfileFromResumeEnrichment(req.auth.userId, resume.aiEnrichment).catch((err) => {
+        console.error(`[ResumesRoutes] Profile auto-sync failed on resume activation ${resume.id}:`, err);
+      });
+    }
 
     const { refreshMatchAnalysisForTrackedJobs } = await import('../services/job-match-analysis.service.js');
     refreshMatchAnalysisForTrackedJobs(req.auth.userId);
@@ -249,34 +236,41 @@ router.post(
 
     req.body.fields.forEach((field) => {
       if (field === 'skills') {
-        const resumeSkills = enrichment.userCorrectedSkills || enrichment.skills || [];
-        const seen = new Set((profile.skills || []).map((s) => s.toLowerCase()));
-        const merged = [...(profile.skills || [])];
-        resumeSkills.forEach((skill) => {
-          if (!seen.has(skill.toLowerCase())) {
-            seen.add(skill.toLowerCase());
-            merged.push(skill);
-          }
-        });
-        updates.skills = merged;
+        const resumeSkills = enrichment.userCorrectedSkills || enrichment.canonicalSkills || enrichment.skills || [];
+        updates.skills = mergeStringListCaseInsensitive(profile.skills, resumeSkills);
       } else if (field === 'targetRoles') {
         const title = enrichment.userCorrectedProfessionalTitle || enrichment.professionalTitle;
         if (title) {
-          const seen = new Set((profile.targetRoles || []).map((r) => r.toLowerCase()));
-          const merged = [...(profile.targetRoles || [])];
-          if (!seen.has(title.toLowerCase())) merged.push(title);
-          updates.targetRoles = merged;
+          updates.targetRoles = mergeStringListCaseInsensitive(profile.targetRoles, [title]);
         }
+      } else if (field === 'professionalTitle') {
+        const title = enrichment.userCorrectedProfessionalTitle || enrichment.professionalTitle;
+        if (title) updates.professionalTitle = title;
+      } else if (field === 'careerLevel') {
+        const careerLevel = enrichment.userCorrectedCareerLevel || enrichment.careerLevel;
+        if (careerLevel && careerLevel !== 'unknown') updates.careerLevel = careerLevel;
+      } else if (field === 'contactInfo') {
+        const contactInfo = enrichment.contactInfo || {};
+        const mergedLinks = { ...(profile.links || {}) };
+        ['linkedin', 'github', 'portfolio'].forEach((key) => {
+          if (!mergedLinks[key] && contactInfo[key]) mergedLinks[key] = contactInfo[key];
+        });
+        updates.links = mergedLinks;
+        if (!profile.phone && contactInfo.phone) updates.phone = contactInfo.phone;
       } else if (field === 'experience') {
-        const years = estimateYearsOfExperience(enrichment.experience || []);
-        if (years !== null) updates.experience = String(years);
+        const years = enrichment.totalExperienceYears ?? estimateYearsOfExperience(enrichment.experience || []);
+        if (years !== null && years !== undefined) updates.experience = String(years);
       } else if (field === 'bio') {
         const summary = enrichment.userCorrectedSummary || enrichment.summary;
         if (summary) updates.bio = summary;
       } else if (field === 'education') {
-        updates.education = enrichment.education || [];
+        updates.education = mergeStructuredListByKey(profile.education, enrichment.education || [], educationSignature);
       } else if (field === 'certifications') {
-        updates.certifications = enrichment.certifications || [];
+        updates.certifications = mergeStructuredListByKey(
+          profile.certifications,
+          enrichment.certifications || [],
+          certificationSignature,
+        );
       }
     });
 

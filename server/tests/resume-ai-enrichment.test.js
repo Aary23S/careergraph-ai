@@ -6,9 +6,36 @@ import { models } from '../src/config/database.js';
 import { env } from '../src/config/env.js';
 import { aiService } from '../src/services/ai/ai.service.js';
 import { fileStorage } from '../src/lib/storage.js';
-import { executeResumeEnrichment } from '../src/services/resume-ai-enrichment.service.js';
+import {
+  executeResumeEnrichment,
+  enqueueResumeEnrichment,
+  extractContactInfo,
+  truncateResumeText,
+  resolvePromptCharBudget,
+  resumeEnrichmentSchema
+} from '../src/services/resume-ai-enrichment.service.js';
 import { analyzeJobResumeFit } from '../src/services/resume-analysis.service.js';
+import { estimateYearsOfExperience } from '../src/lib/experience.util.js';
 import { buildMinimalPdfBuffer } from './helpers/pdf-fixture.js';
+
+async function createTestResume(userId, { fileName, content, isActive = false }) {
+  const buffer = buildMinimalPdfBuffer(content);
+  const stored = await fileStorage.save({
+    originalname: fileName,
+    buffer,
+    mimetype: 'application/pdf',
+    size: buffer.length
+  });
+  return models.Resume.create({
+    user_id: userId,
+    fileName,
+    storageKey: stored.key,
+    contentType: 'application/pdf',
+    sizeBytes: buffer.length,
+    isActive,
+    version: 1
+  });
+}
 
 describe('Resume AI Enrichment & Intelligence Test Suite', () => {
   let app;
@@ -135,6 +162,161 @@ describe('Resume AI Enrichment & Intelligence Test Suite', () => {
       expect(enrichment.status).toBe('failed');
       expect(enrichment.errorCode).toBe('TIMEOUT');
       spy.mockRestore();
+    });
+  });
+
+  describe('Richer extraction: contact info, canonical skills, review flags, structured certifications', () => {
+    it('extracts contact info via deterministic regex, independent of the LLM response', () => {
+      const info = extractContactInfo(
+        'Jane Doe\nEmail: jane.doe@example.com\nPhone: (555) 123-4567\n' +
+        'linkedin.com/in/janedoe\ngithub.com/janedoe'
+      );
+      expect(info.email).toBe('jane.doe@example.com');
+      expect(info.phone).toContain('555');
+      expect(info.linkedin).toContain('linkedin.com/in/janedoe');
+      expect(info.github).toContain('github.com/janedoe');
+    });
+
+    it('truncateResumeText cuts at a full line boundary, never mid-line', () => {
+      const line1 = 'A'.repeat(100);
+      const line2 = 'B'.repeat(100);
+      const line3 = 'C'.repeat(100);
+      const text = [line1, line2, line3].join('\n');
+
+      const truncated = truncateResumeText(text, 150);
+      expect(truncated).toBe(line1);
+      expect(truncated).not.toContain('B');
+    });
+
+    it('truncateResumeText is a no-op when maxChars is 0 (mock provider budget)', () => {
+      const text = 'A'.repeat(500);
+      expect(truncateResumeText(text, 0)).toBe(text);
+    });
+
+    it('resolvePromptCharBudget returns the per-provider budget from env', () => {
+      expect(resolvePromptCharBudget('groq')).toBe(env.aiResumePromptCharBudgetGroq);
+      expect(resolvePromptCharBudget('ollama')).toBe(env.aiResumePromptCharBudgetOllama);
+      expect(resolvePromptCharBudget('mock')).toBe(env.aiResumePromptCharBudgetMock);
+    });
+
+    it('persists canonicalSkills distinct from raw skills and computes totalExperienceYears deterministically', async () => {
+      const resume = await createTestResume(userIdA, { fileName: 'canon.pdf', content: 'Resume canon' });
+      const mockExperience = [
+        { company: 'Acme', title: 'Engineer', startDate: '2020-01', endDate: '2022-01', isCurrent: false, responsibilities: [] }
+      ];
+      const spy = jest.spyOn(aiService, 'generateStructured').mockResolvedValueOnce({
+        professionalTitle: 'Engineer',
+        careerLevel: 'mid',
+        skills: ['Node', 'react', 'POSTGRES'],
+        technicalDomains: [],
+        experience: mockExperience,
+        projects: [],
+        education: [],
+        certifications: [],
+        achievements: [],
+        summary: 'Solid engineer.',
+        confidence: 0.9
+      });
+
+      await executeResumeEnrichment(resume.id);
+      spy.mockRestore();
+
+      const enrichment = await models.ResumeAiEnrichment.findOne({ where: { resumeId: resume.id } });
+      expect(enrichment.skills).toEqual(['Node', 'react', 'POSTGRES']);
+      expect(enrichment.canonicalSkills).toEqual(expect.arrayContaining(['Node.js', 'React', 'PostgreSQL']));
+      expect(enrichment.totalExperienceYears).toBe(estimateYearsOfExperience(mockExperience));
+      expect(enrichment.needsReview).toBe(false);
+    });
+
+    it('sets needsReview true when confidence is low', async () => {
+      const resume = await createTestResume(userIdA, { fileName: 'lowconf.pdf', content: 'Resume lowconf' });
+      const spy = jest.spyOn(aiService, 'generateStructured').mockResolvedValueOnce({
+        professionalTitle: 'Engineer',
+        careerLevel: 'mid',
+        skills: ['JavaScript'],
+        technicalDomains: [],
+        experience: [{ company: 'X', title: 'Y', startDate: '2021-01', endDate: '2022-01', isCurrent: false, responsibilities: [] }],
+        projects: [],
+        education: [],
+        certifications: [],
+        achievements: [],
+        summary: '',
+        confidence: 0.3
+      });
+
+      await executeResumeEnrichment(resume.id);
+      spy.mockRestore();
+
+      const enrichment = await models.ResumeAiEnrichment.findOne({ where: { resumeId: resume.id } });
+      expect(enrichment.needsReview).toBe(true);
+    });
+
+    it('sets needsReview true when no experience entry has a parseable startDate', async () => {
+      const resume = await createTestResume(userIdA, { fileName: 'nodate.pdf', content: 'Resume nodate' });
+      const spy = jest.spyOn(aiService, 'generateStructured').mockResolvedValueOnce({
+        professionalTitle: 'Engineer',
+        careerLevel: 'mid',
+        skills: ['JavaScript'],
+        technicalDomains: [],
+        experience: [{ company: 'X', title: 'Y', startDate: '', endDate: '', isCurrent: false, responsibilities: [] }],
+        projects: [],
+        education: [],
+        certifications: [],
+        achievements: [],
+        summary: '',
+        confidence: 0.9
+      });
+
+      await executeResumeEnrichment(resume.id);
+      spy.mockRestore();
+
+      const enrichment = await models.ResumeAiEnrichment.findOne({ where: { resumeId: resume.id } });
+      expect(enrichment.needsReview).toBe(true);
+    });
+
+    it('accepts both legacy flat-string and new structured-object certifications', () => {
+      // aiService.generateStructured is mocked elsewhere in this suite, which bypasses
+      // its internal schema.validate() call — so the coercion itself is tested directly
+      // against resumeEnrichmentSchema, the same schema the real pipeline validates against.
+      const { error, value } = resumeEnrichmentSchema.validate({
+        certifications: ['AWS Certified', { name: 'PMP', issuer: 'PMI', issueDate: '2021' }]
+      });
+
+      expect(error).toBeUndefined();
+      expect(value.certifications).toHaveLength(2);
+      expect(value.certifications[0]).toMatchObject({ name: 'AWS Certified', issuer: '' });
+      expect(value.certifications[1]).toMatchObject({ name: 'PMP', issuer: 'PMI', issueDate: '2021' });
+    });
+
+    it('forces re-extraction when SCHEMA_VERSION bumps even though inputHash is unchanged', async () => {
+      const resume = await createTestResume(userIdA, { fileName: 'stale.pdf', content: 'Resume stale' });
+      const spy = jest.spyOn(aiService, 'generateStructured').mockResolvedValueOnce({
+        professionalTitle: 'Engineer',
+        careerLevel: 'mid',
+        skills: [],
+        technicalDomains: [],
+        experience: [],
+        projects: [],
+        education: [],
+        certifications: [],
+        achievements: [],
+        summary: '',
+        confidence: 0.9
+      });
+      await executeResumeEnrichment(resume.id);
+      spy.mockRestore();
+
+      // Simulate a pre-existing enrichment produced by an older schema/prompt version.
+      let enrichment = await models.ResumeAiEnrichment.findOne({ where: { resumeId: resume.id } });
+      expect(enrichment.status).toBe('completed');
+      await enrichment.update({ schemaVersion: 1, promptVersion: 1 });
+
+      await enqueueResumeEnrichment(resume.id);
+
+      enrichment = await models.ResumeAiEnrichment.findOne({ where: { resumeId: resume.id } });
+      // Proceeded past the early-return despite an unchanged inputHash, because
+      // the stale schema/prompt version forced re-processing.
+      expect(enrichment.status).toBe('pending');
     });
   });
 
