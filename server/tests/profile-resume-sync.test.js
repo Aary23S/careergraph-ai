@@ -128,8 +128,6 @@ describe('Profile auto-sync trigger points (HTTP integration)', () => {
     token2 = res.body.data.tokens.accessToken;
     userId2 = res.body.data.user.id;
 
-    await models.Profile.create({ user_id: userId2, name: 'Sync Two' });
-
     await models.Resume.create({
       user_id: userId2,
       fileName: 'x.pdf',
