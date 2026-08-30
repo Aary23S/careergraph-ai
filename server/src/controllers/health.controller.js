@@ -1,3 +1,5 @@
+import { env } from '../config/env.js';
+
 export function getHealth(req, res) {
   res.status(200).json({
     status: 'ok',
@@ -6,7 +8,7 @@ export function getHealth(req, res) {
     uptimeSeconds: Number(process.uptime().toFixed(2)),
     version: process.env.npm_package_version ?? '0.1.0',
     database: {
-      configured: Boolean(process.env.DATABASE_URL || process.env.DATABASE_DIALECT === 'postgres'),
+      configured: Boolean(env.databaseDialect === 'postgres' ? env.databaseUrl : env.databaseStorage),
     },
     timestamp: new Date().toISOString(),
   });

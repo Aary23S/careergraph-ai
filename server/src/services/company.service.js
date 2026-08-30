@@ -1,5 +1,6 @@
 import { models, sequelize } from '../config/database.js';
 import { Op } from 'sequelize';
+import { caseInsensitiveLikeOp, caseInsensitiveLikeKeyword } from '../lib/db-utils.js';
 
 export async function getCompanyDirectory(userId, options = {}) {
   const { search = '', page = 1, limit = 50, sortBy = 'connections', sortOrder = 'desc' } = options;
@@ -13,8 +14,8 @@ export async function getCompanyDirectory(userId, options = {}) {
 
   if (search) {
     where[Op.or] = [
-      { company: { [Op.iLike]: `%${search}%` } },
-      { normalizedCompany: { [Op.iLike]: `%${search}%` } }
+      { company: { [caseInsensitiveLikeOp]: `%${search}%` } },
+      { normalizedCompany: { [caseInsensitiveLikeOp]: `%${search}%` } }
     ];
   }
 
@@ -35,7 +36,7 @@ export async function getCompanyDirectory(userId, options = {}) {
         'engineeringCount'
       ],
       [
-        sequelize.literal(`SUM(CASE WHEN role_category = 'recruiting' OR title ILIKE '%recruiter%' THEN 1 ELSE 0 END)`),
+        sequelize.literal(`SUM(CASE WHEN role_category = 'recruiting' OR title ${caseInsensitiveLikeKeyword} '%recruiter%' THEN 1 ELSE 0 END)`),
         'recruiterCount'
       ],
       [
@@ -166,7 +167,7 @@ export async function getCompanyDetail(userId, companyKey) {
       ...where,
       [Op.or]: [
         { roleCategory: 'recruiting' },
-        { title: { [Op.iLike]: '%recruiter%' } }
+        { title: { [caseInsensitiveLikeOp]: '%recruiter%' } }
       ]
     }
   });

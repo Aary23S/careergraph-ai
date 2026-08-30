@@ -5,6 +5,7 @@ import { parse } from 'csv-parse/sync';
 import { Op } from 'sequelize';
 import crypto from 'crypto';
 import { models } from '../config/database.js';
+import { caseInsensitiveLikeOp } from '../lib/db-utils.js';
 import { fileStorage } from '../lib/storage.js';
 import { AppError, asyncHandler, created, ok } from '../lib/http.js';
 import { getPagination, makePageMeta } from '../lib/pagination.js';
@@ -362,13 +363,13 @@ export function buildConnectionWhereClause(userId, filters) {
   // 1. Search Query
   if (filters.search) {
     where[Op.or] = [
-      { name: { [Op.iLike]: `%${filters.search}%` } },
-      { email: { [Op.iLike]: `%${filters.search}%` } },
-      { company: { [Op.iLike]: `%${filters.search}%` } },
-      { normalizedCompany: { [Op.iLike]: `%${filters.search}%` } },
-      { title: { [Op.iLike]: `%${filters.search}%` } },
-      { normalizedPosition: { [Op.iLike]: `%${filters.search}%` } },
-      { profileUrl: { [Op.iLike]: `%${filters.search}%` } },
+      { name: { [caseInsensitiveLikeOp]: `%${filters.search}%` } },
+      { email: { [caseInsensitiveLikeOp]: `%${filters.search}%` } },
+      { company: { [caseInsensitiveLikeOp]: `%${filters.search}%` } },
+      { normalizedCompany: { [caseInsensitiveLikeOp]: `%${filters.search}%` } },
+      { title: { [caseInsensitiveLikeOp]: `%${filters.search}%` } },
+      { normalizedPosition: { [caseInsensitiveLikeOp]: `%${filters.search}%` } },
+      { profileUrl: { [caseInsensitiveLikeOp]: `%${filters.search}%` } },
     ];
   }
 
