@@ -6,7 +6,7 @@ import { syncProfileFromResumeEnrichment } from '../src/services/profile-resume-
 function makeEnrichment(overrides = {}) {
   return {
     status: 'completed',
-    resumeId: 'resume-1',
+    resumeId: '00000000-0000-0000-0000-000000000001',
     professionalTitle: 'Backend Developer',
     careerLevel: 'mid',
     skills: ['Node.js', 'React'],
