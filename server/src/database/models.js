@@ -216,12 +216,23 @@ export function initializeModels(sequelize) {
       hooks: {
         beforeSave: async (job) => {
           try {
-            const Profile = job.sequelize.models.Profile;
-            const profile = await Profile.findOne({ where: { user_id: job.user_id } });
-            if (profile) {
-              const { calculateMatchScore } = await import('../services/intelligence.service.js');
-              job.matchScore = calculateMatchScore(profile, job);
+            const userId = job.user_id ?? job.userId;
+            
+            // Jobs created without an owner cannot have a user-specific
+            // deterministic match score. Leave the existing/default score intact.
+            if (!userId) {
+              return;
             }
+
+            const Profile = job.sequelize.models.Profile;
+            const profile = await Profile.findOne({ where: { user_id: userId } });
+            
+            if (!profile) {
+              return;
+            }
+
+            const { calculateMatchScore } = await import('../services/intelligence.service.js');
+            job.matchScore = calculateMatchScore(profile, job);
           } catch (e) {
             console.error('Error in Job beforeSave hook:', e);
           }
