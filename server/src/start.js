@@ -49,16 +49,51 @@ export async function startServer({
     console.error('[Start] Failed to initialize Telegram Polling:', err);
   }
 
-  // Initialize AI Worker
-  if (env.aiQueueDriver === 'memory') {
+  // Initialize AI Worker.
+  //
+  // Deployment modes:
+  //
+  // 1. memory queue:
+  //    API process initializes the in-process worker.
+  //
+  // 2. embedded worker:
+  //    API process initializes the Redis/BullMQ worker as well.
+  //    This is useful for low-cost/free web-service deployments where
+  //    a separate background-worker service is unavailable.
+  //
+  // 3. dedicated worker:
+  //    API process does not initialize the worker.
+  //    A separate worker service runs npm run worker:ai.
+
+  if (
+    env.aiQueueDriver === 'memory' ||
+    env.aiWorkerEmbedded === true
+  ) {
     try {
-      await import('./workers/ai.worker.js');
-      console.log('[Start] AI Worker module initialized (In-Memory fallback mode).');
+      const { startWorkerService } = await import(
+        './workers/ai.worker.js'
+      );
+
+      await startWorkerService();
+
+      console.log(
+        `[Start] AI Worker module initialized ` +
+        `(${env.aiQueueDriver === 'redis'
+          ? 'Embedded Redis/BullMQ mode'
+          : 'In-Memory fallback mode'
+        }).`
+      );
     } catch (err) {
-      console.error('[Start] Failed to initialize AI Worker:', err);
+      console.error(
+        '[Start] Failed to initialize AI Worker:',
+        err
+      );
     }
   } else {
-    console.log('[Start] Dedicated AI Worker Service mode enabled. Skipping worker initialization in API server process.');
+    console.log(
+      '[Start] Dedicated AI Worker Service mode enabled. ' +
+      'Skipping worker initialization in API server process.'
+    );
   }
 
   return new Promise((resolve, reject) => {

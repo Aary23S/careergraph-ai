@@ -505,32 +505,36 @@ const isMain =
     process.argv[1].endsWith('ai-worker.js')
   );
 
-if (isMain) {
+export async function startWorkerService() {
   console.log(
-    `[AIWorker] [${workerId}] Starting dedicated service daemon...`
+    `[AIWorker] [${workerId}] Starting embedded worker service...`
   );
 
+  const { connectDatabase } = await import(
+    '../config/database.js'
+  );
+
+  await connectDatabase();
+
+  console.log(
+    `[AIWorker] [${workerId}] Database connected successfully.`
+  );
+
+  await initializeBullMQWorker();
+
+  if (
+    env.aiQueueDriver === 'redis' &&
+    isRedisAvailable()
+  ) {
+    startHeartbeat();
+  }
+
+  return bullmqWorker;
+}
+
+if (isMain) {
   try {
-    const {
-      connectDatabase,
-    } = await import(
-      '../config/database.js'
-    );
-
-    await connectDatabase();
-
-    console.log(
-      `[AIWorker] [${workerId}] Database connected successfully.`
-    );
-
-    await initializeBullMQWorker();
-
-    if (
-      env.aiQueueDriver === 'redis' &&
-      isRedisAvailable()
-    ) {
-      startHeartbeat();
-    }
+    await startWorkerService();
   } catch (err) {
     console.error(
       `[AIWorker] [${workerId}] Startup failed:`,
