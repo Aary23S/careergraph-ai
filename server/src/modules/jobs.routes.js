@@ -112,15 +112,17 @@ async function ensureJobOwnership(userId, jobId) {
   return job;
 }
 
-async function serializeJob(job, profile, userId) {
+async function serializeJob(job, profile, userId, passedActiveResume) {
   const jobJson = job.toJSON();
   const companyName = job.company?.name ?? null;
 
-  // Retrieve active resume and merge its AI-extracted details for matching
-  const activeResume = await models.Resume.findOne({
-    where: { user_id: userId, isActive: true },
-    include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }]
-  });
+  // Retrieve active resume and merge its AI-extracted details for matching (reuse passedActiveResume if provided)
+  const activeResume = passedActiveResume !== undefined
+    ? passedActiveResume
+    : await models.Resume.findOne({
+        where: { user_id: userId, isActive: true },
+        include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }]
+      });
 
   const mergedProfile = profile ? profile.toJSON() : { skills: [], targetRoles: [] };
   if (activeResume?.aiEnrichment && activeResume.aiEnrichment.status === 'completed') {
@@ -139,7 +141,9 @@ async function serializeJob(job, profile, userId) {
     }
   }
 
-  const jobEnrichment = job.aiEnrichment || await models.JobAiEnrichment.findOne({ where: { jobId: job.id } });
+  const jobEnrichment = job.aiEnrichment !== undefined
+    ? job.aiEnrichment
+    : await models.JobAiEnrichment.findOne({ where: { jobId: job.id } });
 
   // Calculate matching intelligence on the fly (fallback, always fresh)
   let matchScore = calculateMatchScore(mergedProfile, job, {
@@ -148,7 +152,10 @@ async function serializeJob(job, profile, userId) {
   });
   let matchAnalysisExtras = {};
 
-  const persistedAnalysis = await models.JobMatchAnalysis.findOne({ where: { jobId: job.id, status: 'completed' } });
+  const persistedAnalysis = job.matchAnalysis !== undefined
+    ? (job.matchAnalysis?.status === 'completed' ? job.matchAnalysis : null)
+    : await models.JobMatchAnalysis.findOne({ where: { jobId: job.id, status: 'completed' } });
+
   if (persistedAnalysis) {
     const { computeInputHash } = await import('../services/job-match-analysis.service.js');
     const currentHash = computeInputHash(job, activeResume?.aiEnrichment, profile);
@@ -339,7 +346,11 @@ router.get(
       where.normalizedTitle = { [Op.like]: `%${req.query.roleCategory.toLowerCase().trim()}%` };
     }
 
-    const include = [{ model: models.Company, as: 'company' }];
+    const include = [
+      { model: models.Company, as: 'company' },
+      { model: models.JobAiEnrichment, as: 'aiEnrichment' },
+      { model: models.JobMatchAnalysis, as: 'matchAnalysis' },
+    ];
     if (req.query.company) {
       include[0].where = { name: { [Op.like]: `%${req.query.company}%` } };
     }
@@ -369,7 +380,11 @@ router.get(
     });
 
     const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
-    const items = await Promise.all(rows.map(row => serializeJob(row, profile, req.auth.userId)));
+    const activeResume = await models.Resume.findOne({
+      where: { user_id: req.auth.userId, isActive: true },
+      include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }],
+    });
+    const items = await Promise.all(rows.map(row => serializeJob(row, profile, req.auth.userId, activeResume)));
     ok(res, items, makePageMeta({ ...pagination, total: count }));
   }),
 );

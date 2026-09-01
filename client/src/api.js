@@ -47,15 +47,19 @@ class ApiClient {
       let response = await fetch(url, options);
 
       // Check for token expiration (401) and try refresh
+      // Check for token expiration (401) and try refresh
       if (response.status === 401 && this.refreshToken) {
-        const refreshed = await this.tryRefresh();
-        if (refreshed) {
+        const refreshResult = await this.tryRefresh();
+        if (refreshResult.success) {
           // Retry original request with new token
           options.headers['Authorization'] = `Bearer ${this.accessToken}`;
           response = await fetch(url, options);
-        } else {
+        } else if (refreshResult.isInvalidToken) {
           this.clearTokens();
-          throw new Error('Session expired');
+          throw new Error('Session expired. Please log in again.');
+        } else {
+          // Network failure or server cold start — preserve tokens so user is not logged out
+          throw new Error('Server is taking longer to respond. Retrying connection...');
         }
       }
 
@@ -103,18 +107,22 @@ class ApiClient {
         body: JSON.stringify({ refreshToken: this.refreshToken }),
       });
 
+      if (response.status === 401 || response.status === 403) {
+        return { success: false, isInvalidToken: true };
+      }
+
       if (!response.ok) {
-        return false;
+        return { success: false, isInvalidToken: false };
       }
 
       const body = await response.json();
       if (body.success && body.data) {
         this.setTokens(body.data.accessToken, body.data.refreshToken);
-        return true;
+        return { success: true };
       }
-      return false;
+      return { success: false, isInvalidToken: true };
     } catch {
-      return false;
+      return { success: false, isInvalidToken: false };
     }
   }
 

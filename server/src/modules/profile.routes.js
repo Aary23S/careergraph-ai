@@ -71,7 +71,23 @@ router.post(
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
+    let profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
+
+    // Auto-sync profile from active resume enrichment if active resume exists and profile is empty/unsynced
+    if (profile) {
+      const activeResume = await models.Resume.findOne({
+        where: { user_id: req.auth.userId, isActive: true },
+        include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }]
+      });
+
+      if (activeResume?.aiEnrichment && activeResume.aiEnrichment.status === 'completed') {
+        if (profile.syncedResumeId !== activeResume.id || !profile.skills || profile.skills.length === 0) {
+          const { syncProfileFromResumeEnrichment } = await import('../services/profile-resume-sync.service.js');
+          profile = (await syncProfileFromResumeEnrichment(req.auth.userId, activeResume.aiEnrichment)) || profile;
+        }
+      }
+    }
+
     ok(res, profile);
   }),
 );

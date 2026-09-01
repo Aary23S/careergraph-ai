@@ -782,12 +782,14 @@ function App() {
       if (activeTab === 'jobs') {
         loadJobs();
         loadSearchProfiles();
-        loadGmailStatus();
-        loadTelegramStatus();
-        loadIncomingJobs();
-        loadIngestionMonitor();
-        loadDeduplicationLogs();
-        loadPreferences();
+        setTimeout(() => {
+          loadGmailStatus();
+          loadTelegramStatus();
+          loadIncomingJobs();
+          loadIngestionMonitor();
+          loadDeduplicationLogs();
+          loadPreferences();
+        }, 150);
       }
       if (activeTab === 'applications') loadApplications();
       if (activeTab === 'outreach') loadOutreach();
@@ -1199,8 +1201,12 @@ function App() {
       const res = await api.getMe();
       setUser(res.data.user);
       setIsAuthenticated(true);
-    } catch {
-      api.clearTokens();
+    } catch (err) {
+      if (err?.status === 401 || err?.code === 'UNAUTHORIZED' || !api.accessToken) {
+        api.clearTokens();
+      } else {
+        console.warn('Session load warning (server cold-start / network delay):', err);
+      }
     }
   };
 

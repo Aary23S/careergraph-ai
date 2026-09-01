@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
-import { createReadStream } from 'fs';
+import { createReadStream, existsSync } from 'fs';
 import { env } from '../config/env.js';
 
 export class LocalFileStorage {
@@ -43,6 +43,10 @@ export class LocalFileStorage {
 
   createReadStream(key) {
     return createReadStream(path.join(this.basePath, key));
+  }
+
+  exists(key) {
+    return existsSync(path.join(this.basePath, key));
   }
 }
 

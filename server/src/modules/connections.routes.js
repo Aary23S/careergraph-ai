@@ -170,19 +170,19 @@ async function upsertTags(connection, userId, tags) {
 }
 
 async function serializeConnection(connection) {
-  const tags = await models.ConnectionTag.findAll({
-    where: { connection_id: connection.id },
-    order: [['tag', 'ASC']],
-  });
+  const tags = connection.tags !== undefined
+    ? (Array.isArray(connection.tags) ? connection.tags.map(t => typeof t === 'string' ? t : t.tag) : [])
+    : (await models.ConnectionTag.findAll({ where: { connection_id: connection.id }, order: [['tag', 'ASC']] })).map(t => t.tag);
 
-  const aiEnrichment = await models.ConnectionAiEnrichment.findOne({
-    where: { connectionId: connection.id }
-  });
+  const aiEnrichment = connection.aiEnrichment !== undefined
+    ? connection.aiEnrichment
+    : await models.ConnectionAiEnrichment.findOne({ where: { connectionId: connection.id } });
 
+  const raw = connection.toJSON ? connection.toJSON() : { ...connection };
   return {
-    ...connection.toJSON(),
-    tags: tags.map((tag) => tag.tag),
-    aiEnrichment
+    ...raw,
+    tags,
+    aiEnrichment,
   };
 }
 
@@ -476,6 +476,11 @@ export async function queryConnections(userId, filters, sortBy, sortOrder, limit
     order,
     limit,
     offset,
+    distinct: true,
+    include: [
+      { model: models.ConnectionTag, as: 'tags' },
+      { model: models.ConnectionAiEnrichment, as: 'aiEnrichment' },
+    ],
   });
 
   return { rows, count };
