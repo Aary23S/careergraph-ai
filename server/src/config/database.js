@@ -5,6 +5,12 @@ import { initializeModels } from '../database/models.js';
 const sequelizeOptions = {
   dialect: env.databaseDialect,
   logging: false,
+  pool: {
+    max: 10,
+    min: 2,
+    acquire: 30000,
+    idle: 300000,
+  },
 };
 
 if (env.databaseDialect === 'sqlite') {

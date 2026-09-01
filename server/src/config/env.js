@@ -27,7 +27,7 @@ const schema = Joi.object({
   CORS_ORIGIN: Joi.string().required(),
   JWT_ACCESS_SECRET: Joi.string().min(16).required(),
   JWT_REFRESH_SECRET: Joi.string().min(16).required(),
-  ACCESS_TOKEN_TTL_MINUTES: Joi.number().integer().min(1).default(15),
+  ACCESS_TOKEN_TTL_MINUTES: Joi.number().integer().min(1).default(10080),
   REFRESH_TOKEN_TTL_DAYS: Joi.number().integer().min(1).default(30),
   RESUME_STORAGE_PATH: Joi.string().default('./storage/resumes'),
   AUTH_RATE_LIMIT_WINDOW_MINUTES: Joi.number().integer().min(1).default(15),
