@@ -8,7 +8,7 @@ import { models } from '../config/database.js';
 import { caseInsensitiveLikeOp } from '../lib/db-utils.js';
 import { fileStorage } from '../lib/storage.js';
 import { AppError, asyncHandler, created, ok } from '../lib/http.js';
-import { getPagination, makePageMeta } from '../lib/pagination.js';
+import { getPagination, makePageMeta, encodeCursor, decodeCursor } from '../lib/pagination.js';
 import { createNotification } from '../lib/notifications.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
@@ -53,6 +53,7 @@ const querySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().valid(25, 50, 100).default(50),
   pageSize: Joi.number().integer().min(1).max(100), // backward compatibility
+  cursor: Joi.string().allow('', null),
   search: Joi.string().allow('', null),
   q: Joi.string().allow('', null),
   company: Joi.string().allow('', null),
@@ -464,26 +465,59 @@ export function buildConnectionOrder(sortBy, sortOrder) {
   };
   const column = mapSortBy(sortBy || 'connectedDate');
   const direction = (sortOrder || 'desc').toUpperCase();
-  return [[column, direction]];
+  return [[column, direction], ['id', direction]];
 }
 
-export async function queryConnections(userId, filters, sortBy, sortOrder, limit, offset) {
+export async function queryConnections(userId, filters, sortBy, sortOrder, limit, cursorStr) {
   const where = buildConnectionWhereClause(userId, filters);
   const order = buildConnectionOrder(sortBy, sortOrder);
+
+  const direction = (sortOrder || 'desc').toUpperCase();
+  const sortColumn = order[0][0];
+
+  const decodedCursor = decodeCursor(cursorStr);
+  if (decodedCursor) {
+    const [cursorVal, cursorId] = decodedCursor;
+    const op = direction === 'DESC' ? Op.lt : Op.gt;
+    const tieOp = direction === 'DESC' ? Op.lt : Op.gt;
+
+    where[Op.and] = where[Op.and] || [];
+    if (cursorVal === null) {
+      where[Op.and].push({
+        [sortColumn]: null,
+        id: { [tieOp]: cursorId }
+      });
+    } else {
+      const orConditions = [
+        { [sortColumn]: { [op]: cursorVal } },
+        { [sortColumn]: cursorVal, id: { [tieOp]: cursorId } }
+      ];
+      if (direction === 'DESC') {
+        orConditions.push({ [sortColumn]: null });
+      }
+      where[Op.and].push({ [Op.or]: orConditions });
+    }
+  }
 
   const { rows, count } = await models.Connection.findAndCountAll({
     where,
     order,
     limit,
-    offset,
     distinct: true,
+    subQuery: false,
     include: [
       { model: models.ConnectionTag, as: 'tags' },
       { model: models.ConnectionAiEnrichment, as: 'aiEnrichment' },
     ],
   });
 
-  return { rows, count };
+  let nextCursor = null;
+  if (rows.length > 0 && rows.length === limit) {
+    const lastRow = rows[rows.length - 1];
+    nextCursor = encodeCursor([lastRow[sortColumn], lastRow.id]);
+  }
+
+  return { rows, count, nextCursor };
 }
 
 router.get(
@@ -493,17 +527,17 @@ router.get(
     const pagination = getPagination(req.query);
     const filters = parseConnectionFilters(req.query);
 
-    const { rows, count } = await queryConnections(
+    const { rows, count, nextCursor } = await queryConnections(
       req.auth.userId,
       filters,
       req.query.sortBy,
       req.query.sortOrder,
       pagination.limit,
-      pagination.offset
+      pagination.cursor
     );
 
     const items = await Promise.all(rows.map(serializeConnection));
-    ok(res, items, makePageMeta({ ...pagination, total: count }), 200, filters);
+    ok(res, items, makePageMeta({ ...pagination, total: count, nextCursor }), 200, filters);
   }),
 );
 

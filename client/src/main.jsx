@@ -1,4 +1,4 @@
-import React, { StrictMode, useState, useEffect } from 'react';
+import React, { StrictMode, useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { api } from './api.js';
 import './styles.css';
@@ -624,6 +624,8 @@ function App() {
   const [connMeta, setConnMeta] = useState({ total: 0, totalPages: 1 });
   const [jobFilters, setJobFilters] = useState({ page: 1, pageSize: 10, q: '', company: '', location: '', status: '', archived: false });
   const [jobMeta, setJobMeta] = useState({ total: 0, totalPages: 1 });
+  const connCursors = useRef([null]);
+  const jobCursors = useRef([null]);
   const [connSearchMode, setConnSearchMode] = useState('keyword');
   const [semanticConnResults, setSemanticConnResults] = useState(null);
   const [searchingSemantic, setSearchingSemantic] = useState(false);
@@ -1312,9 +1314,16 @@ function App() {
 
   const loadConnections = async () => {
     try {
-      const res = await api.listConnections(connFilters);
+      if (connFilters.page === 1) connCursors.current = [null];
+      const res = await api.listConnections({
+        ...connFilters,
+        cursor: connCursors.current[connFilters.page - 1]
+      });
       setConnections(res.data);
       setConnMeta(res.meta || { total: res.data.length, totalPages: 1 });
+      if (res.meta?.nextCursor) {
+        connCursors.current[connFilters.page] = res.meta.nextCursor;
+      }
     } catch (e) {
       console.error(e);
     }
@@ -1322,9 +1331,16 @@ function App() {
 
   const loadJobs = async () => {
     try {
-      const res = await api.listJobs(jobFilters);
+      if (jobFilters.page === 1) jobCursors.current = [null];
+      const res = await api.listJobs({
+        ...jobFilters,
+        cursor: jobCursors.current[jobFilters.page - 1]
+      });
       setJobs(res.data);
       setJobMeta(res.meta || { total: res.data.length, totalPages: 1 });
+      if (res.meta?.nextCursor) {
+        jobCursors.current[jobFilters.page] = res.meta.nextCursor;
+      }
     } catch (e) {
       console.error(e);
     }
@@ -4145,7 +4161,7 @@ function App() {
                         <span className="conn-pagination-status">Page {connFilters.page} of {connMeta.totalPages || 1}</span>
                         <button
                           className="conn-btn conn-btn--ghost"
-                          disabled={connFilters.page >= connMeta.totalPages}
+                          disabled={!connMeta.hasNextPage}
                           onClick={() => setConnFilters({ ...connFilters, page: connFilters.page + 1 })}
                         >
                           Next
@@ -4377,7 +4393,7 @@ function App() {
                         <span className="job-pagination-status">Page {jobFilters.page} of {jobMeta.totalPages || 1}</span>
                         <button
                           className="job-btn job-btn--ghost"
-                          disabled={jobFilters.page >= jobMeta.totalPages}
+                          disabled={!jobMeta.hasNextPage}
                           onClick={() => setJobFilters({ ...jobFilters, page: jobFilters.page + 1 })}
                         >
                           Next

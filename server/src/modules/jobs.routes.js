@@ -3,7 +3,7 @@ import Joi from 'joi';
 import { Op } from 'sequelize';
 import { models } from '../config/database.js';
 import { AppError, asyncHandler, created, ok } from '../lib/http.js';
-import { getPagination, makePageMeta } from '../lib/pagination.js';
+import { getPagination, makePageMeta, encodeCursor, decodeCursor } from '../lib/pagination.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { ingestJob, ingestJobsBatch } from '../services/job-ingestion.service.js';
@@ -38,6 +38,7 @@ const jobSchema = Joi.object({
 const querySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   pageSize: Joi.number().integer().min(1).max(100).default(10),
+  cursor: Joi.string().allow('', null),
   q: Joi.string().allow('', null),
   company: Joi.string().allow('', null),
   location: Joi.string().allow('', null),
@@ -355,19 +356,44 @@ router.get(
       include[0].where = { name: { [Op.like]: `%${req.query.company}%` } };
     }
 
-    let order = [['created_at', 'DESC']];
+    const decodedCursor = decodeCursor(pagination.cursor);
+    let order = [['created_at', 'DESC'], ['id', 'DESC']];
     const sortBy = req.query.sortBy || 'createdAt';
     const sortOrder = (req.query.sortOrder || 'desc').toUpperCase();
-    if (sortBy === 'postedDate') {
-      order = [['posted_date', sortOrder]];
-    } else if (sortBy === 'matchScore') {
-      order = [['match_score', sortOrder]];
-    } else if (sortBy === 'title') {
-      order = [['title', sortOrder]];
-    } else if (sortBy === 'company') {
-      order = [[{ model: models.Company, as: 'company' }, 'name', sortOrder]];
+
+    let sortColumn = 'created_at';
+    if (sortBy === 'postedDate') sortColumn = 'posted_date';
+    else if (sortBy === 'matchScore') sortColumn = 'match_score';
+    else if (sortBy === 'title') sortColumn = 'title';
+    else if (sortBy === 'company') sortColumn = '$company.name$';
+
+    if (sortBy === 'company') {
+      order = [[{ model: models.Company, as: 'company' }, 'name', sortOrder], ['id', sortOrder]];
     } else {
-      order = [['created_at', sortOrder]];
+      order = [[sortColumn, sortOrder], ['id', sortOrder]];
+    }
+
+    if (decodedCursor) {
+      const [cursorVal, cursorId] = decodedCursor;
+      const op = sortOrder === 'DESC' ? Op.lt : Op.gt;
+      const tieOp = sortOrder === 'DESC' ? Op.lt : Op.gt;
+
+      where[Op.and] = where[Op.and] || [];
+      if (cursorVal === null) {
+        where[Op.and].push({
+          [sortColumn]: null,
+          id: { [tieOp]: cursorId }
+        });
+      } else {
+        const orConditions = [
+          { [sortColumn]: { [op]: cursorVal } },
+          { [sortColumn]: cursorVal, id: { [tieOp]: cursorId } }
+        ];
+        if (sortOrder === 'DESC') {
+          orConditions.push({ [sortColumn]: null });
+        }
+        where[Op.and].push({ [Op.or]: orConditions });
+      }
     }
 
     const { rows, count } = await models.Job.findAndCountAll({
@@ -375,9 +401,21 @@ router.get(
       include,
       order,
       limit: pagination.limit,
-      offset: pagination.offset,
       distinct: true,
+      subQuery: false,
     });
+
+    let nextCursor = null;
+    if (rows.length > 0 && rows.length === pagination.limit) {
+      const lastRow = rows[rows.length - 1];
+      let lastVal = lastRow.createdAt;
+      if (sortBy === 'postedDate') lastVal = lastRow.postedDate;
+      else if (sortBy === 'matchScore') lastVal = lastRow.matchScore;
+      else if (sortBy === 'title') lastVal = lastRow.title;
+      else if (sortBy === 'company') lastVal = lastRow.company?.name;
+
+      nextCursor = encodeCursor([lastVal, lastRow.id]);
+    }
 
     const profile = await models.Profile.findOne({ where: { user_id: req.auth.userId } });
     const activeResume = await models.Resume.findOne({
@@ -385,7 +423,7 @@ router.get(
       include: [{ model: models.ResumeAiEnrichment, as: 'aiEnrichment' }],
     });
     const items = await Promise.all(rows.map(row => serializeJob(row, profile, req.auth.userId, activeResume)));
-    ok(res, items, makePageMeta({ ...pagination, total: count }));
+    ok(res, items, makePageMeta({ ...pagination, total: count, nextCursor }));
   }),
 );
 
