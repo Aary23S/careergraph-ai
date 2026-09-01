@@ -28,13 +28,13 @@ const authLimiter = rateLimit({
 });
 
 const registerSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().trim().email().required(),
   password: Joi.string().min(8).required(),
   name: Joi.string().trim().min(2).required(),
 });
 
 const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().trim().email().required(),
   password: Joi.string().required(),
 });
 

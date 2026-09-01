@@ -1684,16 +1684,17 @@ function App() {
     setAuthSuccess('');
     setAuthLoading(true);
     try {
+      const email = (authEmail || '').trim();
       if (authTab === 'login') {
-        await api.login(authEmail, authPassword);
+        await api.login(email, authPassword);
         setIsAuthenticated(true);
         loadSession();
       } else if (authTab === 'register') {
-        await api.register(authEmail, authPassword, authName);
+        await api.register(email, authPassword, authName);
         setIsAuthenticated(true);
         loadSession();
       } else if (authTab === 'forgot') {
-        await api.requestPasswordReset(authEmail);
+        await api.requestPasswordReset(email);
         setAuthSuccess('Password reset link requested. Check terminal logs (simulated email)');
       }
     } catch (err) {

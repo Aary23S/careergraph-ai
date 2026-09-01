@@ -8,8 +8,10 @@ export function validate(schema, property = 'body') {
     });
 
     if (error) {
+      const details = error.details ? error.details.map((d) => d.message).join('. ') : '';
+      const message = details ? `Request validation failed: ${details}` : 'Request validation failed.';
       next(
-        new AppError(400, 'VALIDATION_ERROR', 'Request validation failed.', error.details),
+        new AppError(400, 'VALIDATION_ERROR', message, error.details),
       );
       return;
     }
