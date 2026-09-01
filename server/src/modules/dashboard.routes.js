@@ -176,11 +176,19 @@ router.post(
       },
     });
 
-    const result = await emailService.sendDigest(user.email, profile?.name || 'User', {
-      topJobs,
-      topReferrals,
-      pendingFollowUps
-    });
+    let result = null;
+    let emailSent = false;
+    try {
+      result = await emailService.sendDigest(user.email, profile?.name || 'User', {
+        topJobs,
+        topReferrals,
+        pendingFollowUps
+      });
+      emailSent = true;
+    } catch (eErr) {
+      console.error('[DashboardRoutes] Failed to send digest via Email:', eErr.message);
+      result = { success: false, error: eErr.message, body: `Daily digest generated for ${user.email}.` };
+    }
 
     let telegramSent = false;
     try {
@@ -197,7 +205,7 @@ router.post(
       console.error('[DashboardRoutes] Failed to send digest via Telegram:', tErr);
     }
 
-    ok(res, { sent: true, recipient: user.email, result, telegramSent });
+    ok(res, { sent: emailSent, recipient: user.email, result, telegramSent });
   }),
 );
 
