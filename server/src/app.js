@@ -13,30 +13,26 @@ export function createApp() {
     ? env.corsOrigin.split(',').map((o) => o.trim())
     : [];
 
-  const corsHandler = (origin, callback) => {
-    // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
-    if (!origin) return callback(null, true);
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+      const isVercel = /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin);
+      const isLocalhost = env.nodeEnv === 'development' && /^http:\/\/localhost:\d+$/.test(origin);
+      const isAllowedConfig = env.corsOrigin === '*' || corsOrigins.includes(origin);
 
-    // If wildcard is set
-    if (env.corsOrigin === '*') return callback(null, true);
-
-    // Check exact match in configured list
-    if (corsOrigins.includes(origin)) return callback(null, true);
-
-    // Check localhost in development mode
-    if (env.nodeEnv === 'development' && /^http:\/\/localhost:\d+$/.test(origin)) {
-      return callback(null, true);
+      if (isAllowedConfig || isVercel || isLocalhost) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+      }
     }
 
-    // Automatically allow Vercel deployment preview origins (*.vercel.app)
-    if (/^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin)) {
-      return callback(null, true);
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
     }
-
-    callback(null, false);
-  };
-
-  app.use(cors({ origin: corsHandler, credentials: true }));
+    next();
+  });
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(requestLogger);
