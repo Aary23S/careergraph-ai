@@ -30,3 +30,6 @@ ai-service/mlartifacts/
 ai-service/datasets/
 ai-service/models/
 ImplementationCommands
+careergraph-local-backup.dump
+careergraph-data-no-meta.sql
+careergraph-data.sql
