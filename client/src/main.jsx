@@ -496,7 +496,7 @@ const CONN_STATUS_VARIANT = {
 };
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(api.accessToken));
   const [activeTab, setActiveTab] = useState('dashboard');
   const [user, setUser] = useState(null);
 
