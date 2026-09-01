@@ -24,7 +24,7 @@ const schema = Joi.object({
     then: Joi.string().required(),
     otherwise: Joi.string().allow('', null).optional(),
   }),
-  CORS_ORIGIN: Joi.string().uri().required(),
+  CORS_ORIGIN: Joi.string().required(),
   JWT_ACCESS_SECRET: Joi.string().min(16).required(),
   JWT_REFRESH_SECRET: Joi.string().min(16).required(),
   ACCESS_TOKEN_TTL_MINUTES: Joi.number().integer().min(1).default(15),
