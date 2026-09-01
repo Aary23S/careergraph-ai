@@ -147,6 +147,10 @@ export function initializeModels(sequelize) {
     {
       ...baseOptions,
       tableName: 'connections',
+      indexes: [
+        { fields: ['user_id', 'connected_date'] },
+        { fields: ['user_id', 'next_follow_up_date'] },
+      ],
       hooks: {
         beforeSave: (connection) => {
           enrichConnectionData(connection);
@@ -213,6 +217,11 @@ export function initializeModels(sequelize) {
     {
       ...baseOptions,
       tableName: 'jobs',
+      indexes: [
+        { fields: ['user_id', 'created_at'] },
+        { fields: ['user_id', 'status'] },
+        { fields: ['user_id', 'is_archived'] },
+      ],
       hooks: {
         beforeSave: async (job) => {
           try {
@@ -259,7 +268,13 @@ export function initializeModels(sequelize) {
       notes: { type: DataTypes.TEXT },
       nextFollowUpDate: { type: DataTypes.DATEONLY, field: 'next_follow_up_date' },
     },
-    { ...baseOptions, tableName: 'applications' },
+    {
+      ...baseOptions,
+      tableName: 'applications',
+      indexes: [
+        { fields: ['user_id', 'status'] },
+      ],
+    },
   );
 
   const ApplicationEvent = sequelize.define(
@@ -435,7 +450,13 @@ export function initializeModels(sequelize) {
       status: { type: DataTypes.STRING, allowNull: false },
       processedAt: { type: DataTypes.DATE, allowNull: false, field: 'processed_at' }
     },
-    { ...baseOptions, tableName: 'job_ingestion_events' }
+    {
+      ...baseOptions,
+      tableName: 'job_ingestion_events',
+      indexes: [
+        { fields: ['user_id', 'status', 'processed_at'] },
+      ],
+    }
   );
 
   const TelegramIntegration = sequelize.define(
@@ -463,7 +484,14 @@ export function initializeModels(sequelize) {
       matchScore: { type: DataTypes.INTEGER, allowNull: true, field: 'match_score' },
       receivedAt: { type: DataTypes.DATE, allowNull: false, field: 'received_at' }
     },
-    { ...baseOptions, tableName: 'incoming_jobs' }
+    {
+      ...baseOptions,
+      tableName: 'incoming_jobs',
+      indexes: [
+        { fields: ['user_id', 'source', 'received_at'] },
+        { fields: ['user_id', 'status'] },
+      ],
+    }
   );
 
   const JobDeduplicationLog = sequelize.define(
@@ -476,7 +504,13 @@ export function initializeModels(sequelize) {
       reason: { type: DataTypes.STRING, allowNull: false },
       loggedAt: { type: DataTypes.DATE, allowNull: false, field: 'logged_at' }
     },
-    { ...baseOptions, tableName: 'job_deduplication_logs' }
+    {
+      ...baseOptions,
+      tableName: 'job_deduplication_logs',
+      indexes: [
+        { fields: ['user_id', 'logged_at'] },
+      ],
+    }
   );
 
   const JobAiEnrichment = sequelize.define(
