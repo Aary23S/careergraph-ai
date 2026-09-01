@@ -453,8 +453,13 @@ router.post(
   '/sources/adzuna/sync',
   asyncHandler(async (req, res) => {
     const { syncAdzunaJobs } = await import('../services/adzuna-sync.service.js');
-    const summary = await syncAdzunaJobs(req.auth.userId);
-    ok(res, summary);
+    
+    // Run sync in the background to prevent 502 Bad Gateway on Render
+    syncAdzunaJobs(req.auth.userId).catch(err => {
+      console.error('[Adzuna Sync Error]', err);
+    });
+    
+    ok(res, { message: 'Adzuna sync started in background.' });
   })
 );
 
