@@ -21,8 +21,8 @@ router.get(
     const today = new Date().toISOString().slice(0, 10);
     const [totalJobs, newJobs, savedJobs, applications, interviews, offers, totalConnections, followUpsDue] =
       await Promise.all([
-        models.Job.count({ where: { user_id: req.auth.userId } }),
-        models.Job.count({ where: { user_id: req.auth.userId, status: 'new' } }),
+        models.Job.count({ where: { user_id: req.auth.userId, isArchived: false } }),
+        models.Job.count({ where: { user_id: req.auth.userId, isArchived: false, status: 'new' } }),
         models.Application.count({ where: { user_id: req.auth.userId, status: 'saved' } }),
         models.Application.count({ where: { user_id: req.auth.userId } }),
         models.Application.count({ where: { user_id: req.auth.userId, status: 'interview' } }),

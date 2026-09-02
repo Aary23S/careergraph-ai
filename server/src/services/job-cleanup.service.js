@@ -23,8 +23,8 @@ export async function cleanupExpiredAndLowMatchJobs(userId) {
   });
   const protectedJobIds = activeApplications.map(app => app.job_id).filter(Boolean);
 
-  // Delete jobs matching cleanup criteria
-  const deletedCount = await models.Job.destroy({
+  // Archive jobs matching cleanup criteria instead of deleting them
+  const [updatedCount] = await models.Job.update({ isArchived: true }, {
     where: {
       user_id: userId,
       id: { [Op.notIn]: protectedJobIds },
@@ -39,5 +39,5 @@ export async function cleanupExpiredAndLowMatchJobs(userId) {
     }
   });
 
-  return deletedCount;
+  return updatedCount;
 }
