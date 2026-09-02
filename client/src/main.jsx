@@ -4510,7 +4510,11 @@ function App() {
                       onClick={async () => {
                         try {
                           const summary = await api.syncAdzunaJobs();
-                          alert(`Adzuna Sync Complete!\nProcessed: ${summary.processed}\nCreated: ${summary.created}\nUpdated: ${summary.updated}\nDuplicates: ${summary.duplicate}\nFailed: ${summary.failed}`);
+                          if (summary.message) {
+                            alert(summary.message);
+                          } else {
+                            alert(`Adzuna Sync Complete!\nProcessed: ${summary.processed}\nCreated: ${summary.created}\nUpdated: ${summary.updated}\nDuplicates: ${summary.duplicate}\nFailed: ${summary.failed}`);
+                          }
                           loadJobs();
                           loadIngestionMonitor();
                         } catch (err) {
