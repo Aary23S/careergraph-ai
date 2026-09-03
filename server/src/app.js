@@ -4,6 +4,8 @@ import routes from './routes/index.js';
 import { env } from './config/env.js';
 import { requestLogger } from './middleware/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { standardRateLimit } from './middleware/rate-limit.js';
+import { observabilityMiddleware } from './middleware/observability.js';
 
 export function createApp() {
   const app = express();
@@ -36,6 +38,8 @@ export function createApp() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(requestLogger);
+  app.use(observabilityMiddleware);
+  app.use(standardRateLimit);
 
   app.use('/api', routes);
   app.use(notFoundHandler);

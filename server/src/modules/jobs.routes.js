@@ -6,6 +6,7 @@ import { AppError, asyncHandler, created, ok } from '../lib/http.js';
 import { getPagination, makePageMeta, encodeCursor, decodeCursor } from '../lib/pagination.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { strictRateLimit } from '../middleware/rate-limit.js';
 import { ingestJob, ingestJobsBatch } from '../services/job-ingestion.service.js';
 import {
   calculateMatchScore,
@@ -460,6 +461,25 @@ router.post(
     });
     
     ok(res, { message: 'Adzuna sync started in background.' });
+  })
+);
+
+router.post(
+  '/export',
+  strictRateLimit,
+  asyncHandler(async (req, res) => {
+    // We assume req.auth contains the user's email, or we fetch it
+    const user = await models.User.findByPk(req.auth.userId);
+    if (!user) throw new AppError(404, 'USER_NOT_FOUND', 'User not found');
+
+    const { executeAsyncExport } = await import('../services/job-export.service.js');
+    
+    // Kick off background job without awaiting
+    executeAsyncExport(req.auth.userId, user.email).catch(err => {
+      console.error('[Export Route] Async export failed:', err);
+    });
+
+    ok(res, { message: 'Export started. You will receive an email shortly with your data.' });
   })
 );
 

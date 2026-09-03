@@ -11,6 +11,9 @@ const sequelizeOptions = {
     acquire: 30000,
     idle: 300000,
   },
+  dialectOptions: env.databaseDialect === 'postgres' ? {
+    statement_timeout: 10000 // 10 seconds timeout for runaway queries
+  } : {},
 };
 
 if (env.databaseDialect === 'sqlite') {
