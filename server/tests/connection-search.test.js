@@ -55,7 +55,7 @@ describe('CareerGraph Phase 2.5-C: Search, Filtering, Sorting and Pagination Tes
         location: 'Redmond',
         connectedDate: '2026-01-15',
         lastContactedDate: '2026-02-10',
-        nextFollowUpDate: '2026-09-01', // not due
+        nextFollowUpDate: '2027-09-01', // not due
         relationshipStatus: 'replied',
         relationshipStrength: 'medium',
         connectionScore: 60

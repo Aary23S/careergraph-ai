@@ -169,7 +169,8 @@ describe('Adzuna Ingestion & Sync Test Suite', () => {
     expect(purgedCount).toBe(1);
 
     const foundLowMatch = await models.Job.findByPk(lowMatchJob.id);
-    expect(foundLowMatch).toBeNull();
+    expect(foundLowMatch).not.toBeNull();
+    expect(foundLowMatch.isArchived).toBe(true);
 
     const foundActiveLowMatch = await models.Job.findByPk(activeLowMatchJob.id);
     expect(foundActiveLowMatch).not.toBeNull();

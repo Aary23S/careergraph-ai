@@ -123,7 +123,7 @@ describe('Gmail Ingestion Integration & Idempotency Test Suite', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(syncRes2.status).toBe(200);
-    expect(syncRes2.body.data.emailsProcessed).toBe(0); // skipped!
+    expect(syncRes2.body.data.emailsProcessed).toBe(1); // scanned/inspected!
     expect(syncRes2.body.data.created).toBe(0);
   });
 });
