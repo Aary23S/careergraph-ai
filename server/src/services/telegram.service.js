@@ -145,7 +145,7 @@ export async function handleTelegramMessage(message) {
   }
 
   // Import parser and ingestion service dynamically to prevent cycle issues
-  const { classifyMessage, parseTelegramJob } = await import('./telegram-job-parser.service.js');
+  const { classifyMessage, parseTelegramJob, parseTelegramJobAsync } = await import('./telegram-job-parser.service.js');
   const { ingestJob } = await import('./job-ingestion.service.js');
   const { calculateMatchScore } = await import('./intelligence.service.js');
 
@@ -182,10 +182,10 @@ export async function handleTelegramMessage(message) {
     return;
   }
 
-  const { parsedJob, confidence } = parseTelegramJob(text);
+  const { parsedJob, confidence } = await parseTelegramJobAsync(text);
 
   // Determine if job meets auto-ingestion confidence threshold
-  if (classification === 'JOB' && confidence >= 0.7) {
+  if (classification === 'JOB' && confidence >= 0.6) {
     try {
       const result = await ingestJob(integration.user_id, {
         ...parsedJob,
@@ -212,7 +212,18 @@ export async function handleTelegramMessage(message) {
       if (result.status === 'duplicate') {
         await sendMessage(chatId, `ℹ️ This job already exists in CareerGraph.`);
       } else {
-        await sendMessage(chatId, `✅ <b>Added to CareerGraph</b>\n\n<b>${parsedJob.title}</b>\n${parsedJob.companyName}\n${parsedJob.location}\n\nMatch score: ${result.job?.matchScore || 0}`);
+        const details = [];
+        if (parsedJob.companyName) details.push(`<b>Company:</b> ${parsedJob.companyName}`);
+        if (parsedJob.location) details.push(`<b>Location:</b> ${parsedJob.location}`);
+        if (parsedJob.salary) details.push(`<b>Salary:</b> ${parsedJob.salary}`);
+        if (parsedJob.experience) details.push(`<b>Experience:</b> ${parsedJob.experience}`);
+        if (parsedJob.skills && parsedJob.skills.length > 0) details.push(`<b>Skills:</b> ${parsedJob.skills.join(', ')}`);
+
+        let replyText = `✅ <b>Added to CareerGraph!</b>\n\n📌 <b>${parsedJob.title}</b>\n${details.join('\n')}\n\n<b>Match score:</b> ${result.job?.matchScore || 0}%`;
+        if (parsedJob.jobUrl) {
+          replyText += `\n🔗 <a href="${parsedJob.jobUrl}">View/Apply Link</a>`;
+        }
+        await sendMessage(chatId, replyText);
       }
     } catch (err) {
       console.error('[TelegramService] Ingestion failed:', err);

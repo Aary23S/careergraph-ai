@@ -10,7 +10,7 @@ let mockFetch = jest.fn();
 global.fetch = mockFetch;
 
 const { handleTelegramMessage, telegramLinkingCodes } = await import('../src/services/telegram.service.js');
-const { classifyMessage, parseTelegramJob } = await import('../src/services/telegram-job-parser.service.js');
+const { classifyMessage, parseTelegramJob, parseTelegramJobAsync } = await import('../src/services/telegram-job-parser.service.js');
 
 describe('Telegram Integration & Bot Ingestion Test Suite', () => {
   let app;
@@ -104,6 +104,64 @@ describe('Telegram Integration & Bot Ingestion Test Suite', () => {
       expect(parsedJob.title).toBe('Competitive Programmer');
       expect(parsedJob.companyName).toBe('micro1');
       expect(parsedJob.location).toContain('Remote');
+    });
+
+    test('parseTelegramJobAsync uses AI structured extraction when AI is enabled', async () => {
+      env.aiEnabled = true;
+      env.aiProvider = 'mock';
+
+      const shortJobPost = `Hiring Sr Backend Engineer @ Stripe in NYC. Salary $180k. Apply https://stripe.com/jobs/123`;
+      const result = await parseTelegramJobAsync(shortJobPost);
+
+      expect(result.parsedJob).toBeDefined();
+      expect(result.parsedJob.title).toBeTruthy();
+      expect(result.parsedJob.jobUrl).toBe('https://stripe.com/jobs/123');
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
+
+    test('parseTelegramJobAsync parses long unstructured multi-paragraph job post', async () => {
+      env.aiEnabled = true;
+      env.aiProvider = 'mock';
+
+      const longJobPost = `
+        🚀 OPPORTUNITY ALERT - SDE-2 (Backend) 🚀
+        Hey folks, our team at Google (Bengaluru office) is expanding! We have multiple openings for Backend Engineers.
+        You will work on massive scale distributed systems using Go, Java, and gRPC.
+
+        Requirements:
+        - 3-5 years exp in backend engineering
+        - Expertise in Go / Java / Node.js
+        - Strong CS fundamentals
+
+        Perks:
+        - Competitive pay (~35-45 LPA)
+        - Hybrid work policy (2 days WFH)
+
+        Send your resumes to hiring@google.com or apply directly here: https://careers.google.com/jobs/999
+      `;
+      const result = await parseTelegramJobAsync(longJobPost);
+
+      expect(result.parsedJob).toBeDefined();
+      expect(result.parsedJob.jobUrl).toBe('https://careers.google.com/jobs/999');
+      expect(result.parsedJob.contactEmail).toBe('hiring@google.com');
+      expect(result.confidence).toBeGreaterThanOrEqual(0.7);
+    });
+
+    test('parseTelegramJobAsync falls back to heuristic parser when AI is disabled', async () => {
+      env.aiEnabled = false;
+
+      const jobPost = `
+        Role: Frontend Developer
+        Company: Acme Corp
+        Location: Remote
+        Apply: https://acme.com/apply
+      `;
+      const result = await parseTelegramJobAsync(jobPost);
+
+      expect(result.parsedJob.title).toBe('Frontend Developer');
+      expect(result.parsedJob.companyName).toBe('Acme Corp');
+      expect(result.parsedJob.location).toBe('Remote');
+      expect(result.parsedJob.jobUrl).toBe('https://acme.com/apply');
     });
   });
 

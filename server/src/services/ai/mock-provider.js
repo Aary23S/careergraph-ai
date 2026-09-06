@@ -55,6 +55,28 @@ export class MockProvider extends AIProvider {
       };
     }
 
+    // Specific check for Telegram job parsing prompt
+    if (promptLower.includes('telegram message') || promptLower.includes('expert ai recruiting coordinator')) {
+      const urlMatch = prompt.match(/https?:\/\/[^\s]+(?=\b|$)/);
+      const emailMatch = prompt.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+
+      return {
+        title: 'Backend Developer',
+        companyName: 'Mock Technologies',
+        location: 'Remote',
+        jobUrl: urlMatch ? urlMatch[0] : 'https://xyz.com/jobs/backend',
+        contactEmail: emailMatch ? emailMatch[0] : 'hr@mock.com',
+        experience: '3+ years',
+        salary: '100k-120k',
+        employmentType: 'full-time',
+        remoteType: 'remote',
+        skills: ['Node.js', 'PostgreSQL', 'AWS'],
+        summary: 'Exciting backend role at Mock Technologies.',
+        isJobPosting: true,
+        confidence: 0.95
+      };
+    }
+
     // General fallback for job understanding/enrichment
     if (promptLower.includes('job') || promptLower.includes('hiring') || promptLower.includes('role')) {
       return {
@@ -75,7 +97,8 @@ export class MockProvider extends AIProvider {
         location: 'Remote',
         skills: ['Node.js', 'PostgreSQL', 'AWS'],
         salary: '100k-120k',
-        experience: '3+ years'
+        experience: '3+ years',
+        isJobPosting: true
       };
     }
 
