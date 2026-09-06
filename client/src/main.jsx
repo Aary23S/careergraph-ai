@@ -658,6 +658,7 @@ function App() {
   });
 
   const [editingAiEnrichment, setEditingAiEnrichment] = useState(false);
+  const [followedCompaniesLoading, setFollowedCompaniesLoading] = useState(false);
   const [selectedResumeId, setSelectedResumeId] = useState(null);
   const [resumeAnalysis, setResumeAnalysis] = useState(null);
   const [loadingResumeAnalysis, setLoadingResumeAnalysis] = useState(false);
@@ -3506,6 +3507,13 @@ function App() {
                     />
                   </div>
                   <div className="conn-toolbar-sort">
+                    <button
+                      className="conn-btn conn-btn--secondary"
+                      onClick={() => setModal('followed_companies')}
+                      style={{ marginRight: '10px' }}
+                    >
+                      <IconFile /> Import Followed
+                    </button>
                     <span>Sort by</span>
                     <select
                       className="form-input"
@@ -3554,11 +3562,15 @@ function App() {
                               <td>
                                 <button
                                   className="conn-table-link"
-                                  onClick={() => setActiveCompanyKey(c.companyKey)}
+                                  onClick={() => c.connectionCount > 0 ? setActiveCompanyKey(c.companyKey) : null}
+                                  style={{ cursor: c.connectionCount > 0 ? 'pointer' : 'default' }}
                                 >
                                   <span className="conn-avatar conn-avatar--sm"><IconBuilding /></span>
                                   {c.companyName}
                                 </button>
+                                {c.isFollowed && (
+                                  <span className="badge badge-info" style={{ marginLeft: '8px', fontSize: '10px' }}>Followed</span>
+                                )}
                               </td>
                               <td className="conn-cell-strong">{c.connectionCount}</td>
                               <td>{c.seniorPlusCount}</td>
@@ -8330,6 +8342,56 @@ function App() {
                 </div>
               )}
 
+            </div>
+          </div>
+        )
+      }
+
+      {
+        modal === 'followed_companies' && (
+          <div className="modal-overlay">
+            <div className="modal-content conn-modal">
+              <div className="conn-modal-head">
+                <span className="conn-modal-icon"><IconFile /></span>
+                <h2 className="modal-title">Import Followed Companies</h2>
+              </div>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const file = e.target.elements.importFile.files[0];
+                if (!file) return alert('Please select a file.');
+                setFollowedCompaniesLoading(true);
+                try {
+                  const res = await api.importFollowedCompanies(file);
+                  alert(`Import successful! ${res.data.imported} companies processed.`);
+                  setModal(null);
+                  loadDashboardOverview();
+                  // Re-fetch companies if on companies sub-tab
+                  if (connectionSubTab === 'companies') {
+                    setCompaniesPage(1);
+                    fetchCompanies(1, companySortBy, companySortOrder, companySearch);
+                  }
+                } catch (err) {
+                  alert(err.message || 'Import failed');
+                } finally {
+                  setFollowedCompaniesLoading(false);
+                }
+              }}>
+                <p className="conn-modal-subtitle">
+                  Upload a CSV or PDF containing a list of companies you follow (e.g. from LinkedIn). 
+                  They will be matched against your connections and surfaced in the Company Directory.
+                </p>
+                <label className="conn-detail-upload-box conn-modal-upload">
+                  <IconUpload />
+                  <span>Click to choose CSV or PDF</span>
+                  <input type="file" name="importFile" accept=".csv,.pdf" required disabled={followedCompaniesLoading} />
+                </label>
+                <div className="modal-actions">
+                  <button type="button" className="conn-btn conn-btn--ghost" onClick={() => setModal(null)} disabled={followedCompaniesLoading}>Cancel</button>
+                  <button type="submit" className="conn-btn conn-btn--primary" disabled={followedCompaniesLoading}>
+                    {followedCompaniesLoading ? 'Importing...' : 'Import Companies'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )

@@ -66,11 +66,52 @@ export async function getCompanyDirectory(userId, options = {}) {
     recruiterCount: parseInt(r.recruiterCount || 0, 10),
     contactedCount: parseInt(r.contactedCount || 0, 10),
     notContactedCount: parseInt(r.notContactedCount || 0, 10),
-    highPriorityCount: parseInt(r.highPriorityCount || 0, 10)
+    highPriorityCount: parseInt(r.highPriorityCount || 0, 10),
+    isFollowed: false
   }));
 
+  // Fetch followed companies
+  const followedWhere = { user_id: userId };
+  if (search) {
+    followedWhere[Op.or] = [
+      { name: { [caseInsensitiveLikeOp]: `%${search}%` } },
+      { normalizedCompany: { [caseInsensitiveLikeOp]: `%${search}%` } }
+    ];
+  }
+  const followedCompanies = await models.FollowedCompany.findAll({
+    where: followedWhere,
+    raw: true
+  });
+
+  // Merge followed companies
+  const mappedMap = new Map();
+  for (const item of mapped) {
+    mappedMap.set(item.companyKey, item);
+  }
+
+  for (const fc of followedCompanies) {
+    if (mappedMap.has(fc.normalizedCompany)) {
+      mappedMap.get(fc.normalizedCompany).isFollowed = true;
+    } else {
+      mappedMap.set(fc.normalizedCompany, {
+        companyKey: fc.normalizedCompany,
+        companyName: fc.name,
+        connectionCount: 0,
+        seniorPlusCount: 0,
+        engineeringCount: 0,
+        recruiterCount: 0,
+        contactedCount: 0,
+        notContactedCount: 0,
+        highPriorityCount: 0,
+        isFollowed: true
+      });
+    }
+  }
+
+  const merged = Array.from(mappedMap.values());
+
   // Sorting
-  mapped.sort((a, b) => {
+  merged.sort((a, b) => {
     let fieldA = a.connectionCount;
     let fieldB = b.connectionCount;
 
@@ -97,8 +138,8 @@ export async function getCompanyDirectory(userId, options = {}) {
     return sortOrder === 'asc' ? fieldA - fieldB : fieldB - fieldA;
   });
 
-  const total = mapped.length;
-  const paginated = mapped.slice(offset, offset + limit);
+  const total = merged.length;
+  const paginated = merged.slice(offset, offset + limit);
 
   return {
     companies: paginated,

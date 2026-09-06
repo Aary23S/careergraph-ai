@@ -247,6 +247,16 @@ class ApiClient {
     return res.data;
   }
 
+  async importFollowedCompanies(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await this.request('/followed-companies/import', {
+      method: 'POST',
+      body: formData,
+    });
+    return res;
+  }
+
   // Connections
   async listConnections(params = {}) {
     const query = new URLSearchParams();

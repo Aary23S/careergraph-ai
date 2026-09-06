@@ -167,6 +167,23 @@ export function initializeModels(sequelize) {
     },
     { ...baseOptions, tableName: 'connection_tags' },
   );
+  const FollowedCompany = sequelize.define(
+    'FollowedCompany',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      name: { type: DataTypes.STRING, allowNull: false },
+      normalizedCompany: { type: DataTypes.STRING, field: 'normalized_company', allowNull: false },
+      url: { type: DataTypes.STRING, allowNull: true },
+      source: { type: DataTypes.STRING, allowNull: false, defaultValue: 'csv' },
+    },
+    {
+      ...baseOptions,
+      tableName: 'followed_companies',
+      indexes: [
+        { fields: ['user_id', 'normalized_company'], unique: true }
+      ]
+    }
+  );
 
   const Company = sequelize.define(
     'Company',
@@ -903,6 +920,9 @@ export function initializeModels(sequelize) {
   ModelRegistry.hasMany(MlPrediction, { foreignKey: 'model_registry_id', as: 'predictions' });
   MlPrediction.belongsTo(ModelRegistry, { foreignKey: 'model_registry_id', as: 'model' });
 
+  User.hasMany(FollowedCompany, { foreignKey: 'user_id', as: 'followedCompanies' });
+  FollowedCompany.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
   return {
     User,
     RefreshToken,
@@ -937,5 +957,6 @@ export function initializeModels(sequelize) {
     ModelEvaluation,
     ModelAssignment,
     MlPrediction,
+    FollowedCompany,
   };
 }
