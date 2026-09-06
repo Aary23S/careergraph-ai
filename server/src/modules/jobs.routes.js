@@ -178,9 +178,9 @@ async function serializeJob(job, profile, userId, passedActiveResume) {
   let connections = [];
   if (job.company) {
     const allConnections = await models.Connection.findAll({
-      where: {
-        user_id: userId
-      }
+      where: { user_id: userId },
+      attributes: ['id', 'name', 'title', 'company', 'relationshipStrength', 'normalizedCompany'],
+      raw: true
     });
     const cleanCompanyName = str => (str || '').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
     const targetCompanyKey = cleanCompanyName(job.company.normalizedName || job.company.name);
