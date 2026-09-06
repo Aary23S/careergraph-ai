@@ -170,7 +170,7 @@ export async function handleTelegramMessage(message) {
     [Op.or]: []
   };
   
-  if (isForwarded && msgId) {
+  if (msgId) {
     duplicateQuery[Op.or].push({ telegramMessageId: msgId });
   }
   // Content hash match check (we can search in incoming_jobs or check existing jobs)
@@ -187,8 +187,13 @@ export async function handleTelegramMessage(message) {
   // Determine if job meets auto-ingestion confidence threshold
   if (classification === 'JOB' && confidence >= 0.6) {
     try {
+      const cleanTitle = parsedJob.title?.trim() || 'Unknown Role';
+      const cleanCompany = parsedJob.companyName?.trim() || 'Unknown Company';
+
       const result = await ingestJob(integration.user_id, {
         ...parsedJob,
+        title: cleanTitle,
+        companyName: cleanCompany,
         source: 'telegram_bot',
         provider: 'telegram',
         sourceJobId: msgId || contentHash,
@@ -204,7 +209,7 @@ export async function handleTelegramMessage(message) {
         telegramMessageId: msgId || null,
         telegramUserId: fromId,
         status: 'approved',
-        parsedData: parsedJob,
+        parsedData: { ...parsedJob, title: cleanTitle, companyName: cleanCompany },
         matchScore: result.job?.matchScore || 0,
         receivedAt: new Date()
       });
@@ -213,21 +218,51 @@ export async function handleTelegramMessage(message) {
         await sendMessage(chatId, `ℹ️ This job already exists in CareerGraph.`);
       } else {
         const details = [];
-        if (parsedJob.companyName) details.push(`<b>Company:</b> ${parsedJob.companyName}`);
+        if (cleanCompany) details.push(`<b>Company:</b> ${cleanCompany}`);
         if (parsedJob.location) details.push(`<b>Location:</b> ${parsedJob.location}`);
         if (parsedJob.salary) details.push(`<b>Salary:</b> ${parsedJob.salary}`);
         if (parsedJob.experience) details.push(`<b>Experience:</b> ${parsedJob.experience}`);
         if (parsedJob.skills && parsedJob.skills.length > 0) details.push(`<b>Skills:</b> ${parsedJob.skills.join(', ')}`);
 
-        let replyText = `✅ <b>Added to CareerGraph!</b>\n\n📌 <b>${parsedJob.title}</b>\n${details.join('\n')}\n\n<b>Match score:</b> ${result.job?.matchScore || 0}%`;
+        let replyText = `✅ <b>Added to CareerGraph!</b>\n\n📌 <b>${cleanTitle}</b>\n${details.join('\n')}\n\n<b>Match score:</b> ${result.job?.matchScore || 0}%`;
         if (parsedJob.jobUrl) {
           replyText += `\n🔗 <a href="${parsedJob.jobUrl}">View/Apply Link</a>`;
         }
         await sendMessage(chatId, replyText);
       }
     } catch (err) {
-      console.error('[TelegramService] Ingestion failed:', err);
-      await sendMessage(chatId, `❌ Failed to ingest job posting.`);
+      if (err.name === 'SequelizeUniqueConstraintError' || err.message?.includes('unique constraint') || err.parent?.code === '23505') {
+        await sendMessage(chatId, `ℹ️ This job already exists in CareerGraph.`);
+        return;
+      }
+
+      console.error('[TelegramService] Auto-ingestion failed, routing to pending_review queue:', err);
+      try {
+        const profile = await models.Profile.findOne({ where: { user_id: integration.user_id } });
+        const mockJob = { title: parsedJob.title || 'Unknown Role', description: text };
+        const score = calculateMatchScore(profile, mockJob);
+
+        await models.IncomingJob.create({
+          user_id: integration.user_id,
+          source: 'telegram',
+          rawText: text,
+          telegramMessageId: msgId || null,
+          telegramUserId: fromId,
+          status: 'pending_review',
+          parsedData: parsedJob,
+          matchScore: score,
+          receivedAt: new Date()
+        });
+
+        await sendMessage(chatId, `⚠️ Saved job posting to your <b>Review Queue</b> on CareerGraph.\n\nGo to your Web Dashboard under <b>Incoming Jobs</b> to confirm or edit details.`);
+      } catch (fallbackErr) {
+        if (fallbackErr.name === 'SequelizeUniqueConstraintError' || fallbackErr.message?.includes('unique constraint') || fallbackErr.parent?.code === '23505') {
+          await sendMessage(chatId, `ℹ️ This job already exists in CareerGraph.`);
+          return;
+        }
+        console.error('[TelegramService] Fallback incoming job creation failed:', fallbackErr);
+        await sendMessage(chatId, `❌ Failed to process job posting.`);
+      }
     }
   } else {
     // REVIEW_REQUIRED or low confidence - create IncomingJob in pending_review status
@@ -251,6 +286,10 @@ export async function handleTelegramMessage(message) {
 
       await sendMessage(chatId, `⚠️ I found a possible job posting but couldn't confidently determine all fields.\n\nIt has been added to your review queue.`);
     } catch (err) {
+      if (err.name === 'SequelizeUniqueConstraintError' || err.message?.includes('unique constraint') || err.parent?.code === '23505') {
+        await sendMessage(chatId, `ℹ️ This job already exists in CareerGraph.`);
+        return;
+      }
       console.error('[TelegramService] Creating incoming job failed:', err);
     }
   }
