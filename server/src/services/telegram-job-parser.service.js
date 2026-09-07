@@ -267,7 +267,7 @@ export async function parseTelegramJobAsync(text) {
       });
 
       if (aiResult && aiResult.isJobPosting !== false) {
-        const cleanTitle = (aiResult.title || '').replace(/^[\s🚀🔥📢]*hiring[:\s]*/i, '').trim();
+        const cleanTitle = (aiResult.title || '').replace(/^[\s🚀🔥📢]*hiring[:\s]*/iu, '').trim();
         const companyName = aiResult.companyName || '';
         const location = aiResult.location || '';
         const jobUrl = aiResult.jobUrl || detectedUrl;
