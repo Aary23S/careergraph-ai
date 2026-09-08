@@ -386,6 +386,14 @@ class ApiClient {
     return res.data;
   }
 
+  async syncHimalayasJobs(options = {}) {
+    const res = await this.request('/jobs/sources/himalayas/sync', {
+      method: 'POST',
+      body: options
+    });
+    return res.data;
+  }
+
   async listJobSearchProfiles() {
     const res = await this.request('/jobs/search-profiles');
     return res.data;

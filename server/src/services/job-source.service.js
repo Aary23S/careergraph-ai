@@ -156,3 +156,70 @@ export class AdzunaJobSource extends JobSource {
     };
   }
 }
+
+export class HimalayasJobSource extends JobSource {
+  async fetch(limit = 100, offset = 0) {
+    const url = new URL('https://himalayas.app/jobs/api');
+    url.searchParams.append('limit', limit);
+    url.searchParams.append('offset', offset);
+
+    const response = await fetch(url.toString(), {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Himalayas API rate limit exceeded');
+      }
+      throw new Error(`Himalayas API failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.jobs || [];
+  }
+
+  parse(rawJob) {
+    if (rawJob && rawJob.provider === 'himalayas') {
+      return rawJob;
+    }
+
+    let employmentType = null;
+    if (rawJob.employmentType) {
+      const typeLower = rawJob.employmentType.toLowerCase();
+      if (typeLower.includes('full')) employmentType = 'full-time';
+      else if (typeLower.includes('part')) employmentType = 'part-time';
+      else if (typeLower.includes('contract')) employmentType = 'contract';
+    }
+
+    let experienceLevel = null;
+    if (rawJob.seniority && rawJob.seniority.length > 0) {
+      const senLower = rawJob.seniority[0].toLowerCase();
+      if (senLower.includes('senior') || senLower.includes('lead')) experienceLevel = 'senior';
+      else if (senLower.includes('mid')) experienceLevel = 'mid';
+      else if (senLower.includes('junior') || senLower.includes('entry')) experienceLevel = 'junior';
+    }
+
+    return {
+      title: rawJob.title ? rawJob.title.trim() : 'Untitled Job',
+      companyName: rawJob.companyName ? rawJob.companyName.trim() : 'Unknown Company',
+      description: rawJob.description ? rawJob.description.trim() : '',
+      location: rawJob.locationRestrictions?.length ? rawJob.locationRestrictions.join(', ') : 'Remote',
+      sourceUrl: rawJob.applicationLink || rawJob.guid || '',
+      externalJobId: String(rawJob.guid || ''),
+      sourceMetadata: {
+        categories: rawJob.categories || [],
+        salaryMin: rawJob.minSalary || null,
+        salaryMax: rawJob.maxSalary || null,
+        currency: rawJob.currency || null,
+        salaryPeriod: rawJob.salaryPeriod || null
+      },
+      postedDate: rawJob.pubDate ? new Date(rawJob.pubDate * 1000).toISOString().slice(0, 10) : null,
+      fetchedAt: new Date(),
+      provider: 'himalayas',
+      source: 'himalayas',
+      employmentType: employmentType,
+      remoteType: 'remote',
+      experienceLevel: experienceLevel
+    };
+  }
+}

@@ -478,6 +478,28 @@ router.post(
 );
 
 router.post(
+  '/sources/himalayas/sync',
+  asyncHandler(async (req, res) => {
+    const { syncHimalayasJobs } = await import('../services/himalayas-sync.service.js');
+    
+    // Accept user options for Himalayas sync
+    const options = {
+      includeDescription: req.body.includeDescription,
+      maxJobs: req.body.maxJobs,
+      maxPagesToScan: req.body.maxPagesToScan,
+      timeBudgetSecs: req.body.timeBudgetSecs
+    };
+    
+    // Run sync in the background to prevent 502 Bad Gateway
+    syncHimalayasJobs(req.auth.userId, options).catch(err => {
+      console.error('[Himalayas Sync Error]', err);
+    });
+    
+    ok(res, { message: 'Himalayas sync started in background.' });
+  })
+);
+
+router.post(
   '/export',
   strictRateLimit,
   asyncHandler(async (req, res) => {

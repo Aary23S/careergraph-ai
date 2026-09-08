@@ -4576,6 +4576,51 @@ function App() {
 
                 <div className="job-panel">
                   <div className="job-panel-head">
+                    <span className="job-panel-icon"><IconGlobe /></span>
+                    <h2 className="job-panel-title">Job Sources: Himalayas API Integration</h2>
+                  </div>
+                  <p className="job-panel-desc">
+                    Himalayas provides 100k+ 100% remote job listings. Run manual sync below to scrape latest remote jobs without any API key or login.
+                  </p>
+
+                  <div className="job-integration-card">
+                    <div className="job-integration-info">
+                      <div className="job-integration-label">Himalayas Status</div>
+                      <div className="job-integration-status job-integration-status--connected">
+                        <IconCheckCircle /> Active / Unofficial API
+                      </div>
+                    </div>
+                    <button
+                      className="job-btn job-btn--primary"
+                      onClick={async () => {
+                        try {
+                          const options = {
+                            includeDescription: false,
+                            maxJobs: 100,
+                            maxPagesToScan: 50,
+                            timeBudgetSecs: 240
+                          };
+                          const summary = await api.syncHimalayasJobs(options);
+                          if (summary.message) {
+                            alert(summary.message);
+                          } else {
+                            alert(`Himalayas Sync Complete!\nProcessed: ${summary.processed}\nCreated: ${summary.created}\nUpdated: ${summary.updated}\nDuplicates: ${summary.duplicate}\nFailed: ${summary.failed}`);
+                          }
+                          loadJobs();
+                          loadIngestionMonitor();
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                      }}
+                    >
+                      <IconRefresh />
+                      Sync Himalayas Jobs Now
+                    </button>
+                  </div>
+                </div>
+
+                <div className="job-panel">
+                  <div className="job-panel-head">
                     <span className="job-panel-icon"><IconMail /></span>
                     <h2 className="job-panel-title">LinkedIn Job Alerts</h2>
                   </div>
