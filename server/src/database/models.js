@@ -211,6 +211,7 @@ export function initializeModels(sequelize) {
       experienceMin: { type: DataTypes.INTEGER, field: 'experience_min' },
       experienceMax: { type: DataTypes.INTEGER, field: 'experience_max' },
       url: { type: DataTypes.TEXT },
+      contactEmail: { type: DataTypes.STRING, field: 'contact_email' },
       source: { type: DataTypes.STRING },
       sourceJobId: { type: DataTypes.STRING, field: 'source_job_id' },
       postedDate: { type: DataTypes.DATEONLY, field: 'posted_date' },

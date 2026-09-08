@@ -1688,6 +1688,7 @@ function App() {
           if (res.data.location) form.elements.location.value = res.data.location;
           if (res.data.employmentType) form.elements.employmentType.value = res.data.employmentType;
           if (res.data.jobUrl) form.elements.url.value = res.data.jobUrl;
+          if (res.data.contactEmail) form.elements.contactEmail.value = res.data.contactEmail;
           
           let desc = res.data.description || res.data.summary || '';
           if (res.data.skills && res.data.skills.length > 0) {
@@ -6444,6 +6445,10 @@ function App() {
                 <div className="form-group">
                   <label className="form-label">Job URL</label>
                   <input type="url" name="url" className="form-input" defaultValue={editItem?.url || ''} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Contact Email</label>
+                  <input type="email" name="contactEmail" className="form-input" placeholder="e.g. hr@company.com" defaultValue={editItem?.contactEmail || ''} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Job Description</label>
