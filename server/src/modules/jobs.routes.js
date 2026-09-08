@@ -429,6 +429,16 @@ router.get(
 );
 
 router.post(
+  '/parse-text',
+  validate(Joi.object({ text: Joi.string().required() })),
+  asyncHandler(async (req, res) => {
+    const { parseTelegramJobAsync } = await import('../services/telegram-job-parser.service.js');
+    const result = await parseTelegramJobAsync(req.body.text);
+    ok(res, result.parsedJob);
+  })
+);
+
+router.post(
   '/ingest',
   asyncHandler(async (req, res) => {
     const result = await ingestJob(req.auth.userId, req.body);

@@ -667,6 +667,8 @@ function App() {
   const [applyFieldSelection, setApplyFieldSelection] = useState([]);
   const [applyingToProfile, setApplyingToProfile] = useState(false);
   const [applyResultMessage, setApplyResultMessage] = useState('');
+  const [pastedJobText, setPastedJobText] = useState('');
+  const [isParsingJob, setIsParsingJob] = useState(false);
 
   // Connection detail states
   const [activeConnectionId, setActiveConnectionId] = useState(null);
@@ -1670,6 +1672,37 @@ function App() {
       loadDashboard();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleParseJobText = async () => {
+    if (!pastedJobText.trim()) return;
+    setIsParsingJob(true);
+    try {
+      const res = await api.request('/jobs/parse-text', { method: 'POST', body: { text: pastedJobText } });
+      if (res.data) {
+        const form = document.getElementById('track-job-form');
+        if (form) {
+          if (res.data.title) form.elements.title.value = res.data.title;
+          if (res.data.companyName) form.elements.companyName.value = res.data.companyName;
+          if (res.data.location) form.elements.location.value = res.data.location;
+          if (res.data.employmentType) form.elements.employmentType.value = res.data.employmentType;
+          if (res.data.jobUrl) form.elements.url.value = res.data.jobUrl;
+          
+          let desc = res.data.description || res.data.summary || '';
+          if (res.data.skills && res.data.skills.length > 0) {
+            desc += '\n\nSkills: ' + res.data.skills.join(', ');
+          }
+          if (res.data.salary) desc += '\n\nSalary: ' + res.data.salary;
+          if (res.data.experience) desc += '\n\nExperience: ' + res.data.experience;
+          if (desc.trim()) form.elements.description.value = desc.trim();
+        }
+      }
+      setPastedJobText('');
+    } catch (err) {
+      alert('Failed to parse job text: ' + err.message);
+    } finally {
+      setIsParsingJob(false);
     }
   };
 
@@ -6350,7 +6383,30 @@ function App() {
                 <span className="job-modal-icon"><IconBriefcase /></span>
                 <h2 className="modal-title">{editItem ? 'Edit Job Posting' : 'Track New Job'}</h2>
               </div>
-              <form onSubmit={async (e) => {
+              
+              {!editItem && (
+                <div className="job-ai-paste-container" style={{ marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <label className="form-label">Quick Add (Paste Job Text)</label>
+                  <textarea 
+                    className="form-input" 
+                    rows="3" 
+                    placeholder="Paste job description here to auto-fill..."
+                    value={pastedJobText}
+                    onChange={(e) => setPastedJobText(e.target.value)}
+                  ></textarea>
+                  <button 
+                    type="button" 
+                    className="job-btn job-btn--primary" 
+                    style={{ marginTop: '10px' }}
+                    onClick={handleParseJobText}
+                    disabled={isParsingJob || !pastedJobText.trim()}
+                  >
+                    {isParsingJob ? 'Extracting...' : 'Auto-Fill with AI'}
+                  </button>
+                </div>
+              )}
+
+              <form id="track-job-form" onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 const data = Object.fromEntries(formData.entries());
@@ -6361,6 +6417,7 @@ function App() {
                     await api.createJob(data);
                   }
                   setModal(null);
+                  setPastedJobText('');
                   loadJobs();
                 } catch (err) {
                   alert(err.message);
@@ -6393,7 +6450,7 @@ function App() {
                   <textarea name="description" className="form-input" rows="3" defaultValue={editItem?.description || ''}></textarea>
                 </div>
                 <div className="modal-actions">
-                  <button type="button" className="job-btn job-btn--ghost" onClick={() => setModal(null)}>Cancel</button>
+                  <button type="button" className="job-btn job-btn--ghost" onClick={() => { setModal(null); setPastedJobText(''); }}>Cancel</button>
                   <button type="submit" className="job-btn job-btn--primary">Track Job</button>
                 </div>
               </form>
