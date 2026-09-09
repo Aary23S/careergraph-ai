@@ -2,6 +2,7 @@ import { env } from '../../config/env.js';
 import { MockProvider } from './mock-provider.js';
 import { OllamaProvider } from './ollama-provider.js';
 import { GroqProvider } from './groq-provider.js';
+import { OpenAIProvider } from './openai-provider.js';
 import { models } from '../../config/database.js';
 import { detectAndSanitizePromptInjection, validateClaims } from './guardrails.service.js';
 import { aiObservability } from './observability.service.js';
@@ -46,13 +47,15 @@ export class AIService {
     this.provider = this._resolveProvider();
   }
 
-  _resolveProvider() {
-    const providerName = env.aiProvider;
-    if (providerName === 'ollama') {
+  _resolveProvider(name = env.aiProvider) {
+    if (name === 'ollama') {
       return new OllamaProvider();
     }
-    if (providerName === 'groq') {
+    if (name === 'groq') {
       return new GroqProvider();
+    }
+    if (name === 'openai') {
+      return new OpenAIProvider();
     }
     return new MockProvider();
   }
@@ -180,6 +183,18 @@ export class AIService {
       } catch (err) {
         lastError = err;
         attempt++;
+
+        // Automatic fallback detection
+        const errorMsg = err.message || '';
+        const isRateLimit = err.status === 429 || errorMsg.includes('429') || errorMsg.includes('rate_limit_exceeded') || errorMsg.includes('tokens per day (TPD)');
+        
+        if (isRateLimit && env.aiFallbackProvider) {
+          console.warn(`[AIService] Rate limit detected on ${this.provider.constructor.name}, falling back to ${env.aiFallbackProvider}`);
+          this.provider = this._resolveProvider(env.aiFallbackProvider);
+          // Don't sleep, immediately retry on the fallback provider
+          continue;
+        }
+
         console.warn(`[AIService] Attempt ${attempt} failed: ${err.message}`);
         if (attempt > maxRetries) {
           break;
@@ -287,6 +302,18 @@ export class AIService {
       } catch (err) {
         lastError = err;
         attempt++;
+
+        // Automatic fallback detection
+        const errorMsg = err.message || '';
+        const isRateLimit = err.status === 429 || errorMsg.includes('429') || errorMsg.includes('rate_limit_exceeded') || errorMsg.includes('tokens per day (TPD)');
+        
+        if (isRateLimit && env.aiFallbackProvider) {
+          console.warn(`[AIService] Rate limit detected on ${this.provider.constructor.name}, falling back to ${env.aiFallbackProvider}`);
+          this.provider = this._resolveProvider(env.aiFallbackProvider);
+          // Don't sleep, immediately retry on the fallback provider
+          continue;
+        }
+
         console.warn(`[AIService] Attempt ${attempt} failed: ${err.message}`);
         if (attempt > maxRetries) {
           break;

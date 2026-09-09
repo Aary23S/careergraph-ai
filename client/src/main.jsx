@@ -615,6 +615,7 @@ function App() {
   const [resumes, setResumes] = useState([]);
   const [connections, setConnections] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [selectedJobIds, setSelectedJobIds] = useState(new Set());
   const [applications, setApplications] = useState([]);
   const [outreachList, setOutreachList] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -4325,6 +4326,25 @@ function App() {
                     <button className="job-btn job-btn--primary" onClick={jobSearchMode === 'semantic' ? runSemanticJobSearch : loadJobs}>
                       {searchingJobSemantic ? '...' : 'Search'}
                     </button>
+                    {selectedJobIds.size > 0 && (
+                      <button
+                        className="job-btn job-btn--danger"
+                        onClick={async () => {
+                          if (confirm(`Are you sure you want to delete ${selectedJobIds.size} jobs?`)) {
+                            try {
+                              await api.deleteJobsBulk(Array.from(selectedJobIds));
+                              alert(`Successfully deleted ${selectedJobIds.size} jobs.`);
+                              setSelectedJobIds(new Set());
+                              loadJobs();
+                            } catch (err) {
+                              alert(err.message);
+                            }
+                          }
+                        }}
+                      >
+                        Delete Selected ({selectedJobIds.size})
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -4336,6 +4356,25 @@ function App() {
                       <table className="data-table job-table">
                         <thead>
                           <tr>
+                            <th style={{ width: '40px' }}>
+                              <input
+                                type="checkbox"
+                                onChange={(e) => {
+                                  const list = semanticJobResults !== null ? semanticJobResults.map(r => r.job.id) : jobs.map(j => j.id);
+                                  const next = new Set(selectedJobIds);
+                                  if (e.target.checked) {
+                                    list.forEach(id => next.add(id));
+                                  } else {
+                                    list.forEach(id => next.delete(id));
+                                  }
+                                  setSelectedJobIds(next);
+                                }}
+                                checked={
+                                  (semanticJobResults !== null ? semanticJobResults.length : jobs.length) > 0 &&
+                                  (semanticJobResults !== null ? semanticJobResults.map(r => r.job.id) : jobs.map(j => j.id)).every(id => selectedJobIds.has(id))
+                                }
+                              />
+                            </th>
                             <th>Job Title</th>
                             <th>Company Name</th>
                             <th>Location</th>
@@ -4349,6 +4388,18 @@ function App() {
                             : jobs
                           ).map((job) => (
                             <tr key={job.id}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedJobIds.has(job.id)}
+                                  onChange={() => {
+                                    const next = new Set(selectedJobIds);
+                                    if (next.has(job.id)) next.delete(job.id);
+                                    else next.add(job.id);
+                                    setSelectedJobIds(next);
+                                  }}
+                                />
+                              </td>
                               <td>
                                 <div className="job-cell-strong">{job.title}</div>
                                 {job.similarity !== undefined && (
@@ -4598,7 +4649,9 @@ function App() {
                             includeDescription: false,
                             maxJobs: 100,
                             maxPagesToScan: 50,
-                            timeBudgetSecs: 240
+                            timeBudgetSecs: 240,
+                            keywords: "Software Developer, Fresher, Entry Level",
+                            location: "India"
                           };
                           const summary = await api.syncHimalayasJobs(options);
                           if (summary.message) {
@@ -4615,6 +4668,57 @@ function App() {
                     >
                       <IconRefresh />
                       Sync Himalayas Jobs Now
+                    </button>
+                  </div>
+                </div>
+
+                <div className="job-panel">
+                  <div className="job-panel-head">
+                    <span className="job-panel-icon"><IconGlobe /></span>
+                    <h2 className="job-panel-title">Job Sources: Apify LinkedIn Scraper</h2>
+                  </div>
+                  <p className="job-panel-desc">
+                    Scrape 100k+ remote job listings from LinkedIn using Apify's curious_coder/linkedin-jobs-scraper actor.
+                  </p>
+
+                  <div className="job-integration-card">
+                    <div className="job-integration-info">
+                      <div className="job-integration-label">Apify Status</div>
+                      <div className="job-integration-status job-integration-status--connected">
+                        <IconCheckCircle /> Active / Ready
+                      </div>
+                    </div>
+                    <button
+                      className="job-btn job-btn--primary"
+                      onClick={async () => {
+                        try {
+                          const options = {
+                            autoConvertToAiSearch: true,
+                            datePosted: "past24Hours",
+                            keywords: "Backend Engineer, Full Stack Engineer, Frontend Engineer, DevOps Developer, Flutter Developer, Cloud Engineer, FDE Developer, Software Engineer",
+                            limitPerSource: 100,
+                            location: "Remote, On-site, Hybrid",
+                            scrapeCompany: true,
+                            splitByLocation: true,
+                            splitCountry: "IN",
+                            under10Applicants: false,
+                            urls: ["https://www.linkedin.com/jobs/search/?position=1&pageNum=0"]
+                          };
+                          const summary = await api.syncApifyLinkedInJobs(options);
+                          if (summary.message) {
+                            alert(summary.message);
+                          } else {
+                            alert(`Apify LinkedIn Sync Complete!\nProcessed: ${summary.processed}\nCreated: ${summary.created}\nUpdated: ${summary.updated}\nDuplicates: ${summary.duplicate}\nFailed: ${summary.failed}`);
+                          }
+                          loadJobs();
+                          loadIngestionMonitor();
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                      }}
+                    >
+                      <IconRefresh />
+                      Sync LinkedIn Jobs via Apify
                     </button>
                   </div>
                 </div>

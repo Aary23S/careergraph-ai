@@ -500,6 +500,34 @@ router.post(
 );
 
 router.post(
+  '/sources/apify/linkedin/sync',
+  asyncHandler(async (req, res) => {
+    const { syncApifyLinkedInJobs } = await import('../services/apify-sync.service.js');
+    
+    // Accept user options for Apify sync based on JSON payload
+    const options = {
+      autoConvertToAiSearch: req.body.autoConvertToAiSearch,
+      datePosted: req.body.datePosted,
+      keywords: req.body.keywords,
+      limitPerSource: req.body.limitPerSource,
+      location: req.body.location,
+      scrapeCompany: req.body.scrapeCompany,
+      splitByLocation: req.body.splitByLocation,
+      splitCountry: req.body.splitCountry,
+      under10Applicants: req.body.under10Applicants,
+      urls: req.body.urls
+    };
+    
+    // Run sync in the background
+    syncApifyLinkedInJobs(req.auth.userId, options).catch(err => {
+      console.error('[Apify Sync Error]', err);
+    });
+    
+    ok(res, { message: 'Apify LinkedIn Jobs Scraper started in background.' });
+  })
+);
+
+router.post(
   '/export',
   strictRateLimit,
   asyncHandler(async (req, res) => {
@@ -633,6 +661,20 @@ router.patch(
 
 
 
+router.post(
+  '/bulk-delete',
+  validate(Joi.object({ jobIds: Joi.array().items(Joi.string().uuid()).min(1).required() })),
+  asyncHandler(async (req, res) => {
+    const { jobIds } = req.body;
+    await models.Job.destroy({
+      where: {
+        id: jobIds,
+        user_id: req.auth.userId
+      }
+    });
+    ok(res, { deleted: true, count: jobIds.length });
+  })
+);
 
 router.delete(
   '/:jobId',

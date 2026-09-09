@@ -345,6 +345,27 @@ export const aiQueue = {
     const queue = await initializeQueue();
     return queue.getJobCounts();
   },
+
+  async pause() {
+    const queue = await initializeQueue();
+    if (typeof queue.pause === 'function') {
+      return queue.pause();
+    }
+  },
+
+  async resume() {
+    const queue = await initializeQueue();
+    if (typeof queue.resume === 'function') {
+      return queue.resume();
+    }
+  },
+
+  async clean(grace, limit, type) {
+    const queue = await initializeQueue();
+    if (typeof queue.clean === 'function') {
+      return queue.clean(grace, limit, type);
+    }
+  }
 };
 
 export default aiQueue;

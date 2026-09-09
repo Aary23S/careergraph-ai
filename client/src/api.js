@@ -363,6 +363,13 @@ class ApiClient {
     return this.request(`/jobs/${jobId}`, { method: 'DELETE' });
   }
 
+  async deleteJobsBulk(jobIds) {
+    return this.request('/jobs/bulk-delete', {
+      method: 'POST',
+      body: { jobIds }
+    });
+  }
+
   async ingestJob(jobData) {
     const res = await this.request('/jobs/ingest', {
       method: 'POST',
@@ -388,6 +395,14 @@ class ApiClient {
 
   async syncHimalayasJobs(options = {}) {
     const res = await this.request('/jobs/sources/himalayas/sync', {
+      method: 'POST',
+      body: options
+    });
+    return res.data;
+  }
+
+  async syncApifyLinkedInJobs(options = {}) {
+    const res = await this.request('/jobs/sources/apify/linkedin/sync', {
       method: 'POST',
       body: options
     });

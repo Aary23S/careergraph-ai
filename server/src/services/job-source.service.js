@@ -223,3 +223,57 @@ export class HimalayasJobSource extends JobSource {
     };
   }
 }
+
+export class ApifyLinkedInJobSource extends JobSource {
+  async fetch(inputData) {
+    throw new Error('Apify LinkedIn source does not support direct fetch. Use ApifySyncService.');
+  }
+
+  parse(rawJob) {
+    if (rawJob && rawJob.provider === 'apify-linkedin') {
+      return rawJob;
+    }
+
+    let employmentType = null;
+    if (rawJob.employmentType) {
+      const typeLower = rawJob.employmentType.toLowerCase();
+      if (typeLower.includes('full')) employmentType = 'full-time';
+      else if (typeLower.includes('part')) employmentType = 'part-time';
+      else if (typeLower.includes('contract')) employmentType = 'contract';
+    }
+
+    // Attempt to extract from rawJob.workplaceType (Remote, On-site, Hybrid)
+    let remoteType = 'onsite';
+    if (rawJob.workplaceType) {
+      const wpLower = String(rawJob.workplaceType).toLowerCase();
+      if (wpLower.includes('remote')) remoteType = 'remote';
+      else if (wpLower.includes('hybrid')) remoteType = 'hybrid';
+    } else if (rawJob.location && rawJob.location.toLowerCase().includes('remote')) {
+      remoteType = 'remote';
+    }
+
+    return {
+      title: rawJob.title ? rawJob.title.trim() : 'Untitled Job',
+      companyName: rawJob.companyName || rawJob.company ? (rawJob.companyName || rawJob.company).trim() : 'Unknown Company',
+      description: rawJob.description ? rawJob.description.trim() : '',
+      location: rawJob.location ? String(rawJob.location).trim() : 'Remote',
+      sourceUrl: rawJob.jobUrl || rawJob.url || '',
+      externalJobId: String(rawJob.id || rawJob.jobId || ''),
+      sourceMetadata: {
+        categories: rawJob.categories || [],
+        salaryMin: rawJob.minSalary || null,
+        salaryMax: rawJob.maxSalary || null,
+        currency: rawJob.currency || null,
+        salaryPeriod: rawJob.salaryPeriod || null,
+        applicantsCount: rawJob.applicantsCount || null,
+      },
+      postedDate: rawJob.publishedAt || rawJob.postedAt ? new Date(rawJob.publishedAt || rawJob.postedAt).toISOString().slice(0, 10) : null,
+      fetchedAt: new Date(),
+      provider: 'apify-linkedin',
+      source: 'linkedin',
+      employmentType: employmentType,
+      remoteType: remoteType,
+      experienceLevel: null // Can be expanded if Apify provides it
+    };
+  }
+}

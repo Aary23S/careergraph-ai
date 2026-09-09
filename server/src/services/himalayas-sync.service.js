@@ -7,6 +7,8 @@ export async function syncHimalayasJobs(userId, options = {}) {
     maxJobs: 100,
     maxPagesToScan: 50,
     timeBudgetSecs: 240,
+    keywords: '', // e.g. "software, developer, fresher"
+    location: '', // e.g. "india"
     ...options
   };
 
@@ -44,7 +46,37 @@ export async function syncHimalayasJobs(userId, options = {}) {
         break; // No more jobs
       }
 
-      const jobsToIngest = rawResults.map(item => {
+      // Local filtering based on config
+      let filteredResults = rawResults;
+      if (config.keywords || config.location) {
+        filteredResults = rawResults.filter(job => {
+          let match = true;
+          
+          if (config.keywords) {
+            const keywords = config.keywords.toLowerCase().split(',').map(k => k.trim());
+            const textToSearch = `${job.title} ${job.description || ''} ${job.categories?.join(' ') || ''}`.toLowerCase();
+            const hasKeywordMatch = keywords.some(kw => textToSearch.includes(kw));
+            if (!hasKeywordMatch) match = false;
+          }
+
+          if (config.location && match) {
+            const locTokens = config.location.toLowerCase().split(',').map(k => k.trim());
+            const jobLocs = (job.locationRestrictions || []).map(l => l.toLowerCase()).join(' ');
+            
+            // If the job has no restrictions, it's global, so we can assume it's valid anywhere.
+            // If it has restrictions, ensure it mentions our location (e.g., 'india', 'asia', 'worldwide')
+            if (job.locationRestrictions && job.locationRestrictions.length > 0) {
+              const isGlobal = jobLocs.includes('worldwide') || jobLocs.includes('global') || jobLocs.includes('anywhere');
+              const hasLocMatch = locTokens.some(loc => jobLocs.includes(loc));
+              if (!isGlobal && !hasLocMatch) match = false;
+            }
+          }
+
+          return match;
+        });
+      }
+
+      const jobsToIngest = filteredResults.map(item => {
         const parsed = source.parse(item);
         if (!config.includeDescription) {
           parsed.description = ''; // omit description if configured
