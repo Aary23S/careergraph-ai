@@ -1,6 +1,8 @@
+import { APPLICATION_STATUSES } from '../../database/models.js';
+
 /**
  * Action Registry
- * Defines standard action types, statuses, targets, and lifecycle transitions for H7-A.
+ * Defines standard action types, statuses, targets, and lifecycle transitions.
  */
 
 // Centralized Action Types
@@ -8,6 +10,7 @@ export const ActionTypes = {
   SAVE_JOB: 'save_job',
   CHANGE_JOB_STATUS: 'change_job_status',
   CREATE_APPLICATION: 'create_application',
+  CHANGE_APPLICATION_STATUS: 'change_application_status',
   SCHEDULE_FOLLOWUP: 'schedule_followup',
   CREATE_OUTREACH_DRAFT: 'create_outreach_draft',
   ADD_NOTE: 'add_note'
@@ -21,6 +24,26 @@ export const TargetTypes = {
   OUTREACH: 'outreach',
   NOTE: 'note'
 };
+
+// Supported Job Statuses
+export const JOB_STATUSES = [
+  'new',
+  'saved',
+  'interested',
+  'applying',
+  'applied',
+  'interview',
+  'interviewing',
+  'screening',
+  'offer',
+  'accepted',
+  'rejected',
+  'withdrawn',
+  'archived',
+  'closed'
+];
+
+export { APPLICATION_STATUSES };
 
 // Centralized Action Statuses
 export const ActionStatuses = {
@@ -50,8 +73,13 @@ export const ActionRegistryMap = {
     risk: 'HIGH',
     description: 'Log a new application for a job'
   },
+  [ActionTypes.CHANGE_APPLICATION_STATUS]: {
+    targetType: TargetTypes.APPLICATION,
+    risk: 'MEDIUM',
+    description: 'Change the pipeline status of an application'
+  },
   [ActionTypes.SCHEDULE_FOLLOWUP]: { 
-    targetType: TargetTypes.CONNECTION,
+    targetType: [TargetTypes.CONNECTION, TargetTypes.JOB, TargetTypes.APPLICATION, TargetTypes.OUTREACH],
     risk: 'MEDIUM',
     description: 'Schedule a follow-up reminder'
   },
@@ -60,7 +88,6 @@ export const ActionRegistryMap = {
     risk: 'MEDIUM',
     description: 'Draft an outreach message'
   },
-  // ADD_NOTE can target multiple types in the future, we'll allow connection, job, application
   [ActionTypes.ADD_NOTE]: { 
     targetType: [TargetTypes.CONNECTION, TargetTypes.JOB, TargetTypes.APPLICATION],
     risk: 'LOW',
@@ -69,7 +96,6 @@ export const ActionRegistryMap = {
 };
 
 // Valid Lifecycle Transitions
-// Source status -> Array of valid target statuses
 export const ValidTransitions = {
   [ActionStatuses.PENDING_CONFIRMATION]: [
     ActionStatuses.CONFIRMED,
@@ -78,7 +104,7 @@ export const ValidTransitions = {
   ],
   [ActionStatuses.CONFIRMED]: [
     ActionStatuses.EXECUTING,
-    ActionStatuses.FAILED // E.g., if validation fails immediately before async exec
+    ActionStatuses.FAILED
   ],
   [ActionStatuses.EXECUTING]: [
     ActionStatuses.COMPLETED,

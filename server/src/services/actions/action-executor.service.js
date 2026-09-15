@@ -1,6 +1,6 @@
 import { sequelize, models } from '../../config/database.js';
 import { ActionValidator } from './action-validator.js';
-import { ActionStatuses, ActionTypes, TargetTypes } from './action-registry.js';
+import { ActionStatuses, ActionTypes, TargetTypes, JOB_STATUSES, APPLICATION_STATUSES } from './action-registry.js';
 import { ActionValidationError } from './action.error.js';
 import { getRedisClient } from '../../config/queue.js';
 
@@ -163,6 +163,9 @@ export class ActionExecutor {
       case ActionTypes.CREATE_APPLICATION:
         return await this._executeCreateApplication(target, payload, authenticatedUserId);
 
+      case ActionTypes.CHANGE_APPLICATION_STATUS:
+        return await this._executeChangeApplicationStatus(target, payload, authenticatedUserId);
+
       case ActionTypes.SCHEDULE_FOLLOWUP:
         return await this._executeScheduleFollowup(target, payload, authenticatedUserId);
 
@@ -213,6 +216,11 @@ export class ActionExecutor {
     if (!newStatus || typeof newStatus !== 'string' || !newStatus.trim()) {
       throw new ActionValidationError('Valid status string is required.');
     }
+    const cleanStatus = newStatus.trim();
+
+    if (!JOB_STATUSES.includes(cleanStatus)) {
+      throw new ActionValidationError(`Invalid job status '${cleanStatus}'. Supported statuses are: ${JOB_STATUSES.join(', ')}.`);
+    }
 
     const job = await models.Job.findByPk(jobId);
     if (!job) {
@@ -224,7 +232,7 @@ export class ActionExecutor {
       throw new Error('Unauthorized: Job belongs to another user.');
     }
 
-    await job.update({ status: newStatus.trim() });
+    await job.update({ status: cleanStatus });
 
     return {
       jobId: job.id,
@@ -248,14 +256,25 @@ export class ActionExecutor {
       throw new Error('Unauthorized: Job belongs to another user.');
     }
 
-    // Verify resume ownership if provided
-    const resumeId = payload?.resumeId;
+    // Verify resume ownership if provided, or fallback to active resume
+    let resumeId = payload?.resumeId;
     if (resumeId) {
       const resume = await models.Resume.findOne({
         where: { id: resumeId, user_id: authenticatedUserId }
       });
       if (!resume) {
         throw new Error(`Unauthorized or invalid Resume ID ${resumeId}.`);
+      }
+    } else {
+      const activeResume = await models.Resume.findOne({
+        where: { user_id: authenticatedUserId, isActive: true }
+      });
+      if (activeResume) {
+        resumeId = activeResume.id;
+      } else {
+        const err = new ActionValidationError('A resume is required before creating this application.', 'RESUME_REQUIRED');
+        err.code = 'RESUME_REQUIRED';
+        throw err;
       }
     }
 
@@ -270,15 +289,16 @@ export class ActionExecutor {
       }
     }
 
-    // Check for existing application
+    // Duplicate application check
     const existingApp = await models.Application.findOne({
       where: { job_id: jobId, user_id: authenticatedUserId }
     });
     if (existingApp) {
       return {
+        status: 'already_exists',
         applicationId: existingApp.id,
         jobId: existingApp.get('job_id') || jobId,
-        status: existingApp.status,
+        applicationStatus: existingApp.status,
         message: 'Application already exists for this job.',
         createdAt: existingApp.createdAt
       };
@@ -322,6 +342,57 @@ export class ActionExecutor {
         jobId: application.get('job_id') || jobId,
         status: application.status,
         createdAt: application.createdAt
+      };
+    } catch (err) {
+      await t.rollback();
+      throw err;
+    }
+  }
+
+  /**
+   * Action: change_application_status
+   */
+  static async _executeChangeApplicationStatus(target, payload, authenticatedUserId) {
+    const applicationId = target.id;
+    const newStatus = payload?.status || payload?.applicationStatus || payload?.newStatus;
+    if (!newStatus || typeof newStatus !== 'string' || !newStatus.trim()) {
+      throw new ActionValidationError('Valid application status string is required.');
+    }
+    const cleanStatus = newStatus.trim();
+    if (!APPLICATION_STATUSES.includes(cleanStatus)) {
+      throw new ActionValidationError(`Invalid application status '${cleanStatus}'. Supported statuses are: ${APPLICATION_STATUSES.join(', ')}.`);
+    }
+
+    const application = await models.Application.findOne({
+      where: { id: applicationId, user_id: authenticatedUserId }
+    });
+    if (!application) {
+      throw new Error(`Unauthorized or Application with ID ${applicationId} not found.`);
+    }
+
+    const t = await sequelize.transaction();
+    try {
+      await application.update({ status: cleanStatus, lastStatusAt: new Date() }, { transaction: t });
+
+      const appEvent = await models.ApplicationEvent.create(
+        {
+          application_id: application.id,
+          user_id: authenticatedUserId,
+          status: cleanStatus,
+          eventType: 'STATUS_CHANGE',
+          notes: `Application status changed to ${cleanStatus} via AI Action Executor`,
+          occurredAt: new Date()
+        },
+        { transaction: t }
+      );
+
+      await t.commit();
+
+      return {
+        applicationId: application.id,
+        eventId: appEvent.id,
+        status: application.status,
+        updatedAt: new Date()
       };
     } catch (err) {
       await t.rollback();

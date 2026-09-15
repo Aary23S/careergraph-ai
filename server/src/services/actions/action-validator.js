@@ -1,4 +1,4 @@
-import { ActionTypes, TargetTypes, ActionStatuses, ActionRegistryMap, ValidTransitions } from './action-registry.js';
+import { ActionTypes, TargetTypes, ActionStatuses, ActionRegistryMap, ValidTransitions, JOB_STATUSES, APPLICATION_STATUSES } from './action-registry.js';
 import { ActionValidationError } from './action.error.js';
 
 export class ActionValidator {
@@ -73,13 +73,23 @@ export class ActionValidator {
       case ActionTypes.SAVE_JOB:
       case ActionTypes.CREATE_APPLICATION:
       case ActionTypes.CREATE_OUTREACH_DRAFT:
-        // These expect empty or flexible safe payloads for now, but we can restrict to empty keys
-        // We will just ensure it's an object for H7-B unless deeper contract exists.
         break;
 
       case ActionTypes.CHANGE_JOB_STATUS:
         if (typeof payload.status !== 'string' || !payload.status.trim()) {
           throw new ActionValidationError('change_job_status payload must contain a valid "status" string.', 'INVALID_PAYLOAD');
+        }
+        if (!JOB_STATUSES.includes(payload.status.trim())) {
+          throw new ActionValidationError(`Invalid job status '${payload.status}'. Supported statuses are: ${JOB_STATUSES.join(', ')}.`, 'INVALID_JOB_STATUS');
+        }
+        break;
+
+      case ActionTypes.CHANGE_APPLICATION_STATUS:
+        if (typeof payload.status !== 'string' || !payload.status.trim()) {
+          throw new ActionValidationError('change_application_status payload must contain a valid "status" string.', 'INVALID_PAYLOAD');
+        }
+        if (!APPLICATION_STATUSES.includes(payload.status.trim())) {
+          throw new ActionValidationError(`Invalid application status '${payload.status}'. Supported statuses are: ${APPLICATION_STATUSES.join(', ')}.`, 'INVALID_APPLICATION_STATUS');
         }
         break;
 
@@ -104,7 +114,6 @@ export class ActionValidator {
         break;
 
       default:
-        // Do nothing for unknown types here, caught earlier by actionType validation.
         break;
     }
   }

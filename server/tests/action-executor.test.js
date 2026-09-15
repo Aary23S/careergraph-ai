@@ -11,6 +11,7 @@ describe('Phase H7-E: Action Executor Service', () => {
   let testJob;
   let testConnection;
   let testApplication;
+  let activeResume;
 
   beforeAll(async () => {
     // Reset database schema and seed test users
@@ -29,6 +30,15 @@ describe('Phase H7-E: Action Executor Service', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    activeResume = await models.Resume.create({
+      user_id: userId,
+      fileName: 'test_resume.pdf',
+      storageKey: 'key_test',
+      contentType: 'application/pdf',
+      sizeBytes: 1024,
+      isActive: true
+    });
 
     // Create fresh test entities in database using user_id
     testJob = await models.Job.create({
@@ -53,6 +63,7 @@ describe('Phase H7-E: Action Executor Service', () => {
 
   afterEach(async () => {
     // Clean up created test models
+    if (activeResume) await models.Resume.destroy({ where: { id: activeResume.id } }).catch(() => {});
     if (testApplication) await models.Application.destroy({ where: { id: testApplication.id } }).catch(() => {});
     if (testConnection) await models.Connection.destroy({ where: { id: testConnection.id } }).catch(() => {});
     if (testJob) await models.Job.destroy({ where: { id: testJob.id } }).catch(() => {});

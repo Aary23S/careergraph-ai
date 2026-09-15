@@ -19,10 +19,13 @@ export class IntentMapper {
     }
 
     // Heuristics mapping
+    if (/\b(change.*application.*status|update.*application|mark.*application|move.*application)\b/i.test(normalized)) {
+      return ActionTypes.CHANGE_APPLICATION_STATUS;
+    }
     if (/\b(save.*job|bookmark.*job|track.*job)\b/i.test(normalized)) {
       return ActionTypes.SAVE_JOB;
     }
-    if (/\b(change.*status|mark.*interested|mark.*rejected|move.*pipeline|update.*status)\b/i.test(normalized)) {
+    if (/\b(change.*job.*status|mark.*job|move.*job|mark.*interested|mark.*rejected|move.*pipeline|update.*status)\b/i.test(normalized)) {
       return ActionTypes.CHANGE_JOB_STATUS;
     }
     if (/\b(apply|create.*application|log.*application)\b/i.test(normalized)) {
@@ -50,6 +53,7 @@ export class IntentMapper {
 
     switch (actionType) {
       case ActionTypes.CHANGE_JOB_STATUS:
+      case ActionTypes.CHANGE_APPLICATION_STATUS:
         if (!payload || !payload.status) return { complete: false, missing: 'payload.status' };
         break;
       case ActionTypes.SCHEDULE_FOLLOWUP:
