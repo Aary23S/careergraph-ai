@@ -34,7 +34,13 @@ export class IntentMapper {
     if (/\b(remind.*follow.*up|schedule.*follow.*up|follow.*up)\b/i.test(normalized)) {
       return ActionTypes.SCHEDULE_FOLLOWUP;
     }
-    if (/\b(draft.*message|draft.*outreach|write.*email)\b/i.test(normalized)) {
+    if (/\b(log.*outreach|record.*outreach|contacted|log.*contact)\b/i.test(normalized)) {
+      return ActionTypes.LOG_OUTREACH;
+    }
+    if (/\b(update.*relationship|change.*relationship|mark.*contacted|mark.*relationship)\b/i.test(normalized)) {
+      return ActionTypes.UPDATE_RELATIONSHIP_STATUS;
+    }
+    if (/\b(draft.*message|draft.*outreach|write.*email|prepare.*outreach|referral.*request)\b/i.test(normalized)) {
       return ActionTypes.CREATE_OUTREACH_DRAFT;
     }
     if (/\b(add.*note|write.*note|log.*note)\b/i.test(normalized)) {
@@ -55,6 +61,12 @@ export class IntentMapper {
       case ActionTypes.CHANGE_JOB_STATUS:
       case ActionTypes.CHANGE_APPLICATION_STATUS:
         if (!payload || !payload.status) return { complete: false, missing: 'payload.status' };
+        break;
+      case ActionTypes.LOG_OUTREACH:
+        if (!payload || (!payload.outreachStatus && !payload.status)) return { complete: false, missing: 'payload.outreachStatus' };
+        break;
+      case ActionTypes.UPDATE_RELATIONSHIP_STATUS:
+        if (!payload || (!payload.relationshipStatus && !payload.status)) return { complete: false, missing: 'payload.relationshipStatus' };
         break;
       case ActionTypes.SCHEDULE_FOLLOWUP:
         if (!payload || !payload.followUpAt) return { complete: false, missing: 'payload.followUpAt' };

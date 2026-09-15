@@ -2,6 +2,8 @@ import { models } from '../../config/database.js';
 import { Op } from 'sequelize';
 import { TargetTypes } from './action-registry.js';
 
+const likeOp = Op.like;
+
 export class TargetResolver {
   /**
    * Resolves a natural language target description to a specific entity.
@@ -39,8 +41,8 @@ export class TargetResolver {
       where: {
         user_id: userId,
         [Op.or]: [
-          { title: { [Op.iLike]: `%${term}%` } },
-          { company: { [Op.iLike]: `%${term}%` } }
+          { title: { [likeOp]: `%${term}%` } },
+          { company: { [likeOp]: `%${term}%` } }
         ]
       },
       limit: 5
@@ -61,8 +63,10 @@ export class TargetResolver {
       where: {
         user_id: userId,
         [Op.or]: [
-          { name: { [Op.iLike]: `%${term}%` } },
-          { company: { [Op.iLike]: `%${term}%` } }
+          { name: { [likeOp]: `%${term}%` } },
+          { company: { [likeOp]: `%${term}%` } },
+          { title: { [likeOp]: `%${term}%` } },
+          { email: { [likeOp]: `%${term}%` } }
         ]
       },
       limit: 5
@@ -88,8 +92,8 @@ export class TargetResolver {
           as: 'job',
           where: {
             [Op.or]: [
-              { title: { [Op.iLike]: `%${term}%` } },
-              { company: { [Op.iLike]: `%${term}%` } }
+              { title: { [likeOp]: `%${term}%` } },
+              { company: { [likeOp]: `%${term}%` } }
             ]
           }
         }

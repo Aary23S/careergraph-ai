@@ -172,6 +172,12 @@ export class ActionExecutor {
       case ActionTypes.CREATE_OUTREACH_DRAFT:
         return await this._executeCreateOutreachDraft(target, payload, authenticatedUserId);
 
+      case ActionTypes.LOG_OUTREACH:
+        return await this._executeLogOutreach(target, payload, authenticatedUserId);
+
+      case ActionTypes.UPDATE_RELATIONSHIP_STATUS:
+        return await this._executeUpdateRelationshipStatus(target, payload, authenticatedUserId);
+
       case ActionTypes.ADD_NOTE:
         return await this._executeAddNote(target, payload, authenticatedUserId);
 
@@ -453,6 +459,18 @@ export class ActionExecutor {
       if (!conn) {
         throw new Error(`Unauthorized or Connection with ID ${targetId} not found.`);
       }
+      if (payload?.jobId) {
+        const job = await models.Job.findByPk(payload.jobId);
+        if (!job || (this._getEntityUserId(job) && this._getEntityUserId(job) !== authenticatedUserId)) {
+          throw new Error('Unauthorized or invalid linked Job ID.');
+        }
+      }
+      if (payload?.applicationId) {
+        const app = await models.Application.findOne({ where: { id: payload.applicationId, user_id: authenticatedUserId } });
+        if (!app) {
+          throw new Error('Unauthorized or invalid linked Application ID.');
+        }
+      }
       let outreach = await models.Outreach.findOne({ where: { connection_id: targetId, user_id: authenticatedUserId } });
       if (outreach) {
         await outreach.update({ followUpDate: followUpDate });
@@ -460,6 +478,7 @@ export class ActionExecutor {
         await models.Outreach.create({
           user_id: authenticatedUserId,
           connection_id: targetId,
+          job_id: payload?.jobId || null,
           status: 'researching',
           followUpDate: followUpDate,
           notes: 'Follow-up scheduled via Action Executor'
@@ -501,6 +520,10 @@ export class ActionExecutor {
       if (!job) {
         throw new Error(`Job with ID ${jobId} not found.`);
       }
+      const jobOwner = this._getEntityUserId(job);
+      if (jobOwner && jobOwner !== authenticatedUserId) {
+        throw new Error('Unauthorized: Job belongs to another user.');
+      }
     }
 
     const draftText = payload?.message || payload?.draft || payload?.text || `Hi ${connection.name || 'there'}, I wanted to reach out regarding career opportunities.`;
@@ -527,6 +550,117 @@ export class ActionExecutor {
       status: draftRecord.status,
       createdAt: draftRecord.createdAt,
       note: 'Draft created successfully. No external message was sent.'
+    };
+  }
+
+  /**
+   * Action: log_outreach
+   */
+  static async _executeLogOutreach(target, payload, authenticatedUserId) {
+    const connectionId = target.id;
+    const connection = await models.Connection.findOne({
+      where: { id: connectionId, user_id: authenticatedUserId }
+    });
+    if (!connection) {
+      throw new Error(`Unauthorized or Connection with ID ${connectionId} not found.`);
+    }
+
+    let jobId = payload?.jobId || null;
+    if (jobId) {
+      const job = await models.Job.findByPk(jobId);
+      if (!job || (this._getEntityUserId(job) && this._getEntityUserId(job) !== authenticatedUserId)) {
+        throw new Error(`Unauthorized or Job with ID ${jobId} not found.`);
+      }
+    }
+
+    let applicationId = payload?.applicationId || null;
+    if (applicationId) {
+      const app = await models.Application.findOne({
+        where: { id: applicationId, user_id: authenticatedUserId }
+      });
+      if (!app) {
+        throw new Error(`Unauthorized or Application with ID ${applicationId} not found.`);
+      }
+    }
+
+    const outreachStatus = payload?.outreachStatus || payload?.status || 'contacted';
+    const notes = payload?.notes || payload?.note || 'Outreach logged via AI Action Executor';
+
+    const t = await sequelize.transaction();
+    try {
+      let outreach = await models.Outreach.findOne({
+        where: { connection_id: connectionId, user_id: authenticatedUserId }
+      }, { transaction: t });
+
+      if (outreach) {
+        await outreach.update({
+          status: outreachStatus,
+          contactDate: new Date(),
+          notes: notes,
+          jobId: jobId || outreach.jobId
+        }, { transaction: t });
+      } else {
+        outreach = await models.Outreach.create({
+          user_id: authenticatedUserId,
+          connection_id: connectionId,
+          job_id: jobId,
+          status: outreachStatus,
+          contactDate: new Date(),
+          notes: notes
+        }, { transaction: t });
+      }
+
+      const outreachEvent = await models.OutreachEvent.create({
+        outreach_id: outreach.id,
+        user_id: authenticatedUserId,
+        status: outreachStatus,
+        eventType: 'STATUS_CHANGE',
+        notes: notes,
+        occurredAt: new Date()
+      }, { transaction: t });
+
+      await connection.update({
+        relationshipStatus: outreachStatus,
+        lastContactedDate: new Date()
+      }, { transaction: t });
+
+      await t.commit();
+
+      return {
+        outreachId: outreach.id,
+        eventId: outreachEvent.id,
+        connectionId: connection.id,
+        status: outreach.status,
+        contactDate: outreach.contactDate,
+        updatedAt: new Date()
+      };
+    } catch (err) {
+      await t.rollback();
+      throw err;
+    }
+  }
+
+  /**
+   * Action: update_relationship_status
+   */
+  static async _executeUpdateRelationshipStatus(target, payload, authenticatedUserId) {
+    const connectionId = target.id;
+    const connection = await models.Connection.findOne({
+      where: { id: connectionId, user_id: authenticatedUserId }
+    });
+    if (!connection) {
+      throw new Error(`Unauthorized or Connection with ID ${connectionId} not found.`);
+    }
+
+    const relStatus = payload?.relationshipStatus || payload?.status;
+    const cleanStatus = typeof relStatus === 'string' ? relStatus.trim() : '';
+
+    await connection.update({ relationshipStatus: cleanStatus });
+
+    return {
+      connectionId: connection.id,
+      relationshipStatus: connection.relationshipStatus,
+      updatedAt: new Date()
     };
   }
 

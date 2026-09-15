@@ -1,4 +1,4 @@
-import { APPLICATION_STATUSES } from '../../database/models.js';
+import { APPLICATION_STATUSES, OUTREACH_STATUSES } from '../../database/models.js';
 
 /**
  * Action Registry
@@ -13,6 +13,8 @@ export const ActionTypes = {
   CHANGE_APPLICATION_STATUS: 'change_application_status',
   SCHEDULE_FOLLOWUP: 'schedule_followup',
   CREATE_OUTREACH_DRAFT: 'create_outreach_draft',
+  LOG_OUTREACH: 'log_outreach',
+  UPDATE_RELATIONSHIP_STATUS: 'update_relationship_status',
   ADD_NOTE: 'add_note'
 };
 
@@ -43,7 +45,7 @@ export const JOB_STATUSES = [
   'closed'
 ];
 
-export { APPLICATION_STATUSES };
+export { APPLICATION_STATUSES, OUTREACH_STATUSES };
 
 // Centralized Action Statuses
 export const ActionStatuses = {
@@ -87,6 +89,16 @@ export const ActionRegistryMap = {
     targetType: TargetTypes.CONNECTION,
     risk: 'MEDIUM',
     description: 'Draft an outreach message'
+  },
+  [ActionTypes.LOG_OUTREACH]: {
+    targetType: TargetTypes.CONNECTION,
+    risk: 'MEDIUM',
+    description: 'Record an outreach event for a connection'
+  },
+  [ActionTypes.UPDATE_RELATIONSHIP_STATUS]: {
+    targetType: TargetTypes.CONNECTION,
+    risk: 'MEDIUM',
+    description: 'Update the relationship status of a connection'
   },
   [ActionTypes.ADD_NOTE]: { 
     targetType: [TargetTypes.CONNECTION, TargetTypes.JOB, TargetTypes.APPLICATION],

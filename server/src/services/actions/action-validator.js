@@ -1,4 +1,4 @@
-import { ActionTypes, TargetTypes, ActionStatuses, ActionRegistryMap, ValidTransitions, JOB_STATUSES, APPLICATION_STATUSES } from './action-registry.js';
+import { ActionTypes, TargetTypes, ActionStatuses, ActionRegistryMap, ValidTransitions, JOB_STATUSES, APPLICATION_STATUSES, OUTREACH_STATUSES } from './action-registry.js';
 import { ActionValidationError } from './action.error.js';
 
 export class ActionValidator {
@@ -92,6 +92,31 @@ export class ActionValidator {
           throw new ActionValidationError(`Invalid application status '${payload.status}'. Supported statuses are: ${APPLICATION_STATUSES.join(', ')}.`, 'INVALID_APPLICATION_STATUS');
         }
         break;
+
+      case ActionTypes.LOG_OUTREACH: {
+        const outreachStatus = payload.outreachStatus || payload.status;
+        if (typeof outreachStatus !== 'string' || !outreachStatus.trim()) {
+          throw new ActionValidationError('log_outreach payload must contain a valid "outreachStatus" string.', 'INVALID_PAYLOAD');
+        }
+        if (!OUTREACH_STATUSES.includes(outreachStatus.trim())) {
+          throw new ActionValidationError(`Invalid outreach status '${outreachStatus}'. Supported statuses are: ${OUTREACH_STATUSES.join(', ')}.`, 'INVALID_OUTREACH_STATUS');
+        }
+        if (payload.notes && payload.notes.length > this.LIMITS.MAX_PAYLOAD_NOTE_LENGTH) {
+          throw new ActionValidationError(`Notes content exceeds maximum length of ${this.LIMITS.MAX_PAYLOAD_NOTE_LENGTH}.`, 'PAYLOAD_TOO_LARGE');
+        }
+        break;
+      }
+
+      case ActionTypes.UPDATE_RELATIONSHIP_STATUS: {
+        const relStatus = payload.relationshipStatus || payload.status;
+        if (typeof relStatus !== 'string' || !relStatus.trim()) {
+          throw new ActionValidationError('update_relationship_status payload must contain a valid "relationshipStatus" string.', 'INVALID_PAYLOAD');
+        }
+        if (!OUTREACH_STATUSES.includes(relStatus.trim())) {
+          throw new ActionValidationError(`Invalid relationship status '${relStatus}'. Supported statuses are: ${OUTREACH_STATUSES.join(', ')}.`, 'INVALID_RELATIONSHIP_STATUS');
+        }
+        break;
+      }
 
       case ActionTypes.SCHEDULE_FOLLOWUP: {
         if (!payload.followUpAt) {
