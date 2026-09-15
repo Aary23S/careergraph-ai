@@ -122,3 +122,27 @@ export function getRedisClient() {
 export function isRedisAvailable() {
   return isRedisConnected && redisClient !== null;
 }
+
+export async function shutdownRedis() {
+  if (!redisClient) {
+    return;
+  }
+
+  try {
+    isRedisConnected = false;
+    // Prefer graceful quit
+    if (redisClient.status !== 'end' && redisClient.status !== 'close') {
+      await redisClient.quit();
+    }
+  } catch (err) {
+    console.warn(`[QueueService] Graceful Redis quit failed, forcing disconnect: ${err.message}`);
+    try {
+      redisClient.disconnect();
+    } catch (fallbackErr) {
+      // Ignore fallback errors safely
+    }
+  } finally {
+    redisClient = null;
+    redisInitializationPromise = null;
+  }
+}

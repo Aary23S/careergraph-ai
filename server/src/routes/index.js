@@ -21,6 +21,8 @@ import adminQueueRoutes from '../modules/admin-queue.routes.js';
 import modelRegistryRoutes from '../modules/model-registry.routes.js';
 import followedCompaniesRoutes from '../modules/followed-companies.routes.js';
 
+import copilotRoutes from '../modules/copilot.routes.js';
+
 const router = Router();
 
 router.use('/health', healthRoutes);
@@ -44,5 +46,6 @@ router.use('/search', searchRoutes);
 router.use('/admin/ai-queue', adminQueueRoutes);
 router.use('/admin/models', modelRegistryRoutes);
 router.use('/followed-companies', followedCompaniesRoutes);
+router.use('/copilot', copilotRoutes);
 
 export default router;

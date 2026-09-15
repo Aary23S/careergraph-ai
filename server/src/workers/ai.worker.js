@@ -6,6 +6,7 @@ import {
   getRedisClient,
   initializeRedis,
   isRedisAvailable,
+  shutdownRedis,
 } from '../config/queue.js';
 
 import { env } from '../config/env.js';
@@ -476,6 +477,8 @@ export async function shutdownWorker() {
 
     bullmqWorker = null;
   }
+
+  await shutdownRedis();
 
   if (bullmqInitializationPromise) {
     bullmqInitializationPromise = null;

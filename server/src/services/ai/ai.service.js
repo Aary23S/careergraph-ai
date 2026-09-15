@@ -3,6 +3,7 @@ import { MockProvider } from './mock-provider.js';
 import { OllamaProvider } from './ollama-provider.js';
 import { GroqProvider } from './groq-provider.js';
 import { OpenAIProvider } from './openai-provider.js';
+import { GeminiProvider } from './gemini-provider.js';
 import { models } from '../../config/database.js';
 import { detectAndSanitizePromptInjection, validateClaims } from './guardrails.service.js';
 import { aiObservability } from './observability.service.js';
@@ -48,6 +49,9 @@ export class AIService {
   }
 
   _resolveProvider(name = env.aiProvider) {
+    if (name === 'gemini') {
+      return new GeminiProvider();
+    }
     if (name === 'ollama') {
       return new OllamaProvider();
     }

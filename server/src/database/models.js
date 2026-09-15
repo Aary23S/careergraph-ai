@@ -243,6 +243,13 @@ export function initializeModels(sequelize) {
       hooks: {
         beforeSave: async (job) => {
           try {
+            if (!job.contactEmail && job.description) {
+              const emailMatch = job.description.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+              if (emailMatch) {
+                job.contactEmail = emailMatch[0];
+              }
+            }
+
             const userId = job.user_id ?? job.userId;
             
             // Jobs created without an owner cannot have a user-specific

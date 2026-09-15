@@ -495,6 +495,243 @@ const CONN_STATUS_VARIANT = {
   closed: 'badge-success'
 };
 
+const CopilotChat = () => {
+  const [messages, setMessages] = useState([
+    {
+      role: 'assistant',
+      content: 'Hello! I am your Career Copilot. Ask me anything about your job opportunities, referral paths, match explanations, applications, or daily priorities.',
+      suggestedPrompts: [
+        'Who can refer me for my top job?',
+        'Why is this job a good match?',
+        'What should I focus on today?',
+        'What is the status of my applications?'
+      ]
+    }
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSend = async (promptText) => {
+    const textToSend = promptText || input;
+    if (!textToSend.trim() || loading) return;
+
+    const userMsg = { role: 'user', content: textToSend };
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
+    if (!promptText) setInput('');
+    setLoading(true);
+    setError(null);
+
+    try {
+      const history = updatedMessages.slice(-6).map(m => ({ role: m.role, content: m.content }));
+      const res = await api.sendCopilotChat({
+        message: textToSend,
+        messages: history
+      });
+
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: res.message,
+          intent: res.intent,
+          confidence: res.confidence,
+          aiStatus: res.aiStatus,
+          references: res.references,
+          data: res.data,
+          suggestedPrompts: res.suggestedPrompts
+        }
+      ]);
+    } catch (err) {
+      setError(err.message || 'Failed to send Copilot message');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+          <IconZap /> Career Copilot Chat
+        </h2>
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', background: 'var(--bg-tertiary)', padding: '4px 8px', borderRadius: '4px' }}>
+          H6 Orchestration Agent
+        </span>
+      </div>
+
+      <div style={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '4px' }}>
+        {messages.map((msg, idx) => (
+          <div key={idx} style={{
+            alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+            maxWidth: '85%',
+            background: msg.role === 'user' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+            color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
+            padding: '12px 16px',
+            borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+            border: msg.role === 'assistant' ? '1px solid var(--border-color)' : 'none'
+          }}>
+            <div style={{ fontWeight: 500, marginBottom: '4px', display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '0.8rem', opacity: 0.8 }}>
+              <span>{msg.role === 'user' ? 'You' : 'Copilot'}</span>
+              {msg.intent && (
+                <span style={{ textTransform: 'uppercase', fontSize: '0.7rem', background: 'rgba(255,255,255,0.2)', padding: '1px 6px', borderRadius: '3px' }}>
+                  {msg.intent.replace('_', ' ')}
+                </span>
+              )}
+            </div>
+            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{msg.content}</div>
+
+            {msg.references && msg.references.length > 0 && (
+              <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>References:</span>
+                {msg.references.map((ref, rIdx) => (
+                  <span key={rIdx} style={{ fontSize: '0.75rem', background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                    🏷️ {ref.label}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {msg.suggestedPrompts && msg.suggestedPrompts.length > 0 && (
+              <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {msg.suggestedPrompts.map((prompt, pIdx) => (
+                  <button key={pIdx} className="conn-btn conn-btn--secondary" style={{ fontSize: '0.75rem', padding: '3px 8px' }} onClick={() => handleSend(prompt)}>
+                    💬 {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        {loading && (
+          <div style={{ alignSelf: 'flex-start', background: 'var(--bg-secondary)', padding: '10px 16px', borderRadius: '12px', fontStyle: 'italic', fontSize: '0.9rem' }}>
+            Copilot is thinking & routing request...
+          </div>
+        )}
+      </div>
+
+      {error && <div className="error-message" style={{ color: 'var(--error-color)', padding: '8px 12px', marginTop: '12px', background: 'var(--error-bg)', borderRadius: '6px', fontSize: '0.85rem' }}>{error}</div>}
+
+      <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+        <input
+          type="text"
+          className="form-input"
+          placeholder="Ask CareerGraph anything (e.g., 'Who can refer me?', 'Why is this job a match?')..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          disabled={loading}
+          style={{ flex: 1 }}
+        />
+        <button className="conn-btn conn-btn--primary" onClick={() => handleSend()} disabled={loading || !input.trim()}>
+          Send
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const DecisionDigest = () => {
+  const [digest, setDigest] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchDigest = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.getDecisionDigest(new Date().toISOString().split('T')[0]);
+      setDigest(res);
+    } catch (err) {
+      setError(err.message || 'Failed to load Decision Digest');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+          <IconAward /> Career Copilot: Decision Digest
+        </h2>
+        <button className="conn-btn conn-btn--primary" onClick={fetchDigest} disabled={loading}>
+          {loading ? 'Generating...' : (digest ? 'Refresh Digest' : 'Generate Daily Digest')}
+        </button>
+      </div>
+
+      {error && <div className="error-message" style={{ color: 'var(--error-color)', padding: '12px', background: 'var(--error-bg)', borderRadius: '6px' }}>{error}</div>}
+      
+      {digest && (
+        <div className="digest-content" style={{ marginTop: '16px' }}>
+          <p style={{ fontSize: '1.1rem', marginBottom: '24px', color: 'var(--brand-accent)', fontWeight: '500' }}>
+            {digest.summary || digest.message}
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+            {digest.priorities?.length > 0 && (
+              <div className="digest-section">
+                <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: 'var(--text-primary)' }}>🔥 Top Priorities</h3>
+                {digest.priorities.map((p, i) => (
+                  <div key={i} style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>{p.title}</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>{p.reason}</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--brand-accent)' }}>→ {p.recommendedAction}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {digest.referralOpportunities?.length > 0 && (
+              <div className="digest-section">
+                <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: 'var(--text-primary)' }}>🤝 Referral Opportunities</h3>
+                {digest.referralOpportunities.map((r, i) => (
+                  <div key={i} style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>Connection: {r.connectionId}</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>{r.reason}</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--brand-accent)' }}>→ {r.recommendedAction}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {digest.applicationAttention?.length > 0 && (
+              <div className="digest-section">
+                <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: 'var(--text-primary)' }}>📋 Applications Needing Attention</h3>
+                {digest.applicationAttention.map((a, i) => (
+                  <div key={i} style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>App: {a.applicationId}</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>{a.reason}</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--brand-accent)' }}>→ {a.recommendedAction}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {digest.careerSignals?.length > 0 && (
+              <div className="digest-section">
+                <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: 'var(--text-primary)' }}>📈 Career Signals</h3>
+                {digest.careerSignals.map((s, i) => (
+                  <div key={i} style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontWeight: '600', marginBottom: '8px', textTransform: 'capitalize' }}>{s.type}</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{s.statement}</div>
+                    {s.guardrailNotes && s.guardrailNotes.length > 0 && (
+                      <div style={{ fontSize: '0.8rem', color: '#ff4d4f', marginTop: '8px', padding: '8px', background: 'rgba(255, 77, 79, 0.1)', borderRadius: '4px' }}>
+                        ⚠️ {s.guardrailNotes.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(api.accessToken));
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -2068,9 +2305,12 @@ function App() {
                 }
               }}>
                 <IconSend />
-                Trigger Daily Digest
+                Trigger Daily Digest (Email)
               </button>
             </div>
+
+            <CopilotChat />
+            <DecisionDigest />
 
             <div className="dash-stats-grid">
               <div className="dash-stat-card">

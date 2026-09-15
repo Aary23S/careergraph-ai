@@ -555,6 +555,43 @@ class ApiClient {
     const res = await this.request('/dashboard');
     return res.data;
   }
+
+  // Copilot
+  async getCopilotContext(payload) {
+    return this.request('/copilot/context', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  async getReferralPath(jobId, query = '') {
+    return this.request('/copilot/referral-path', {
+      method: 'POST',
+      body: { jobId, query }
+    });
+  }
+
+  async getMatchExplanation(jobId, query = '') {
+    return this.request('/copilot/match-explanation', {
+      method: 'POST',
+      body: { jobId, query }
+    });
+  }
+
+  async getDecisionDigest(date, query = '') {
+    return this.request('/copilot/decision-digest', {
+      method: 'POST',
+      body: { date, query }
+    });
+  }
+
+  async sendCopilotChat(payload) {
+    return this.request('/copilot/chat', {
+      method: 'POST',
+      body: payload
+    });
+  }
 }
 
 export const api = new ApiClient();
+
