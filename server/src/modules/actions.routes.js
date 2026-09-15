@@ -3,11 +3,13 @@ import { requireAuth } from '../middleware/auth.js';
 import { ActionModel } from '../services/actions/action.model.js';
 import { ActionValidator } from '../services/actions/action-validator.js';
 import { ActionConfirmationService } from '../services/actions/action-confirmation.service.js';
+import { ActionExecutor } from '../services/actions/action-executor.service.js';
 
 const router = express.Router();
 
 /**
  * Reconstructs and validates the ActionModel from the request body.
+ * Ensures structural limits and immutability rules.
  */
 function parseActionFromRequest(req) {
   const { action } = req.body;
@@ -20,7 +22,7 @@ function parseActionFromRequest(req) {
     throw new Error('Action ID in payload does not match route parameter.');
   }
 
-  // Reconstruct ActionModel
+  // Reconstruct ActionModel securely
   const actionModel = new ActionModel({
     actionId: action.actionId,
     actionType: action.actionType,
@@ -34,7 +36,7 @@ function parseActionFromRequest(req) {
     expiresAt: action.expiresAt
   });
 
-  // Re-validate the contract to ensure UI didn't tamper with structural limits
+  // Re-validate contract integrity
   ActionValidator.validateActionContract(actionModel);
 
   return actionModel;
@@ -84,6 +86,36 @@ router.post('/:actionId/cancel', requireAuth, async (req, res, next) => {
     res.status(200).json(result);
   } catch (err) {
     if (err.name === 'ActionValidationError' || err.message.includes('Unauthorized') || err.message.includes('expired')) {
+      return res.status(400).json({ error: err.message });
+    }
+    next(err);
+  }
+});
+
+/**
+ * POST /api/actions/:actionId/execute
+ * Executes a confirmed action plan against domain services and database models.
+ */
+router.post('/:actionId/execute', requireAuth, async (req, res, next) => {
+  try {
+    const authenticatedUserId = req.user.id;
+    const actionModel = parseActionFromRequest(req);
+    const requestId = req.headers['x-request-id'] || req.body.action?.requestId || 'req-api-execute';
+
+    const result = await ActionExecutor.executeAction({
+      action: actionModel,
+      authenticatedUserId,
+      requestId
+    });
+
+    res.status(200).json(result);
+  } catch (err) {
+    if (
+      err.name === 'ActionValidationError' ||
+      err.message.includes('Unauthorized') ||
+      err.message.includes('expired') ||
+      err.message.includes('Cannot execute action')
+    ) {
       return res.status(400).json({ error: err.message });
     }
     next(err);
