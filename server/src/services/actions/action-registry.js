@@ -33,15 +33,39 @@ export const ActionStatuses = {
   EXPIRED: 'expired'
 };
 
-// Registry Metadata mapping actions to valid target types
+// Registry Metadata mapping actions to valid target types, risks, and descriptions
 export const ActionRegistryMap = {
-  [ActionTypes.SAVE_JOB]: { targetType: TargetTypes.JOB },
-  [ActionTypes.CHANGE_JOB_STATUS]: { targetType: TargetTypes.JOB },
-  [ActionTypes.CREATE_APPLICATION]: { targetType: TargetTypes.JOB },
-  [ActionTypes.SCHEDULE_FOLLOWUP]: { targetType: TargetTypes.CONNECTION },
-  [ActionTypes.CREATE_OUTREACH_DRAFT]: { targetType: TargetTypes.CONNECTION },
+  [ActionTypes.SAVE_JOB]: { 
+    targetType: TargetTypes.JOB,
+    risk: 'LOW',
+    description: 'Save a job to your list'
+  },
+  [ActionTypes.CHANGE_JOB_STATUS]: { 
+    targetType: TargetTypes.JOB,
+    risk: 'MEDIUM',
+    description: 'Change the pipeline status of a job'
+  },
+  [ActionTypes.CREATE_APPLICATION]: { 
+    targetType: TargetTypes.JOB,
+    risk: 'HIGH',
+    description: 'Log a new application for a job'
+  },
+  [ActionTypes.SCHEDULE_FOLLOWUP]: { 
+    targetType: TargetTypes.CONNECTION,
+    risk: 'MEDIUM',
+    description: 'Schedule a follow-up reminder'
+  },
+  [ActionTypes.CREATE_OUTREACH_DRAFT]: { 
+    targetType: TargetTypes.CONNECTION,
+    risk: 'MEDIUM',
+    description: 'Draft an outreach message'
+  },
   // ADD_NOTE can target multiple types in the future, we'll allow connection, job, application
-  [ActionTypes.ADD_NOTE]: { targetType: [TargetTypes.CONNECTION, TargetTypes.JOB, TargetTypes.APPLICATION] }
+  [ActionTypes.ADD_NOTE]: { 
+    targetType: [TargetTypes.CONNECTION, TargetTypes.JOB, TargetTypes.APPLICATION],
+    risk: 'LOW',
+    description: 'Add a textual note to a record'
+  }
 };
 
 // Valid Lifecycle Transitions

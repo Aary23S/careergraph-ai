@@ -8,9 +8,11 @@ import { ContextBuilder } from './context/context-builder.service.js';
 import { ReferralPathAgentService } from './referral-path-agent.service.js';
 import { MatchExplainerService } from './match-explainer.service.js';
 import { DecisionDigestService } from './decision-digest.service.js';
+import { ActionPlanner } from '../actions/action-planner.service.js';
+import crypto from 'crypto';
 
 const IntentClassifierSchema = Joi.object({
-  intent: Joi.string().valid('referral_search', 'match_explanation', 'decision_digest', 'application_status', 'career_query').required(),
+  intent: Joi.string().valid('referral_search', 'match_explanation', 'decision_digest', 'application_status', 'career_query', 'action_proposal').required(),
   confidence: Joi.number().min(0).max(1).required()
 });
 
@@ -125,6 +127,10 @@ USER MESSAGE: "${safeMessage}"
     let result;
     try {
       switch (intent) {
+        case 'action_proposal':
+          result = await this.handleActionProposal(userId, safeMessage, authorizedContext);
+          break;
+
         case 'referral_search':
           result = await this.handleReferralSearch(userId, safeMessage, authorizedContext);
           break;
@@ -200,6 +206,11 @@ USER MESSAGE: "${safeMessage}"
   static classifyIntentDeterminist(text) {
     const lower = text.toLowerCase();
 
+    // Action proposals
+    if (/\b(save.*job|bookmark.*job|track.*job|change.*status|mark.*interested|mark.*rejected|move.*pipeline|update.*status|apply|create.*application|log.*application|remind.*follow.*up|schedule.*follow.*up|follow.*up|draft.*message|draft.*outreach|write.*email|add.*note|write.*note|log.*note)\b/i.test(lower)) {
+      return 'action_proposal';
+    }
+
     if (/\b(refer|referral|who can refer|connection at|who should i contact|contact at|network at)\b/i.test(lower)) {
       return 'referral_search';
     }
@@ -224,6 +235,54 @@ USER MESSAGE: "${safeMessage}"
   }
 
   // --- INTENT HANDLERS ---
+
+  static async handleActionProposal(userId, query, context) {
+    const targetId = context.jobId || context.connectionId || context.applicationId;
+    const requestId = crypto.randomUUID();
+
+    try {
+      const planResult = await ActionPlanner.planAction({
+        userId,
+        intent: query,
+        targetDescription: !targetId ? query : null, // If no explicit context, use query to find target
+        targetId,
+        requestId,
+        explanation: 'You asked to perform an action.' // A more specific explanation is generated inside ActionPlanner
+      });
+
+      if (planResult.needsInput || planResult.needsClarification) {
+        return {
+          message: planResult.message,
+          aiStatus: 'success',
+          references: [],
+          data: { 
+            needsClarification: planResult.needsClarification,
+            candidates: planResult.candidates 
+          },
+          suggestedPrompts: planResult.candidates 
+            ? planResult.candidates.map(c => `Use ${c.label}`) 
+            : ['What should I focus on today?']
+        };
+      }
+
+      return {
+        message: 'I have prepared an action plan for you. Please review and confirm it below.',
+        aiStatus: 'success',
+        references: [],
+        data: { actionPlan: planResult.toJSON() },
+        suggestedPrompts: ['What should I focus on today?']
+      };
+    } catch (err) {
+      console.error('[CopilotChatService] Error planning action:', err);
+      return {
+        message: 'I could not create a safe action plan for your request. ' + (err.message || ''),
+        aiStatus: 'unavailable',
+        references: [],
+        data: {},
+        suggestedPrompts: ['What should I focus on today?']
+      };
+    }
+  }
 
   static async handleReferralSearch(userId, query, context) {
     let jobId = context.jobId;
