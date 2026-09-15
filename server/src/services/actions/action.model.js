@@ -43,6 +43,12 @@ export class ActionModel {
     this.requestId = requestId;
     this.createdAt = new Date();
     this.expiresAt = new Date(this.createdAt.getTime() + expirationMs);
+
+    // Freeze security fields to prevent mutation
+    Object.defineProperty(this, 'actionId', { writable: false, configurable: false });
+    Object.defineProperty(this, 'userId', { writable: false, configurable: false });
+    Object.defineProperty(this, 'requestId', { writable: false, configurable: false });
+    Object.defineProperty(this, 'createdAt', { writable: false, configurable: false });
   }
 
   /**

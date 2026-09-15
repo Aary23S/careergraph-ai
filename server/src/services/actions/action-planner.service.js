@@ -20,17 +20,23 @@ export class ActionPlanner {
     if (!userId) throw new Error('userId is required');
     if (!requestId) throw new Error('requestId is required');
 
-    // Create the action model instance
-    // It defaults to PENDING_CONFIRMATION status and assigns expiration/actionId
-    const action = new ActionModel({
+    // Extract strictly the known fields to prevent unknown field injections
+    const sanitizedParams = {
       userId,
       actionType,
-      target,
-      payload,
-      reason,
+      target: {
+        type: target?.type,
+        id: target?.id
+      },
+      payload: typeof payload === 'object' && payload !== null && !Array.isArray(payload) ? payload : {},
+      reason: typeof reason === 'string' ? reason : '',
       requestId,
       status: ActionStatuses.PENDING_CONFIRMATION
-    });
+    };
+
+    // Create the action model instance
+    // It defaults to PENDING_CONFIRMATION status and assigns expiration/actionId
+    const action = new ActionModel(sanitizedParams);
 
     // Validate the resulting contract
     ActionValidator.validateActionContract(action);
