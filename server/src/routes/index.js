@@ -22,6 +22,7 @@ import modelRegistryRoutes from '../modules/model-registry.routes.js';
 import followedCompaniesRoutes from '../modules/followed-companies.routes.js';
 
 import copilotRoutes from '../modules/copilot.routes.js';
+import actionsRoutes from '../modules/actions.routes.js';
 
 const router = Router();
 
@@ -47,5 +48,6 @@ router.use('/admin/ai-queue', adminQueueRoutes);
 router.use('/admin/models', modelRegistryRoutes);
 router.use('/followed-companies', followedCompaniesRoutes);
 router.use('/copilot', copilotRoutes);
+router.use('/actions', actionsRoutes);
 
 export default router;

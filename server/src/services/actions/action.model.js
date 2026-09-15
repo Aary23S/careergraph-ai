@@ -28,9 +28,12 @@ export class ActionModel {
     reason = '',
     requestId,
     status = ActionStatuses.PENDING_CONFIRMATION,
-    expirationMs = ActionConfig.DEFAULT_EXPIRATION_MS
+    expirationMs = ActionConfig.DEFAULT_EXPIRATION_MS,
+    actionId,
+    createdAt,
+    expiresAt
   }) {
-    this.actionId = crypto.randomUUID();
+    this.actionId = actionId || crypto.randomUUID();
     this.actionType = actionType;
     this.status = status;
     this.userId = userId;
@@ -41,8 +44,8 @@ export class ActionModel {
     this.payload = payload;
     this.reason = reason;
     this.requestId = requestId;
-    this.createdAt = new Date();
-    this.expiresAt = new Date(this.createdAt.getTime() + expirationMs);
+    this.createdAt = createdAt ? new Date(createdAt) : new Date();
+    this.expiresAt = expiresAt ? new Date(expiresAt) : new Date(this.createdAt.getTime() + expirationMs);
 
     // Freeze security fields to prevent mutation
     Object.defineProperty(this, 'actionId', { writable: false, configurable: false });
