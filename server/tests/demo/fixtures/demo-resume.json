@@ -1,0 +1,18 @@
+{
+  "id": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+  "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "fileName": "Alex_Mercer_DevOps_Resume.pdf",
+  "storageKey": "resumes/alex_mercer_devops.pdf",
+  "contentType": "application/pdf",
+  "sizeBytes": 24580,
+  "isActive": true,
+  "isDemo": true,
+  "enrichment": {
+    "roleCategory": "Infrastructure",
+    "seniority": "Senior",
+    "skills": ["javascript", "python", "docker", "kubernetes", "aws", "postgresql", "terraform"],
+    "domains": ["cloud", "devops", "infrastructure"],
+    "experienceYears": 6,
+    "status": "completed"
+  }
+}

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "d4e5f6a7-b8c9-4d8e-1f2a-3b4c5d6e7f8a",
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "name": "Vikram Malhotra",
+    "title": "VP of Engineering",
+    "company": "CloudScale Inc",
+    "normalizedCompany": "cloudscale",
+    "email": "vikram.malhotra@cloudscale.com",
+    "relationshipStatus": "conversation",
+    "notes": "Prefers morning syncs; expressed interest in referring senior candidates.",
+    "isDemo": true
+  },
+  {
+    "id": "e5f6a7b8-c9d0-4e9f-2a3b-4c5d6e7f8a9b",
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "name": "Sarah Jenkins",
+    "title": "Senior Cloud Architect",
+    "company": "CloudScale Inc",
+    "normalizedCompany": "cloudscale",
+    "email": "s.jenkins@cloudscale.com",
+    "relationshipStatus": "contacted",
+    "notes": "Worked together at previous cloud startup.",
+    "isDemo": true
+  },
+  {
+    "id": "f6a7b8c9-d0e1-4f0a-3b4c-5d6e7f8a9b0c",
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "name": "Marcus Vance",
+    "title": "Technical Recruiter",
+    "company": "DataScale Systems",
+    "normalizedCompany": "datascale",
+    "email": "marcus.vance@datascale.com",
+    "relationshipStatus": "not_contacted",
+    "isDemo": true
+  }
+]

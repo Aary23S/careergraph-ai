@@ -26,7 +26,8 @@
     "models:evaluate": "node scripts/models-cli.js evaluate",
     "ai:mlflow:benchmark": "node scripts/ai-mlflow-benchmark.js",
     "h8:evaluate": "node scripts/h8-evaluate.js",
-    "hackathon:evaluate": "node scripts/h8-evaluate.js"
+    "hackathon:evaluate": "node scripts/h8-evaluate.js",
+    "demo:reset": "node scripts/demo-reset.js"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

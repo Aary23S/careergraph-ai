@@ -1,0 +1,12 @@
+[
+  {
+    "id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "job_id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+    "status": "interview",
+    "appliedAt": "2026-09-01T10:00:00Z",
+    "lastStatusAt": "2026-09-10T14:00:00Z",
+    "notes": "Technical screen scheduled with engineering lead.",
+    "isDemo": true
+  }
+]

@@ -101,6 +101,7 @@ const schema = Joi.object({
   MODEL_REGISTRY_ENABLED: Joi.boolean().default(false),
   MODEL_REGISTRY_DEFAULT_ENVIRONMENT: Joi.string().valid('development', 'staging', 'production').default('development'),
   MLFLOW_ENABLED: Joi.boolean().default(false),
+  DEMO_MODE: Joi.boolean().default(false),
 }).unknown(true);
 
 const { error, value } = schema.validate(process.env, { abortEarly: false });
@@ -190,4 +191,5 @@ export const env = {
   modelRegistryDefaultEnvironment: value.MODEL_REGISTRY_DEFAULT_ENVIRONMENT,
   mlflowEnabled: value.MLFLOW_ENABLED,
   opportunityRankerShadowEnabled: value.OPPORTUNITY_RANKER_SHADOW_ENABLED,
+  demoMode: value.DEMO_MODE,
 };

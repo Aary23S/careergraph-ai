@@ -1,0 +1,44 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "title": "Senior DevOps Engineer",
+    "company": "CloudScale Inc",
+    "normalizedCompany": "cloudscale",
+    "description": "CloudScale Inc is hiring a Senior DevOps Engineer with 5+ years experience in Python, Docker, Kubernetes, AWS, and PostgreSQL.",
+    "location": "Remote",
+    "employmentType": "full_time",
+    "experienceMin": 5,
+    "experienceMax": 10,
+    "status": "saved",
+    "isDemo": true
+  },
+  {
+    "id": "b2c3d4e5-f6a7-4b6c-9d0e-1f2a3b4c5d6e",
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "title": "Staff Backend Engineer",
+    "company": "CloudScale Inc",
+    "normalizedCompany": "cloudscale",
+    "description": "Seeking a Staff Backend Engineer proficient in Node.js, Express, Microservices, and SQL.",
+    "location": "San Francisco, CA",
+    "employmentType": "full_time",
+    "experienceMin": 6,
+    "experienceMax": 12,
+    "status": "saved",
+    "isDemo": true
+  },
+  {
+    "id": "c3d4e5f6-a7b8-4c7d-0e1f-2a3b4c5d6e7f",
+    "user_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    "title": "Lead Infrastructure Architect",
+    "company": "DataScale Systems",
+    "normalizedCompany": "datascale",
+    "description": "DataScale is looking for a Lead Infrastructure Architect to manage multi-cloud deployments.",
+    "location": "New York, NY",
+    "employmentType": "full_time",
+    "experienceMin": 8,
+    "experienceMax": 15,
+    "status": "new",
+    "isDemo": true
+  }
+]
