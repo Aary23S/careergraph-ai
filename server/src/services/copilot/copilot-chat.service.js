@@ -528,22 +528,32 @@ ${JSON.stringify(appSummaries, null, 2)}
 
     const resume = contextPackage.entities.resume;
     const skills = resume?.skills || [];
+    const jobsCount = contextPackage.entities.jobs?.length || 0;
+    const connCount = contextPackage.entities.connections?.length || 0;
 
-    let message = `Based on your profile, your key skills include: ${skills.join(', ') || 'Node.js, PostgreSQL'}.`;
+    let message = `I am your Career Copilot. Based on your pipeline, you have ${jobsCount} job opportunities tracked, ${connCount} professional connections, and skills including ${skills.slice(0, 5).join(', ') || 'engineering & product'}. How can I help you advance your career search today?`;
     let aiStatus = 'success';
 
     try {
       const prompt = `
-Answer the user's career query using ONLY the provided context package.
+YOU ARE CAREERGRAPH COPILOT - AN ELITE CAREER & OUTREACH AI ASSISTANT.
+Answer the user's query thoughtfully, clearly, and concisely.
+Provide actionable guidance, tips, or insights. If relevant, use their profile and pipeline context provided below.
+
 USER QUERY: "${query}"
-CONTEXT PACKAGE: ${JSON.stringify(contextPackage.entities, null, 2)}
+
+USER PROFILE & PIPELINE CONTEXT:
+${JSON.stringify(contextPackage.entities, null, 2)}
 `;
       const aiResponse = await aiService.generateText(prompt, {
         operation: 'copilot_career_query',
         userId
       });
-      if (aiResponse) message = aiResponse;
+      if (aiResponse && aiResponse.trim()) {
+        message = aiResponse.trim();
+      }
     } catch (err) {
+      console.warn('[CopilotChatService] Career query AI generation failed:', err.message);
       aiStatus = 'unavailable';
     }
 
@@ -559,9 +569,9 @@ CONTEXT PACKAGE: ${JSON.stringify(contextPackage.entities, null, 2)}
       references,
       data: { contextPackage },
       suggestedPrompts: [
-        'What should I focus on today?',
         'Who can refer me for my top job?',
-        'Why is my top job a good match?'
+        'Why is my top job a good match?',
+        'What should I focus on today?'
       ]
     };
   }

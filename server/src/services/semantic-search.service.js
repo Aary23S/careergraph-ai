@@ -47,59 +47,64 @@ export async function querySemanticMatches({ userId, queryText, entityTypes, lim
     return [];
   }
 
-  const modelName = resolveEmbeddingModelName();
-  const queryEmbedding = await generateEmbeddingVector(queryText, modelName);
+  try {
+    const modelName = resolveEmbeddingModelName();
+    const queryEmbedding = await generateEmbeddingVector(queryText, modelName);
 
-  const hasVector = await checkVectorExtension();
+    const hasVector = await checkVectorExtension();
 
-  if (hasVector) {
-    // 1. Native pgvector similarity search
-    const queryEmbeddingStr = `[${queryEmbedding.join(',')}]`;
-    const results = await sequelize.query(`
-      SELECT entity_id, entity_type, (1 - (embedding <=> :queryEmbeddingStr::vector)) as similarity
-      FROM semantic_embeddings
-      WHERE user_id = :userId AND entity_type IN (:entityTypes) AND embedding_model = :modelName
-      ORDER BY similarity DESC
-      LIMIT :limit
-    `, {
-      replacements: { userId, entityTypes, queryEmbeddingStr, limit, modelName },
-      type: sequelize.QueryTypes.SELECT
-    });
+    if (hasVector) {
+      // 1. Native pgvector similarity search
+      const queryEmbeddingStr = `[${queryEmbedding.join(',')}]`;
+      const results = await sequelize.query(`
+        SELECT entity_id, entity_type, (1 - (embedding <=> :queryEmbeddingStr::vector)) as similarity
+        FROM semantic_embeddings
+        WHERE user_id = :userId AND entity_type IN (:entityTypes) AND embedding_model = :modelName
+        ORDER BY similarity DESC
+        LIMIT :limit
+      `, {
+        replacements: { userId, entityTypes, queryEmbeddingStr, limit, modelName },
+        type: sequelize.QueryTypes.SELECT
+      });
 
-    return results.map(r => ({
-      entityId: r.entity_id,
-      entityType: r.entity_type,
-      similarity: parseFloat(r.similarity || 0)
-    }));
-  } else {
-    // 2. JS-based Cosine Similarity Fallback
-    const embeddings = await models.SemanticEmbedding.findAll({
-      where: {
-        userId,
-        entityType: entityTypes,
-        embeddingModel: modelName
-      }
-    });
-
-    const candidates = embeddings.map(e => {
-      let vectorArray = e.embedding;
-      if (typeof vectorArray === 'string') {
-        try {
-          vectorArray = JSON.parse(vectorArray);
-        } catch {
-          // Ignore
+      return results.map(r => ({
+        entityId: r.entity_id,
+        entityType: r.entity_type,
+        similarity: parseFloat(r.similarity || 0)
+      }));
+    } else {
+      // 2. JS-based Cosine Similarity Fallback
+      const embeddings = await models.SemanticEmbedding.findAll({
+        where: {
+          userId,
+          entityType: entityTypes,
+          embeddingModel: modelName
         }
-      }
-      const similarity = cosineSimilarity(queryEmbedding, vectorArray);
-      return {
-        entityId: e.entityId,
-        entityType: e.entityType,
-        similarity
-      };
-    });
+      });
 
-    // Sort descending
-    candidates.sort((a, b) => b.similarity - a.similarity);
-    return candidates.slice(0, limit);
+      const candidates = embeddings.map(e => {
+        let vectorArray = e.embedding;
+        if (typeof vectorArray === 'string') {
+          try {
+            vectorArray = JSON.parse(vectorArray);
+          } catch {
+            // Ignore
+          }
+        }
+        const similarity = cosineSimilarity(queryEmbedding, vectorArray);
+        return {
+          entityId: e.entityId,
+          entityType: e.entityType,
+          similarity
+        };
+      });
+
+      // Sort descending
+      candidates.sort((a, b) => b.similarity - a.similarity);
+      return candidates.slice(0, limit);
+    }
+  } catch (err) {
+    console.warn('[SemanticSearch] Semantic match lookup failed, falling back to empty list:', err.message);
+    return [];
   }
 }

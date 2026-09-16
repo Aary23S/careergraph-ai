@@ -73,6 +73,23 @@ export class GeminiProvider extends AIProvider {
     }
   }
 
+  async generateEmbedding(text, model = 'text-embedding-004') {
+    this._checkEnabled();
+    try {
+      let modelId = 'text-embedding-004';
+      if (model && (model.includes('text-embedding') || model.includes('gemini'))) {
+        modelId = model.replace(/^models\//, '');
+      }
+      const response = await this.client.models.embedContent({
+        model: modelId,
+        contents: text
+      });
+      return response.embedding?.values || response.embedding || [];
+    } catch (err) {
+      this._normalizeError(err);
+    }
+  }
+
   async healthCheck() {
     if (!this.isEnabled || !this.apiKey) return false;
     return true; // Simplified for provider pattern

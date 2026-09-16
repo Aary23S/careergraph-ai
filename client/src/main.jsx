@@ -495,7 +495,7 @@ const CONN_STATUS_VARIANT = {
   closed: 'badge-success'
 };
 
-const CopilotChat = () => {
+const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -511,6 +511,13 @@ const CopilotChat = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (initialPrompt && !loading) {
+      handleSend(initialPrompt);
+      if (onPromptSent) onPromptSent();
+    }
+  }, [initialPrompt]);
 
   const handleSend = async (promptText) => {
     const textToSend = promptText || input;
@@ -595,36 +602,22 @@ const CopilotChat = () => {
   };
 
   return (
-    <div className="card" style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-          <IconZap /> Career Copilot Chat
-        </h2>
-        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', background: 'var(--bg-tertiary)', padding: '4px 8px', borderRadius: '4px' }}>
-          H7 Action Agent
-        </span>
-      </div>
-
-      <div style={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '4px' }}>
+    <div className="copilot-chat-box">
+      <div className="copilot-chat-stream">
         {messages.map((msg, idx) => (
-          <div key={idx} style={{
-            alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-            maxWidth: '85%',
-            background: msg.role === 'user' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
-            color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
-            padding: '12px 16px',
-            borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-            border: msg.role === 'assistant' ? '1px solid var(--border-color)' : 'none'
-          }}>
-            <div style={{ fontWeight: 500, marginBottom: '4px', display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '0.8rem', opacity: 0.8 }}>
-              <span>{msg.role === 'user' ? 'You' : 'Copilot'}</span>
+          <div
+            key={idx}
+            className={`copilot-msg-bubble ${msg.role === 'user' ? 'copilot-msg-bubble--user' : 'copilot-msg-bubble--assistant'}`}
+          >
+            <div className="copilot-msg-header">
+              <span>{msg.role === 'user' ? 'You' : '✨ Copilot'}</span>
               {msg.intent && (
-                <span style={{ textTransform: 'uppercase', fontSize: '0.7rem', background: 'rgba(255,255,255,0.2)', padding: '1px 6px', borderRadius: '3px' }}>
+                <span className="copilot-msg-intent">
                   {msg.intent.replace('_', ' ')}
                 </span>
               )}
             </div>
-            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{msg.content}</div>
+            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{msg.content}</div>
 
             {/* Action Preview Card */}
             {msg.data?.actionPlan && (
@@ -699,7 +692,7 @@ const CopilotChat = () => {
             {msg.suggestedPrompts && msg.suggestedPrompts.length > 0 && (
               <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {msg.suggestedPrompts.map((prompt, pIdx) => (
-                  <button key={pIdx} className="conn-btn conn-btn--secondary" style={{ fontSize: '0.75rem', padding: '3px 8px' }} onClick={() => handleSend(prompt)}>
+                  <button key={pIdx} className="copilot-quick-pill" onClick={() => handleSend(prompt)}>
                     💬 {prompt}
                   </button>
                 ))}
@@ -708,28 +701,48 @@ const CopilotChat = () => {
           </div>
         ))}
         {loading && (
-          <div style={{ alignSelf: 'flex-start', background: 'var(--bg-secondary)', padding: '10px 16px', borderRadius: '12px', fontStyle: 'italic', fontSize: '0.9rem' }}>
-            Copilot is thinking & routing request...
+          <div className="copilot-msg-bubble copilot-msg-bubble--assistant" style={{ fontStyle: 'italic', fontSize: '0.88rem' }}>
+            Copilot is analyzing context & generating response...
           </div>
         )}
       </div>
 
-      {error && <div className="error-message" style={{ color: 'var(--error-color)', padding: '8px 12px', marginTop: '12px', background: 'var(--error-bg)', borderRadius: '6px', fontSize: '0.85rem' }}>{error}</div>}
+      {error && (
+        <div style={{ color: '#ef4444', padding: '8px 16px', background: 'rgba(239, 68, 68, 0.1)', fontSize: '0.85rem' }}>
+          {error}
+        </div>
+      )}
 
-      <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-        <input
-          type="text"
-          className="form-input"
-          placeholder="Ask CareerGraph anything (e.g., 'Who can refer me?', 'Why is this job a match?')..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          disabled={loading}
-          style={{ flex: 1 }}
-        />
-        <button className="conn-btn conn-btn--primary" onClick={() => handleSend()} disabled={loading || !input.trim()}>
-          Send
-        </button>
+      <div className="copilot-input-area">
+        <div className="copilot-quick-prompts">
+          <button className="copilot-quick-pill" onClick={() => handleSend('Who can refer me for my top job?')}>
+            🤝 Who can refer me?
+          </button>
+          <button className="copilot-quick-pill" onClick={() => handleSend('Why is my top job a good match?')}>
+            ⚡ Match explanation
+          </button>
+          <button className="copilot-quick-pill" onClick={() => handleSend('What should I focus on today?')}>
+            🎯 Daily priorities
+          </button>
+          <button className="copilot-quick-pill" onClick={() => handleSend('What is the status of my applications?')}>
+            📋 Application status
+          </button>
+        </div>
+
+        <div className="copilot-input-row">
+          <input
+            type="text"
+            className="copilot-input-field"
+            placeholder="Ask Copilot anything (e.g. 'Who can refer me?', 'Draft an outreach email')..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            disabled={loading}
+          />
+          <button className="copilot-send-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>
+            Send
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -835,6 +848,61 @@ const DecisionDigest = () => {
   );
 };
 
+const CopilotDashboardHub = ({ onOpenDrawer }) => {
+  const [inlineOpen, setInlineOpen] = useState(false);
+
+  return (
+    <div className="copilot-dashboard-hub">
+      <div className="copilot-hub-header">
+        <h2 className="copilot-hub-title">
+          <IconZap style={{ color: '#6366f1' }} /> Career Copilot Intelligence
+        </h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            className="conn-btn conn-btn--secondary" 
+            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            onClick={() => setInlineOpen(!inlineOpen)}
+          >
+            {inlineOpen ? 'Hide Inline Chat' : '💬 Toggle Inline Chat'}
+          </button>
+          <button 
+            className="conn-btn conn-btn--primary" 
+            style={{ fontSize: '0.8rem', padding: '6px 12px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
+            onClick={() => onOpenDrawer()}
+          >
+            ✨ Open Assistant Drawer
+          </button>
+        </div>
+      </div>
+
+      <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '14px' }}>
+        Ask Copilot anything about your job opportunities, referral paths, match explanations, or daily priorities:
+      </div>
+
+      <div className="copilot-hub-prompts">
+        <button className="copilot-prompt-pill" onClick={() => onOpenDrawer('Who can refer me for my top job?')}>
+          🤝 Who can refer me for my top job?
+        </button>
+        <button className="copilot-prompt-pill" onClick={() => onOpenDrawer('Why is this job a good match?')}>
+          ⚡ Why is this job a good match?
+        </button>
+        <button className="copilot-prompt-pill" onClick={() => onOpenDrawer(null, 'digest')}>
+          🏆 Daily Decision Digest
+        </button>
+        <button className="copilot-prompt-pill" onClick={() => onOpenDrawer('What is the status of my applications?')}>
+          📋 Status of my applications
+        </button>
+      </div>
+
+      {inlineOpen && (
+        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
+          <CopilotChat />
+        </div>
+      )}
+    </div>
+  );
+};
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(api.accessToken));
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -845,6 +913,18 @@ function App() {
   const [editItem, setEditItem] = useState(null);
   const [editingConnectionAi, setEditingConnectionAi] = useState(false);
   const [loadingConnectionAi, setLoadingConnectionAi] = useState(false);
+
+  // Copilot Drawer & Page States
+  const [copilotDrawerOpen, setCopilotDrawerOpen] = useState(false);
+  const [copilotDrawerTab, setCopilotDrawerTab] = useState('chat');
+  const [copilotInitialPrompt, setCopilotInitialPrompt] = useState(null);
+  const [copilotPageTab, setCopilotPageTab] = useState('chat');
+
+  const handleOpenCopilotDrawer = (prompt = null, tab = 'chat') => {
+    setCopilotDrawerTab(tab);
+    if (prompt) setCopilotInitialPrompt(prompt);
+    setCopilotDrawerOpen(true);
+  };
 
   // AI Outreach Assistant States
   const [aiIntent, setAiIntent] = useState('referral_request');
@@ -2354,6 +2434,9 @@ function App() {
           <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
             Dashboard
           </button>
+          <button className={`nav-item ${activeTab === 'copilot' ? 'active' : ''}`} onClick={() => setActiveTab('copilot')}>
+            Career Copilot
+          </button>
           <button className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>
             My Profile
           </button>
@@ -2411,9 +2494,6 @@ function App() {
                 Trigger Daily Digest (Email)
               </button>
             </div>
-
-            <CopilotChat />
-            <DecisionDigest />
 
             <div className="dash-stats-grid">
               <div className="dash-stat-card">
@@ -2614,6 +2694,43 @@ function App() {
                 })()}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* CAREER COPILOT TAB */}
+        {activeTab === 'copilot' && (
+          <div className="copilot-workspace">
+            <div className="copilot-workspace-header">
+              <div>
+                <h1 className="copilot-workspace-title">Career Copilot Workspace</h1>
+                <p className="copilot-workspace-subtitle">Your AI partner for opportunity discovery, referral paths, match explanations, and workflow actions</p>
+              </div>
+              <div className="copilot-workspace-badges">
+                <span className="copilot-model-badge">⚡ Gemini AI</span>
+                <span className="copilot-agent-badge">🛡️ H7 Action Agent</span>
+              </div>
+            </div>
+
+            <div className="copilot-subnav">
+              <button 
+                className={`copilot-subnav-btn ${copilotPageTab === 'chat' ? 'active' : ''}`}
+                onClick={() => setCopilotPageTab('chat')}
+              >
+                💬 Conversational Assistant & Actions
+              </button>
+              <button 
+                className={`copilot-subnav-btn ${copilotPageTab === 'digest' ? 'active' : ''}`}
+                onClick={() => setCopilotPageTab('digest')}
+              >
+                🏆 Daily Decision Digest
+              </button>
+            </div>
+
+            {copilotPageTab === 'chat' ? (
+              <CopilotChat />
+            ) : (
+              <DecisionDigest />
+            )}
           </div>
         )}
 
@@ -8987,6 +9104,52 @@ function App() {
           </div>
         )
       }
+
+      {/* Floating Copilot Launcher Button (Hidden on Copilot Workspace page) */}
+      {isAuthenticated && activeTab !== 'copilot' && (
+        <button className="copilot-floating-btn" onClick={() => handleOpenCopilotDrawer()}>
+          ✨ Copilot Assistant
+        </button>
+      )}
+
+      {/* Copilot Drawer Overlay */}
+      {copilotDrawerOpen && (
+        <div className="copilot-drawer-overlay" onClick={() => setCopilotDrawerOpen(false)}>
+          <div className="copilot-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="copilot-drawer-header">
+              <h2 className="copilot-drawer-title">
+                <IconZap style={{ color: '#6366f1' }} /> Career Copilot Assistant
+              </h2>
+              <button className="copilot-drawer-close" onClick={() => setCopilotDrawerOpen(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="copilot-drawer-tabs">
+              <button 
+                className={`copilot-drawer-tab ${copilotDrawerTab === 'chat' ? 'active' : ''}`}
+                onClick={() => setCopilotDrawerTab('chat')}
+              >
+                💬 Chat & Actions
+              </button>
+              <button 
+                className={`copilot-drawer-tab ${copilotDrawerTab === 'digest' ? 'active' : ''}`}
+                onClick={() => setCopilotDrawerTab('digest')}
+              >
+                🏆 Decision Digest
+              </button>
+            </div>
+
+            <div className="copilot-drawer-body">
+              {copilotDrawerTab === 'chat' ? (
+                <CopilotChat initialPrompt={copilotInitialPrompt} onPromptSent={() => setCopilotInitialPrompt(null)} />
+              ) : (
+                <DecisionDigest />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div >
   );

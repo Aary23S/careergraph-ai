@@ -17,8 +17,7 @@ export async function retrieveContextData(userId, policy, params) {
   // 1. Fetch Job (Deterministic)
   if (policy.allowedEntities.job && jobId) {
     const job = await models.Job.findOne({
-      where: { id: jobId, user_id: userId },
-      include: [{ model: models.Company, as: 'company' }]
+      where: { id: jobId, user_id: userId }
     });
     if (job) data.jobs.push(job);
   }
