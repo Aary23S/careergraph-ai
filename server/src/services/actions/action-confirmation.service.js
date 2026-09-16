@@ -45,8 +45,17 @@ export class ActionConfirmationService {
   }
 
   static async _handleTransition({ action, authenticatedUserId, requestId, targetStatus }) {
-    if (!action || !(action instanceof ActionModel)) {
+    if (!action) {
       throw new ActionValidationError('Action must be a valid ActionModel instance.');
+    }
+
+    let targetAction = action;
+    if (!(targetAction instanceof ActionModel) && typeof targetAction === 'object') {
+      try {
+        targetAction = new ActionModel(targetAction);
+      } catch (e) {
+        throw new ActionValidationError('Action must be a valid ActionModel instance.');
+      }
     }
 
     if (!authenticatedUserId) {
@@ -54,26 +63,26 @@ export class ActionConfirmationService {
     }
 
     // 1. Enforce Ownership
-    if (action.userId !== authenticatedUserId) {
+    if (targetAction.userId !== authenticatedUserId) {
       throw new Error('Unauthorized: You cannot transition an action belonging to another user.');
     }
 
     // 2. Enforce Expiration
-    if (action.expiresAt < new Date()) {
+    if (targetAction.expiresAt < new Date()) {
       throw new ActionValidationError('This action has expired and can no longer be transitioned.');
     }
 
     // 3. Atomicity & Idempotency Check
-    const currentTrackedStatus = await this._getTrackedStatus(action.actionId);
+    const currentTrackedStatus = await this._getTrackedStatus(targetAction.actionId);
     
     // If we've already tracked a transition for this action, it's either idempotent success or an invalid state race
     if (currentTrackedStatus) {
       if (currentTrackedStatus === targetStatus) {
         // Idempotent duplicate request
         return {
-          actionId: action.actionId,
+          actionId: targetAction.actionId,
           status: currentTrackedStatus,
-          userId: action.userId,
+          userId: targetAction.userId,
           message: 'Idempotent success: already in requested state.',
           transitionedAt: new Date()
         };
@@ -84,20 +93,21 @@ export class ActionConfirmationService {
     }
 
     // 4. Validate State Transition (PENDING -> target)
-    const allowedTargets = ValidTransitions[action.status] || [];
+    const allowedTargets = ValidTransitions[targetAction.status] || [];
     if (!allowedTargets.includes(targetStatus)) {
-      throw new ActionValidationError(`Invalid transition from ${action.status} to ${targetStatus}.`);
+      throw new ActionValidationError(`Invalid transition from ${targetAction.status} to ${targetStatus}.`);
     }
 
     // 5. Commit Transition
-    await this._setTrackedStatus(action.actionId, targetStatus);
-    action.status = targetStatus;
+    await this._setTrackedStatus(targetAction.actionId, targetStatus);
+    targetAction.status = targetStatus;
 
     return {
-      actionId: action.actionId,
+      actionId: targetAction.actionId,
       status: targetStatus,
-      userId: action.userId,
-      transitionedAt: new Date()
+      userId: targetAction.userId,
+      transitionedAt: new Date(),
+      action: targetAction
     };
   }
 

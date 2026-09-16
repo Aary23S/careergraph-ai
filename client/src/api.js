@@ -591,6 +591,28 @@ class ApiClient {
       body: payload
     });
   }
+
+  // Actions Gateway
+  async confirmAction(actionId, action) {
+    return this.request(`/actions/${actionId}/confirm`, {
+      method: 'POST',
+      body: { action }
+    });
+  }
+
+  async cancelAction(actionId, action) {
+    return this.request(`/actions/${actionId}/cancel`, {
+      method: 'POST',
+      body: { action }
+    });
+  }
+
+  async executeAction(actionId, action) {
+    return this.request(`/actions/${actionId}/execute`, {
+      method: 'POST',
+      body: { action }
+    });
+  }
 }
 
 export const api = new ApiClient();

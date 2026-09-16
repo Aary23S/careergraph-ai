@@ -48,8 +48,9 @@ export class ActionPlanner {
       resolvedEntity = resolution.resolvedTarget;
     }
 
-    // 3. Application Specific Logic: Active Resume Auto-Fallback
-    const finalPayload = typeof payload === 'object' && payload !== null && !Array.isArray(payload) ? { ...payload } : {};
+    // 3. Application & Action Payload Parsing
+    const rawPayload = typeof payload === 'object' && payload !== null && !Array.isArray(payload) ? { ...payload } : {};
+    const finalPayload = IntentMapper.extractPayloadFromIntent(actionType, intent, rawPayload);
     
     if (actionType === ActionTypes.CREATE_APPLICATION) {
       if (!finalPayload.resumeId) {

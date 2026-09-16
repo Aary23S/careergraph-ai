@@ -42,7 +42,7 @@ export class TargetResolver {
         user_id: userId,
         [Op.or]: [
           { title: { [likeOp]: `%${term}%` } },
-          { company: { [likeOp]: `%${term}%` } }
+          { normalizedCompany: { [likeOp]: `%${term}%` } }
         ]
       },
       limit: 5
@@ -54,7 +54,7 @@ export class TargetResolver {
 
     return {
       needsClarification: true,
-      candidates: jobs.map(j => ({ id: j.id, label: `${j.title} at ${j.company}` }))
+      candidates: jobs.map(j => ({ id: j.id, label: `${j.title} at ${j.company || j.normalizedCompany || 'Company'}` }))
     };
   }
 

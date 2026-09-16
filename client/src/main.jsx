@@ -534,6 +534,7 @@ const CopilotChat = () => {
         ...prev,
         {
           role: 'assistant',
+          type: res.type,
           content: res.message,
           intent: res.intent,
           confidence: res.confidence,
@@ -550,6 +551,49 @@ const CopilotChat = () => {
     }
   };
 
+  const handleConfirmAction = async (msgIndex, actionPlan) => {
+    try {
+      setMessages(prev => prev.map((m, i) => i === msgIndex ? { ...m, actionStatus: 'executing' } : m));
+      const actionModelData = actionPlan.action;
+      
+      const confirmRes = await api.confirmAction(actionModelData.actionId, actionModelData);
+      const confirmedAction = confirmRes.action || { ...actionModelData, status: 'confirmed' };
+      const execRes = await api.executeAction(actionModelData.actionId, confirmedAction);
+      
+      setMessages(prev => prev.map((m, i) => i === msgIndex ? {
+        ...m,
+        actionStatus: 'completed',
+        content: `✓ Action completed successfully! ${execRes.message || ''}`
+      } : m));
+
+      window.dispatchEvent(new CustomEvent('careergraph:data-refetch'));
+    } catch (err) {
+      setMessages(prev => prev.map((m, i) => i === msgIndex ? {
+        ...m,
+        actionStatus: 'failed',
+        content: `✕ Execution failed: ${err.message}`
+      } : m));
+    }
+  };
+
+  const handleCancelAction = async (msgIndex, actionPlan) => {
+    try {
+      const actionModelData = actionPlan.action;
+      await api.cancelAction(actionModelData.actionId, actionModelData);
+      setMessages(prev => prev.map((m, i) => i === msgIndex ? {
+        ...m,
+        actionStatus: 'cancelled',
+        content: '✕ Action cancelled.'
+      } : m));
+    } catch (err) {
+      setMessages(prev => prev.map((m, i) => i === msgIndex ? {
+        ...m,
+        actionStatus: 'cancelled',
+        content: '✕ Action cancelled.'
+      } : m));
+    }
+  };
+
   return (
     <div className="card" style={{ marginBottom: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -557,7 +601,7 @@ const CopilotChat = () => {
           <IconZap /> Career Copilot Chat
         </h2>
         <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', background: 'var(--bg-tertiary)', padding: '4px 8px', borderRadius: '4px' }}>
-          H6 Orchestration Agent
+          H7 Action Agent
         </span>
       </div>
 
@@ -581,6 +625,65 @@ const CopilotChat = () => {
               )}
             </div>
             <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{msg.content}</div>
+
+            {/* Action Preview Card */}
+            {msg.data?.actionPlan && (
+              <div style={{
+                marginTop: '12px',
+                background: 'var(--bg-tertiary, #1e293b)',
+                border: '1px solid var(--border-color, #334155)',
+                borderRadius: '8px',
+                padding: '12px 14px'
+              }}>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#6366f1', marginBottom: '6px' }}>
+                  ⚡ Action Required: {msg.data.actionPlan.preview?.operation || msg.data.actionPlan.action?.actionType}
+                </div>
+                <div style={{ fontSize: '0.8rem', marginBottom: '4px' }}>
+                  <strong>Target:</strong> {msg.data.actionPlan.preview?.target}
+                </div>
+                {msg.data.actionPlan.preview?.reason && (
+                  <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '6px' }}>
+                    <strong>Reason:</strong> {msg.data.actionPlan.preview.reason}
+                  </div>
+                )}
+                {msg.data.actionPlan.action?.actionType === 'create_outreach_draft' && (
+                  <div style={{ fontSize: '0.75rem', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', padding: '4px 8px', borderRadius: '4px', marginBottom: '8px' }}>
+                    🛡️ <strong>Draft only — nothing will be sent externally.</strong>
+                  </div>
+                )}
+
+                {msg.actionStatus === 'executing' ? (
+                  <div style={{ fontSize: '0.8rem', color: '#6366f1', fontStyle: 'italic', marginTop: '8px' }}>
+                    ⏳ Executing action...
+                  </div>
+                ) : msg.actionStatus === 'completed' ? (
+                  <div style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 500, marginTop: '8px' }}>
+                    ✓ Action executed successfully!
+                  </div>
+                ) : msg.actionStatus === 'cancelled' ? (
+                  <div style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic', marginTop: '8px' }}>
+                    ✕ Action cancelled.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                    <button 
+                      className="conn-btn conn-btn--primary" 
+                      style={{ fontSize: '0.8rem', padding: '4px 12px' }}
+                      onClick={() => handleConfirmAction(idx, msg.data.actionPlan)}
+                    >
+                      Confirm
+                    </button>
+                    <button 
+                      className="conn-btn conn-btn--secondary" 
+                      style={{ fontSize: '0.8rem', padding: '4px 12px' }}
+                      onClick={() => handleCancelAction(idx, msg.data.actionPlan)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {msg.references && msg.references.length > 0 && (
               <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>

@@ -128,7 +128,7 @@ USER MESSAGE: "${safeMessage}"
     try {
       switch (intent) {
         case 'action_proposal':
-          result = await this.handleActionProposal(userId, safeMessage, authorizedContext);
+          result = await this.handleActionProposal(userId, safeMessage, authorizedContext, messages);
           break;
 
         case 'referral_search':
@@ -157,6 +157,7 @@ USER MESSAGE: "${safeMessage}"
       console.error(`[CopilotChatService] Error handling intent ${intent}:`, err);
       // Fallback response if handler fails unexpectedly
       result = {
+        type: 'error',
         message: 'I ran into an issue retrieving full information for your request. Here are your general career options.',
         aiStatus: 'unavailable',
         references: [],
@@ -186,6 +187,11 @@ USER MESSAGE: "${safeMessage}"
     }
 
     return {
+      type: result.type || (intent === 'action_proposal' ? 'action_preview' : 'answer'),
+      actionId: result.actionId || null,
+      actionType: result.actionType || null,
+      preview: result.preview || null,
+      requiresConfirmation: result.requiresConfirmation || false,
       message: result.message,
       intent,
       confidence,
@@ -207,7 +213,7 @@ USER MESSAGE: "${safeMessage}"
     const lower = text.toLowerCase();
 
     // Action proposals
-    if (/\b(save.*job|bookmark.*job|track.*job|change.*status|mark.*interested|mark.*rejected|move.*pipeline|update.*status|apply|create.*application|log.*application|remind.*follow.*up|schedule.*follow.*up|follow.*up|draft.*message|draft.*outreach|write.*email|add.*note|write.*note|log.*note)\b/i.test(lower)) {
+    if (/\b(save.*job|bookmark.*job|track.*job|change.*status|mark.*interested|mark.*applying|mark.*interviewing|mark.*offer|mark.*rejected|mark.*contacted|mark.*conversation|set.*relationship|move.*pipeline|update.*status|apply.*to|create.*application|log.*application|remind.*follow.*up|schedule.*follow.*up|follow.*up|draft.*message|draft.*outreach|draft.*referral|write.*email|prepare.*referral|add.*note|write.*note|log.*note|remember.*that|note.*that|i.*contacted|log.*outreach|record.*outreach|log.*messaged)\b/i.test(lower)) {
       return 'action_proposal';
     }
 
@@ -236,45 +242,83 @@ USER MESSAGE: "${safeMessage}"
 
   // --- INTENT HANDLERS ---
 
-  static async handleActionProposal(userId, query, context) {
-    const targetId = context.jobId || context.connectionId || context.applicationId;
+  static async handleActionProposal(userId, query, context, messages = []) {
+    let targetId = context.jobId || context.connectionId || context.applicationId;
+
+    // Fallback: Check recent message history for references if context was not explicitly passed
+    if (!targetId && Array.isArray(messages) && messages.length > 0) {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const msg = messages[i];
+        if (msg.references && Array.isArray(msg.references)) {
+          const jobRef = msg.references.find(r => r.type === 'job');
+          const connRef = msg.references.find(r => r.type === 'connection');
+          const appRef = msg.references.find(r => r.type === 'application');
+          if (jobRef?.id) { targetId = jobRef.id; break; }
+          if (connRef?.id) { targetId = connRef.id; break; }
+          if (appRef?.id) { targetId = appRef.id; break; }
+        }
+      }
+    }
+
     const requestId = crypto.randomUUID();
 
     try {
       const planResult = await ActionPlanner.planAction({
         userId,
         intent: query,
-        targetDescription: !targetId ? query : null, // If no explicit context, use query to find target
+        targetDescription: !targetId ? query : null,
         targetId,
         requestId,
-        explanation: 'You asked to perform an action.' // A more specific explanation is generated inside ActionPlanner
+        explanation: `You asked Copilot: "${query}"`
       });
 
       if (planResult.needsInput || planResult.needsClarification) {
         return {
-          message: planResult.message,
+          type: 'clarification',
+          message: planResult.message || 'I found multiple or no matching entities. Please clarify your target.',
           aiStatus: 'success',
           references: [],
           data: { 
             needsClarification: planResult.needsClarification,
-            candidates: planResult.candidates 
+            candidates: planResult.candidates || []
           },
           suggestedPrompts: planResult.candidates 
-            ? planResult.candidates.map(c => `Use ${c.label}`) 
+            ? planResult.candidates.map(c => `Use ${c.label || c.name || c.title || c.id}`) 
             : ['What should I focus on today?']
         };
       }
 
+      const actionPlanJson = planResult.toJSON();
+      const actionModel = planResult.action;
+      const previewData = planResult.preview || {};
+
+      const safetyNotes = actionModel.actionType === 'create_outreach_draft' 
+        ? 'Draft only — nothing will be sent.' 
+        : undefined;
+
       return {
-        message: 'I have prepared an action plan for you. Please review and confirm it below.',
+        type: 'action_preview',
+        actionId: actionModel.actionId,
+        actionType: actionModel.actionType,
+        preview: {
+          operation: previewData.operation || 'Execute Action',
+          target: previewData.target || `${actionModel.target.type}:${actionModel.target.id}`,
+          reason: planResult.explanation || `You asked to perform ${actionModel.actionType.replace('_', ' ')}.`,
+          safetyNotes
+        },
+        requiresConfirmation: true,
+        message: `I have prepared an action plan to ${previewData.operation ? previewData.operation.toLowerCase() : 'execute action'} for ${previewData.target || 'the requested item'}. Please review and confirm it below.`,
         aiStatus: 'success',
-        references: [],
-        data: { actionPlan: planResult.toJSON() },
+        references: [
+          { type: actionModel.target.type, id: actionModel.target.id, label: previewData.target }
+        ],
+        data: { actionPlan: actionPlanJson },
         suggestedPrompts: ['What should I focus on today?']
       };
     } catch (err) {
       console.error('[CopilotChatService] Error planning action:', err);
       return {
+        type: 'error',
         message: 'I could not create a safe action plan for your request. ' + (err.message || ''),
         aiStatus: 'unavailable',
         references: [],
