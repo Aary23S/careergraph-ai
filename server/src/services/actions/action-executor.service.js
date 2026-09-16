@@ -1,6 +1,6 @@
 import { sequelize, models } from '../../config/database.js';
 import { ActionValidator } from './action-validator.js';
-import { ActionStatuses, ActionTypes, TargetTypes, JOB_STATUSES, APPLICATION_STATUSES } from './action-registry.js';
+import { ActionStatuses, ActionTypes, TargetTypes, JOB_STATUSES, APPLICATION_STATUSES, OUTREACH_STATUSES } from './action-registry.js';
 import { ActionValidationError } from './action.error.js';
 import { getRedisClient } from '../../config/queue.js';
 
@@ -193,12 +193,12 @@ export class ActionExecutor {
     const jobId = target.id;
     const job = await models.Job.findByPk(jobId);
     if (!job) {
-      throw new Error(`Job with ID ${jobId} not found.`);
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     const jobOwnerId = this._getEntityUserId(job);
     if (jobOwnerId && jobOwnerId !== authenticatedUserId) {
-      throw new Error('Unauthorized: Job belongs to another user.');
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     if (job.status !== 'saved') {
@@ -230,12 +230,12 @@ export class ActionExecutor {
 
     const job = await models.Job.findByPk(jobId);
     if (!job) {
-      throw new Error(`Job with ID ${jobId} not found.`);
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     const jobOwnerId = this._getEntityUserId(job);
     if (jobOwnerId && jobOwnerId !== authenticatedUserId) {
-      throw new Error('Unauthorized: Job belongs to another user.');
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     await job.update({ status: cleanStatus });
@@ -254,12 +254,12 @@ export class ActionExecutor {
     const jobId = target.id || payload?.jobId;
     const job = await models.Job.findByPk(jobId);
     if (!job) {
-      throw new Error(`Job with ID ${jobId} not found.`);
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     const jobOwnerId = this._getEntityUserId(job);
     if (jobOwnerId && jobOwnerId !== authenticatedUserId) {
-      throw new Error('Unauthorized: Job belongs to another user.');
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     // Verify resume ownership if provided, or fallback to active resume
@@ -269,7 +269,7 @@ export class ActionExecutor {
         where: { id: resumeId, user_id: authenticatedUserId }
       });
       if (!resume) {
-        throw new Error(`Unauthorized or invalid Resume ID ${resumeId}.`);
+        throw new Error('Unauthorized or invalid Resume ID.');
       }
     } else {
       const activeResume = await models.Resume.findOne({
@@ -291,7 +291,7 @@ export class ActionExecutor {
         where: { id: referralConnectionId, user_id: authenticatedUserId }
       });
       if (!connection) {
-        throw new Error(`Unauthorized or invalid Connection ID ${referralConnectionId}.`);
+        throw new Error('Unauthorized or invalid Connection ID.');
       }
     }
 
@@ -373,7 +373,7 @@ export class ActionExecutor {
       where: { id: applicationId, user_id: authenticatedUserId }
     });
     if (!application) {
-      throw new Error(`Unauthorized or Application with ID ${applicationId} not found.`);
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     const t = await sequelize.transaction();
@@ -425,11 +425,11 @@ export class ActionExecutor {
     if (targetType === TargetTypes.JOB) {
       const job = await models.Job.findByPk(targetId);
       if (!job) {
-        throw new Error(`Job with ID ${targetId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
       const jobOwner = this._getEntityUserId(job);
       if (jobOwner && jobOwner !== authenticatedUserId) {
-        throw new Error('Unauthorized: Job belongs to another user.');
+        throw new Error('Unauthorized access to requested resource.');
       }
       let app = await models.Application.findOne({ where: { job_id: targetId, user_id: authenticatedUserId } });
       if (app) {
@@ -451,24 +451,24 @@ export class ActionExecutor {
     } else if (targetType === TargetTypes.APPLICATION) {
       const app = await models.Application.findOne({ where: { id: targetId, user_id: authenticatedUserId } });
       if (!app) {
-        throw new Error(`Unauthorized or Application with ID ${targetId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
       await app.update({ nextFollowUpDate: followUpDate });
     } else if (targetType === TargetTypes.CONNECTION) {
       const conn = await models.Connection.findOne({ where: { id: targetId, user_id: authenticatedUserId } });
       if (!conn) {
-        throw new Error(`Unauthorized or Connection with ID ${targetId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
       if (payload?.jobId) {
         const job = await models.Job.findByPk(payload.jobId);
         if (!job || (this._getEntityUserId(job) && this._getEntityUserId(job) !== authenticatedUserId)) {
-          throw new Error('Unauthorized or invalid linked Job ID.');
+          throw new Error('Unauthorized access to requested resource.');
         }
       }
       if (payload?.applicationId) {
         const app = await models.Application.findOne({ where: { id: payload.applicationId, user_id: authenticatedUserId } });
         if (!app) {
-          throw new Error('Unauthorized or invalid linked Application ID.');
+          throw new Error('Unauthorized access to requested resource.');
         }
       }
       let outreach = await models.Outreach.findOne({ where: { connection_id: targetId, user_id: authenticatedUserId } });
@@ -487,7 +487,7 @@ export class ActionExecutor {
     } else if (targetType === TargetTypes.OUTREACH) {
       const outreach = await models.Outreach.findOne({ where: { id: targetId, user_id: authenticatedUserId } });
       if (!outreach) {
-        throw new Error(`Unauthorized or Outreach with ID ${targetId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
       await outreach.update({ followUpDate: followUpDate });
     } else {
@@ -511,18 +511,18 @@ export class ActionExecutor {
       where: { id: connectionId, user_id: authenticatedUserId }
     });
     if (!connection) {
-      throw new Error(`Unauthorized or Connection with ID ${connectionId} not found.`);
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     let jobId = payload?.jobId || null;
     if (jobId) {
       const job = await models.Job.findByPk(jobId);
       if (!job) {
-        throw new Error(`Job with ID ${jobId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
       const jobOwner = this._getEntityUserId(job);
       if (jobOwner && jobOwner !== authenticatedUserId) {
-        throw new Error('Unauthorized: Job belongs to another user.');
+        throw new Error('Unauthorized access to requested resource.');
       }
     }
 
@@ -562,14 +562,14 @@ export class ActionExecutor {
       where: { id: connectionId, user_id: authenticatedUserId }
     });
     if (!connection) {
-      throw new Error(`Unauthorized or Connection with ID ${connectionId} not found.`);
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     let jobId = payload?.jobId || null;
     if (jobId) {
       const job = await models.Job.findByPk(jobId);
       if (!job || (this._getEntityUserId(job) && this._getEntityUserId(job) !== authenticatedUserId)) {
-        throw new Error(`Unauthorized or Job with ID ${jobId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
     }
 
@@ -579,7 +579,7 @@ export class ActionExecutor {
         where: { id: applicationId, user_id: authenticatedUserId }
       });
       if (!app) {
-        throw new Error(`Unauthorized or Application with ID ${applicationId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
     }
 
@@ -649,11 +649,15 @@ export class ActionExecutor {
       where: { id: connectionId, user_id: authenticatedUserId }
     });
     if (!connection) {
-      throw new Error(`Unauthorized or Connection with ID ${connectionId} not found.`);
+      throw new Error('Unauthorized access to requested resource.');
     }
 
     const relStatus = payload?.relationshipStatus || payload?.status;
     const cleanStatus = typeof relStatus === 'string' ? relStatus.trim() : '';
+
+    if (!OUTREACH_STATUSES.includes(cleanStatus)) {
+      throw new ActionValidationError(`Invalid relationship status '${cleanStatus}'.`);
+    }
 
     await connection.update({ relationshipStatus: cleanStatus });
 
@@ -681,21 +685,21 @@ export class ActionExecutor {
     if (targetType === TargetTypes.JOB) {
       const job = await models.Job.findByPk(targetId);
       if (!job) {
-        throw new Error(`Job with ID ${targetId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
       const jobOwner = this._getEntityUserId(job);
       if (jobOwner && jobOwner !== authenticatedUserId) {
-        throw new Error('Unauthorized: Job belongs to another user.');
+        throw new Error('Unauthorized access to requested resource.');
       }
     } else if (targetType === TargetTypes.CONNECTION) {
       const conn = await models.Connection.findOne({ where: { id: targetId, user_id: authenticatedUserId } });
       if (!conn) {
-        throw new Error(`Unauthorized or Connection with ID ${targetId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
     } else if (targetType === TargetTypes.APPLICATION) {
       const app = await models.Application.findOne({ where: { id: targetId, user_id: authenticatedUserId } });
       if (!app) {
-        throw new Error(`Unauthorized or Application with ID ${targetId} not found.`);
+        throw new Error('Unauthorized access to requested resource.');
       }
     }
 
@@ -745,8 +749,13 @@ export class ActionExecutor {
    */
   static async _getTrackedStatus(actionId) {
     const redis = getRedisClient();
-    if (redis && redis.status === 'ready') {
-      return await redis.get(`action:state:${actionId}`);
+    if (redis) {
+      if (redis.status === 'ready') {
+        return await redis.get(`action:state:${actionId}`);
+      }
+      if (redis.status === 'reconnecting' || redis.status === 'end') {
+        throw new Error('Redis state tracking unavailable: action execution blocked to prevent duplicate side effects.');
+      }
     }
     return memoryStateTracker.get(actionId);
   }
