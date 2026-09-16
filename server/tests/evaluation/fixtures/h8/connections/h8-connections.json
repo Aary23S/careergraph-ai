@@ -1,0 +1,46 @@
+[
+  {
+    "id": "referral-eval-001",
+    "category": "referral",
+    "severity": "critical",
+    "tags": ["referral_ranking", "company_match", "zero_hallucinations"],
+    "input": {
+      "targetJob": {
+        "title": "Staff Cloud Architect",
+        "company": "CloudScale Inc",
+        "normalizedCompany": "cloudscale"
+      },
+      "userNetwork": [
+        { "id": "conn-001", "name": "Aarav Sharma", "company": "CloudScale Inc", "normalizedCompany": "cloudscale", "title": "VP of Engineering", "relationshipStatus": "conversation" },
+        { "id": "conn-002", "name": "Neha Gupta", "company": "CloudScale Inc", "normalizedCompany": "cloudscale", "title": "Senior Cloud Architect", "relationshipStatus": "contacted" },
+        { "id": "conn-003", "name": "Rohan Mehta", "company": "OtherTech Ltd", "normalizedCompany": "othertech", "title": "Engineering Manager", "relationshipStatus": "not_contacted" }
+      ]
+    },
+    "expected": {
+      "matchingConnectionIds": ["conn-001", "conn-002"],
+      "topRankedId": "conn-001",
+      "nonExistentIdsProhibited": true
+    }
+  },
+  {
+    "id": "referral-eval-002",
+    "category": "referral",
+    "severity": "high",
+    "tags": ["no_network_connections"],
+    "input": {
+      "targetJob": {
+        "title": "Principal AI Specialist",
+        "company": "QuantumLabs",
+        "normalizedCompany": "quantumlabs"
+      },
+      "userNetwork": [
+        { "id": "conn-010", "name": "Priya Verma", "company": "FinTech Corp", "normalizedCompany": "fintech", "title": "Product Manager" }
+      ]
+    },
+    "expected": {
+      "matchingConnectionIds": [],
+      "topRankedId": null,
+      "nonExistentIdsProhibited": true
+    }
+  }
+]

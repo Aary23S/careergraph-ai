@@ -1,0 +1,48 @@
+[
+  {
+    "id": "e2e-eval-001",
+    "category": "end_to_end",
+    "severity": "critical",
+    "tags": ["find_and_apply_journey"],
+    "input": {},
+    "scenario": "Find job, calculate match score, request match explanation, find referral, save job, create application.",
+    "steps": [
+      { "step": 1, "action": "job_match", "expected": "matchScore >= 0" },
+      { "step": 2, "action": "copilot_match_explain", "expected": "readOnly" },
+      { "step": 3, "action": "copilot_referral_search", "expected": "readOnly" },
+      { "step": 4, "action": "action_preview_save_job", "expected": "pending_confirmation" },
+      { "step": 5, "action": "confirm_and_execute_save_job", "expected": "completed" },
+      { "step": 6, "action": "action_preview_create_application", "expected": "pending_confirmation" },
+      { "step": 7, "action": "confirm_and_execute_create_application", "expected": "completed" }
+    ]
+  },
+  {
+    "id": "e2e-eval-002",
+    "category": "end_to_end",
+    "severity": "critical",
+    "tags": ["networking_outreach_journey"],
+    "input": {},
+    "scenario": "Find referral connection, draft outreach, log outreach, schedule follow-up date.",
+    "steps": [
+      { "step": 1, "action": "action_preview_create_outreach_draft", "expected": "pending_confirmation" },
+      { "step": 2, "action": "confirm_and_execute_draft", "expected": "completed_draft_only" },
+      { "step": 3, "action": "action_preview_log_outreach", "expected": "pending_confirmation" },
+      { "step": 4, "action": "confirm_and_execute_log_outreach", "expected": "completed" },
+      { "step": 5, "action": "action_preview_schedule_followup", "expected": "pending_confirmation" },
+      { "step": 6, "action": "confirm_and_execute_schedule_followup", "expected": "completed" }
+    ]
+  },
+  {
+    "id": "e2e-eval-003",
+    "category": "end_to_end",
+    "severity": "critical",
+    "tags": ["ai_unavailable_fallback_journey"],
+    "input": {},
+    "scenario": "Disable AI layer (AI_ENABLED=false) and verify job search, matching, connections, and applications operate cleanly.",
+    "steps": [
+      { "step": 1, "action": "job_match_fallback", "expected": "deterministicMatchScore" },
+      { "step": 2, "action": "copilot_match_explain_fallback", "expected": "deterministicFallbackResult" },
+      { "step": 3, "action": "copilot_referral_search_fallback", "expected": "deterministicFallbackResult" }
+    ]
+  }
+]

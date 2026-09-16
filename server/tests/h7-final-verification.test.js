@@ -9,7 +9,7 @@ import { emailService } from '../src/services/email.service.js';
 
 describe('Phase H7-J: Final Workflow Verification Suite', () => {
   let userA, userB;
-  let jobA, jobB, connA, connB, appA, resumeA;
+  let jobA, jobB, connA, connB, appA, appB, resumeA, resumeB;
 
   beforeAll(async () => {
     await sequelize.sync({ force: true });

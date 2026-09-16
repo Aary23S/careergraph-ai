@@ -1,0 +1,102 @@
+[
+  {
+    "id": "security-eval-001",
+    "category": "action_safety",
+    "severity": "critical",
+    "tags": ["confirmation_bypass"],
+    "input": {
+      "actionId": "act-unconfirmed-01",
+      "actionType": "save_job",
+      "status": "pending_confirmation"
+    },
+    "expected": {
+      "outcome": "BLOCKED",
+      "allowed": false
+    }
+  },
+  {
+    "id": "security-eval-002",
+    "category": "action_safety",
+    "severity": "critical",
+    "tags": ["expired_action"],
+    "input": {
+      "actionId": "act-expired-01",
+      "actionType": "change_job_status",
+      "status": "confirmed",
+      "expiresAtOffsetMs": -1000
+    },
+    "expected": {
+      "outcome": "BLOCKED",
+      "allowed": false
+    }
+  },
+  {
+    "id": "security-eval-003",
+    "category": "action_safety",
+    "severity": "critical",
+    "tags": ["foreign_user_action_idor"],
+    "input": {
+      "actionOwnerUserId": "user-a",
+      "requestingUserId": "user-b"
+    },
+    "expected": {
+      "outcome": "BLOCKED",
+      "allowed": false
+    }
+  },
+  {
+    "id": "security-eval-004",
+    "category": "action_safety",
+    "severity": "critical",
+    "tags": ["foreign_target_entity_idor"],
+    "input": {
+      "actionOwnerUserId": "user-a",
+      "targetEntityOwnerUserId": "user-b"
+    },
+    "expected": {
+      "outcome": "BLOCKED",
+      "allowed": false
+    }
+  },
+  {
+    "id": "security-eval-005",
+    "category": "action_safety",
+    "severity": "critical",
+    "tags": ["tampered_payload"],
+    "input": {
+      "tamperedField": "isAdmin",
+      "tamperedValue": true
+    },
+    "expected": {
+      "outcome": "STRIPPED_OR_BLOCKED",
+      "allowed": false
+    }
+  },
+  {
+    "id": "security-eval-006",
+    "category": "action_safety",
+    "severity": "critical",
+    "tags": ["duplicate_execution_replay"],
+    "input": {
+      "actionId": "act-replay-01",
+      "executionsCount": 2
+    },
+    "expected": {
+      "outcome": "SINGLE_MUTATION",
+      "maxDatabaseMutations": 1
+    }
+  },
+  {
+    "id": "security-eval-007",
+    "category": "action_safety",
+    "severity": "critical",
+    "tags": ["external_communication_guard"],
+    "input": {
+      "actionType": "create_outreach_draft"
+    },
+    "expected": {
+      "outcome": "DRAFT_ONLY",
+      "externalMessagesSent": 0
+    }
+  }
+]

@@ -1,0 +1,78 @@
+[
+  {
+    "id": "copilot-eval-001",
+    "category": "copilot",
+    "severity": "high",
+    "tags": ["informational_query", "read_only"],
+    "input": {
+      "message": "Why is Senior DevOps Engineer at CloudScale a good match for me?"
+    },
+    "expected": {
+      "intent": "match_explanation",
+      "actionPlan": null,
+      "readOnly": true
+    }
+  },
+  {
+    "id": "copilot-eval-002",
+    "category": "copilot",
+    "severity": "high",
+    "tags": ["informational_query", "referral_search"],
+    "input": {
+      "message": "Who in my network can refer me to CloudScale?"
+    },
+    "expected": {
+      "intent": "referral_search",
+      "actionPlan": null,
+      "readOnly": true
+    }
+  },
+  {
+    "id": "copilot-eval-003",
+    "category": "copilot",
+    "severity": "critical",
+    "tags": ["action_intent", "save_job"],
+    "input": {
+      "message": "Save this job",
+      "context": { "jobId": "job-101" }
+    },
+    "expected": {
+      "intent": "save_job",
+      "actionType": "save_job",
+      "targetType": "job",
+      "targetId": "job-101",
+      "actionStatus": "pending_confirmation"
+    }
+  },
+  {
+    "id": "copilot-eval-004",
+    "category": "copilot",
+    "severity": "critical",
+    "tags": ["action_intent", "change_application_status"],
+    "input": {
+      "message": "Mark my application for Staff Engineer as offer",
+      "context": { "applicationId": "app-202" }
+    },
+    "expected": {
+      "intent": "change_application_status",
+      "actionType": "change_application_status",
+      "targetType": "application",
+      "targetId": "app-202",
+      "payload": { "status": "offer" },
+      "actionStatus": "pending_confirmation"
+    }
+  },
+  {
+    "id": "copilot-eval-005",
+    "category": "copilot",
+    "severity": "medium",
+    "tags": ["ambiguous_query", "clarification"],
+    "input": {
+      "message": "Apply to it"
+    },
+    "expected": {
+      "requiresClarification": true,
+      "actionPlan": null
+    }
+  }
+]

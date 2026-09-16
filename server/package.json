@@ -24,7 +24,9 @@
     "models:promote": "node scripts/models-cli.js promote",
     "models:rollback": "node scripts/models-cli.js rollback",
     "models:evaluate": "node scripts/models-cli.js evaluate",
-    "ai:mlflow:benchmark": "node scripts/ai-mlflow-benchmark.js"
+    "ai:mlflow:benchmark": "node scripts/ai-mlflow-benchmark.js",
+    "h8:evaluate": "node scripts/h8-evaluate.js",
+    "hackathon:evaluate": "node scripts/h8-evaluate.js"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

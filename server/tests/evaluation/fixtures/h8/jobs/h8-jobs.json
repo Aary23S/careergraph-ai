@@ -1,0 +1,80 @@
+[
+  {
+    "id": "job-eval-001",
+    "category": "job_matching",
+    "severity": "high",
+    "tags": ["exact_skill_match", "title_match", "remote"],
+    "input": {
+      "title": "Senior DevOps Engineer",
+      "description": "Looking for a Senior DevOps Engineer proficient in JavaScript, Python, Docker, Kubernetes, AWS, and PostgreSQL.",
+      "location": "Remote",
+      "employmentType": "full_time",
+      "experienceMin": 5,
+      "experienceMax": 10
+    },
+    "profile": {
+      "targetRoles": ["DevOps Engineer", "Senior DevOps Engineer"],
+      "skills": ["javascript", "python", "docker", "kubernetes", "aws", "postgresql"],
+      "experience": "6",
+      "remotePreference": "remote",
+      "preferredLocations": ["Remote"]
+    },
+    "expected": {
+      "minMatchScore": 85,
+      "exactSkills": ["javascript", "python", "docker", "kubernetes", "aws", "postgresql"],
+      "titleMatch": true,
+      "locationMatch": true
+    }
+  },
+  {
+    "id": "job-eval-002",
+    "category": "job_matching",
+    "severity": "medium",
+    "tags": ["partial_skill_match", "experience_gap"],
+    "input": {
+      "title": "Backend Software Engineer",
+      "description": "Seeking a Backend Software Engineer with Go, Rust, PostgreSQL, and Kubernetes expertise.",
+      "location": "New York, NY",
+      "employmentType": "full_time",
+      "experienceMin": 8,
+      "experienceMax": 12
+    },
+    "profile": {
+      "targetRoles": ["Backend Engineer"],
+      "skills": ["python", "node.js", "postgresql", "docker"],
+      "experience": "3",
+      "remotePreference": "hybrid",
+      "location": "New York, NY"
+    },
+    "expected": {
+      "maxMatchScore": 65,
+      "matchedSkills": ["postgresql"],
+      "titleMatch": true,
+      "experienceOverqualified": false,
+      "experienceUnderqualified": true
+    }
+  },
+  {
+    "id": "job-eval-003",
+    "category": "job_matching",
+    "severity": "high",
+    "tags": ["excluded_company", "mismatch"],
+    "input": {
+      "title": "Frontend Developer",
+      "description": "React and TypeScript developer for e-commerce website.",
+      "location": "San Francisco, CA",
+      "employmentType": "contract",
+      "company": "LegacyCorp"
+    },
+    "profile": {
+      "targetRoles": ["DevOps Engineer"],
+      "skills": ["python", "aws"],
+      "excludedCompanies": ["LegacyCorp"],
+      "excludedRoles": ["Frontend Developer"]
+    },
+    "expected": {
+      "maxMatchScore": 30,
+      "excluded": true
+    }
+  }
+]

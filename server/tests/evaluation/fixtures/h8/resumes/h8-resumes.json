@@ -1,0 +1,33 @@
+[
+  {
+    "id": "resume-eval-001",
+    "category": "groundedness",
+    "severity": "high",
+    "tags": ["resume_enrichment", "extraction_grounding"],
+    "input": {
+      "rawText": "Senior Infrastructure Lead with 7 years of experience in Cloud Architectures. Core skills: Python, Docker, Kubernetes, AWS, Terraform, PostgreSQL. Led migration of 40+ microservices."
+    },
+    "expected": {
+      "roleCategory": "Infrastructure",
+      "seniority": "Senior",
+      "experienceYears": 7,
+      "skills": ["python", "docker", "kubernetes", "aws", "terraform", "postgresql"],
+      "domains": ["cloud", "infrastructure"]
+    }
+  },
+  {
+    "id": "resume-eval-002",
+    "category": "groundedness",
+    "severity": "medium",
+    "tags": ["junior_resume", "no_unsupported_claims"],
+    "input": {
+      "rawText": "Junior Full Stack Developer. Experience with React, Node.js, and SQL. 1 year of internship experience."
+    },
+    "expected": {
+      "roleCategory": "Software Engineering",
+      "seniority": "Junior",
+      "experienceYears": 1,
+      "skills": ["react", "node.js", "sql"]
+    }
+  }
+]
