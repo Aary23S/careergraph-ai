@@ -1,10 +1,10 @@
 {
-  "evaluationRunId": "h8-eval-1789521835665",
-  "timestamp": "2026-09-16T01:23:55.665Z",
+  "evaluationRunId": "h8-eval-1789522150894",
+  "timestamp": "2026-09-16T01:29:10.894Z",
   "version": "1.0.0",
   "gitCommit": "h8-final-commit",
-  "aiProvider": "openai",
-  "aiModel": "gemini-3.1-flash-lite",
+  "aiProvider": "gemini",
+  "aiModel": "gemini-2.5-flash",
   "overallStatus": "PASSED",
   "safetyGatePassed": true,
   "jobMatching": {
@@ -54,10 +54,10 @@
     "totalScenarios": 3
   },
   "system": {
-    "latencyP50": 1,
-    "latencyP95": 3,
+    "latencyP50": 0,
+    "latencyP95": 1,
     "errorRate": 0,
-    "totalDurationMs": 14
+    "totalDurationMs": 16
   },
   "details": {
     "jobMatching": {
