@@ -10,19 +10,28 @@ export function rankAndLimitConnections(connections, job, policyLimits) {
   
   // Apply referral score dynamically for the given job context if we have a job
   if (job) {
+    const jobCompStr = (typeof job.company === 'string' ? job.company : (job.company?.name || job.normalizedCompany || '')).toLowerCase().trim();
+
     connections.forEach(c => {
-      // simulate connection object for intelligence.service (needs company, relationshipStrength, etc)
       const mockConn = {
         company: c.company,
         title: c.title,
         relationshipStrength: c.relationshipStrength
       };
-      c.referralScore = Math.max(c.referralScore || 0, calculateReferralScore(mockConn, job));
+      const calculated = calculateReferralScore(mockConn, job);
+      c.referralScore = Math.max(c.referralScore || 0, calculated);
+
+      // Explicit target company insider flag
+      const connCompStr = (c.company || '').toLowerCase().trim();
+      c.isTargetCompanyInsider = !!(jobCompStr && connCompStr && (connCompStr.includes(jobCompStr) || jobCompStr.includes(connCompStr)));
     });
   }
 
-  // Sort by referral score (desc), then connection score (desc), then semantic similarity (if attached)
+  // Sort by target company insider (desc), then referral score (desc), then connection score (desc)
   connections.sort((a, b) => {
+    if (a.isTargetCompanyInsider !== b.isTargetCompanyInsider) {
+      return (b.isTargetCompanyInsider ? 1 : 0) - (a.isTargetCompanyInsider ? 1 : 0);
+    }
     if (a.referralScore !== b.referralScore) {
       return (b.referralScore || 0) - (a.referralScore || 0);
     }

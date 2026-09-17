@@ -701,8 +701,13 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
           </div>
         ))}
         {loading && (
-          <div className="copilot-msg-bubble copilot-msg-bubble--assistant" style={{ fontStyle: 'italic', fontSize: '0.88rem' }}>
-            Copilot is analyzing context & generating response...
+          <div className="copilot-msg-bubble copilot-msg-bubble--assistant copilot-typing-indicator">
+            <span>✨ Copilot is analyzing network & generating response</span>
+            <div className="copilot-typing-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
           </div>
         )}
       </div>

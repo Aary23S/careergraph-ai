@@ -244,7 +244,8 @@ export function calculateReferralScore(connection, job) {
 
   // 1. Company Match (Max 50)
   const connCompany = (connection.company || '').toLowerCase().trim();
-  const jobCompany = (job.company?.name || '').toLowerCase().trim();
+  const jobCompanyRaw = typeof job.company === 'string' ? job.company : (job.company?.name || job.normalizedCompany || '');
+  const jobCompany = (jobCompanyRaw || '').toLowerCase().trim();
   
   if (connCompany && jobCompany && (connCompany.includes(jobCompany) || jobCompany.includes(connCompany))) {
     score += 50;

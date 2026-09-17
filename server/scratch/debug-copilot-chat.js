@@ -10,12 +10,23 @@ async function debugChat() {
 
   console.log('Testing sendChat for user:', user.id, user.email);
   try {
-    const res = await CopilotChatService.sendChat({
+    console.log('\n--- TEST 1: Specific Company Query ("who can refer me in google?") ---');
+    const res1 = await CopilotChatService.sendChat({
       userId: user.id,
-      message: 'Who can refer me for my top job?',
+      message: 'who can refer me in google?',
       authorizedContext: {}
     });
-    console.log('CopilotChatService result:', JSON.stringify(res, null, 2));
+    console.log('Result 1 message:\n', res1.message);
+    console.log('Result 1 references:', JSON.stringify(res1.references, null, 2));
+
+    console.log('\n--- TEST 2: General Referral Query ("who can refer me for my top job?") ---');
+    const res2 = await CopilotChatService.sendChat({
+      userId: user.id,
+      message: 'who can refer me for my top job?',
+      authorizedContext: {}
+    });
+    console.log('Result 2 message:\n', res2.message);
+    console.log('Result 2 references:', JSON.stringify(res2.references, null, 2));
   } catch (err) {
     console.error('Caught top-level error:', err);
   }

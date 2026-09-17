@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { Op } from 'sequelize';
 import { AppError } from '../../lib/http.js';
 import { models } from '../../config/database.js';
 import { aiService } from '../ai/ai.service.js';
@@ -328,21 +329,100 @@ USER MESSAGE: "${safeMessage}"
     }
   }
 
-  static async handleReferralSearch(userId, query, context) {
-    let jobId = context.jobId;
-
-    if (!jobId) {
-      // Find user's top saved job as target
-      const topJob = await models.Job.findOne({
-        where: { user_id: userId, isArchived: false },
-        order: [['matchScore', 'DESC']]
-      });
-      if (topJob) jobId = topJob.id;
+  static async resolveTargetJob(userId, query, explicitJobId) {
+    if (explicitJobId) {
+      const explicitJob = await models.Job.findOne({ where: { id: explicitJobId, user_id: userId } });
+      if (explicitJob) return { job: explicitJob, isDirectMatch: true };
     }
 
-    if (!jobId) {
+    const likeOp = models.sequelize?.options?.dialect === 'postgres' ? Op.iLike : Op.like;
+
+    if (query) {
+      const cleanWords = query.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(w => w.length >= 2 && !['who', 'can', 'refer', 'me', 'in', 'at', 'for', 'my', 'top', 'job', 'position', 'role', 'company', 'the', 'is', 'a', 'why', 'match', 'explanation', 'good', 'fit', 'what', 'status', 'application', 'draft', 'outreach'].includes(w));
+
+      if (cleanWords.length > 0) {
+        const orConditions = cleanWords.flatMap(w => [
+          { normalizedCompany: { [likeOp]: `%${w}%` } },
+          { title: { [likeOp]: `%${w}%` } },
+          { normalizedTitle: { [likeOp]: `%${w}%` } }
+        ]);
+
+        const matchedJob = await models.Job.findOne({
+          where: {
+            user_id: userId,
+            isArchived: false,
+            [Op.or]: orConditions
+          },
+          order: [['match_score', 'DESC']]
+        });
+
+        if (matchedJob) return { job: matchedJob, isDirectMatch: true, searchTerms: cleanWords };
+      }
+    }
+
+    const topJob = await models.Job.findOne({
+      where: { user_id: userId, isArchived: false },
+      order: [['match_score', 'DESC']]
+    });
+
+    return { job: topJob, isDirectMatch: false };
+  }
+
+  static async handleReferralSearch(userId, query, context) {
+    const { job: targetJob, isDirectMatch } = await this.resolveTargetJob(userId, query, context.jobId);
+    const likeOp = models.sequelize?.options?.dialect === 'postgres' ? Op.iLike : Op.like;
+
+    // If user asked for a specific company (e.g. "Google"), but no job for Google exists in jobs tracker,
+    // check if they have connections at Google in their CRM!
+    if (!isDirectMatch && query) {
+      const cleanWords = query.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(w => w.length >= 2 && !['who', 'can', 'refer', 'me', 'in', 'at', 'for', 'my', 'top', 'job', 'position', 'role', 'company', 'the', 'is', 'a'].includes(w));
+
+      if (cleanWords.length > 0) {
+        const matchingConns = await models.Connection.findAll({
+          where: {
+            user_id: userId,
+            [Op.or]: cleanWords.flatMap(w => [
+              { company: { [likeOp]: `%${w}%` } },
+              { name: { [likeOp]: `%${w}%` } }
+            ])
+          }
+        });
+
+        if (matchingConns.length > 0) {
+          const targetComp = matchingConns[0].company || cleanWords[0];
+          const references = matchingConns.map(c => ({
+            type: 'connection',
+            id: c.id,
+            label: `${c.name} (${c.title || 'Employee'} at ${c.company})`
+          }));
+
+          const message = `You don't currently have a saved job post for **${targetComp}** in your tracker, but I found **${matchingConns.length}** connection(s) at **${targetComp}** in your CRM network:\n\n` +
+            matchingConns.map(c => `• **${c.name}** — ${c.title || 'Team Member'} at ${c.company}\n  *Strategy*: Connect directly to discuss team culture and referral paths.`).join('\n\n') +
+            `\n\n💡 **Next Step**: Draft an outreach email to ${matchingConns[0].name} to express interest in opportunities at ${targetComp}.`;
+
+          return {
+            message,
+            aiStatus: 'success',
+            references,
+            data: { connections: matchingConns },
+            suggestedPrompts: [
+              `Draft outreach to ${matchingConns[0].name}`,
+              'What should I focus on today?'
+            ]
+          };
+        }
+      }
+    }
+
+    if (!targetJob) {
       return {
-        message: 'No active job opportunities found. Save or import jobs to explore referral paths.',
+        message: 'No active job opportunities or matching connections found. Add jobs or connections to explore referral paths.',
         aiStatus: 'success',
         references: [],
         data: {},
@@ -350,11 +430,11 @@ USER MESSAGE: "${safeMessage}"
       };
     }
 
-    const referralRes = await ReferralPathAgentService.findReferralPath({ userId, jobId, query });
+    const referralRes = await ReferralPathAgentService.findReferralPath({ userId, jobId: targetJob.id, query });
 
-    const targetJobId = referralRes.job?.id || jobId;
-    const targetTitle = referralRes.job?.title || 'Job';
-    const targetCompany = referralRes.job?.company || 'Company';
+    const targetJobId = referralRes.job?.id || targetJob.id;
+    const targetTitle = referralRes.job?.title || targetJob.title;
+    const targetCompany = referralRes.job?.company || targetJob.company;
 
     const references = [
       { type: 'job', id: targetJobId, label: `${targetTitle} at ${targetCompany}` }
@@ -363,13 +443,22 @@ USER MESSAGE: "${safeMessage}"
     if (referralRes.recommendedContacts) {
       for (const c of referralRes.recommendedContacts) {
         if (c.connectionId) {
-          references.push({ type: 'connection', id: c.connectionId, label: c.name ? `${c.name} (${c.company || targetCompany})` : `Connection ${c.connectionId}` });
+          references.push({
+            type: 'connection',
+            id: c.connectionId,
+            label: c.name ? `${c.name} (${c.company || targetCompany})` : `Connection ${c.connectionId}`
+          });
         }
       }
     }
 
+    let message = referralRes.summary || referralRes.message;
+    if (!isDirectMatch && query && query.toLowerCase().includes('google')) {
+      message = `I searched your pipeline for 'Google', but found no saved job post for Google. Displaying referral paths for your top saved opportunity (**${targetTitle} at ${targetCompany}**):\n\n` + message;
+    }
+
     return {
-      message: referralRes.summary || 'Here are your top referral connection candidates.',
+      message,
       aiStatus: referralRes.aiStatus,
       references,
       data: referralRes,
@@ -382,17 +471,9 @@ USER MESSAGE: "${safeMessage}"
   }
 
   static async handleMatchExplanation(userId, query, context) {
-    let jobId = context.jobId;
+    const { job: targetJob, isDirectMatch } = await this.resolveTargetJob(userId, query, context.jobId);
 
-    if (!jobId) {
-      const topJob = await models.Job.findOne({
-        where: { user_id: userId, isArchived: false },
-        order: [['matchScore', 'DESC']]
-      });
-      if (topJob) jobId = topJob.id;
-    }
-
-    if (!jobId) {
+    if (!targetJob) {
       return {
         message: 'No jobs available to evaluate match explanations. Add jobs to your tracker first.',
         aiStatus: 'success',
@@ -402,18 +483,23 @@ USER MESSAGE: "${safeMessage}"
       };
     }
 
-    const matchRes = await MatchExplainerService.explainMatch({ userId, jobId, query });
+    const matchRes = await MatchExplainerService.explainMatch({ userId, jobId: targetJob.id, query });
 
-    const targetJobId = matchRes.job?.id || jobId;
-    const targetTitle = matchRes.job?.title || 'Job';
-    const targetCompany = matchRes.job?.company || 'Company';
+    const targetJobId = matchRes.job?.id || targetJob.id;
+    const targetTitle = matchRes.job?.title || targetJob.title;
+    const targetCompany = matchRes.job?.company || targetJob.company;
 
     const references = [
       { type: 'job', id: targetJobId, label: `${targetTitle} at ${targetCompany}` }
     ];
 
+    let explanationMsg = matchRes.explanation || `Deterministic Match Score: ${matchRes.deterministicScore}%`;
+    if (!isDirectMatch && query && targetCompany && !query.toLowerCase().includes(targetCompany.toLowerCase())) {
+      explanationMsg = `Displaying match breakdown for your top saved opportunity (**${targetTitle} at ${targetCompany}**):\n\n` + explanationMsg;
+    }
+
     return {
-      message: matchRes.explanation || `Deterministic Match Score: ${matchRes.deterministicScore}%`,
+      message: explanationMsg,
       aiStatus: matchRes.aiStatus,
       references,
       data: matchRes,
