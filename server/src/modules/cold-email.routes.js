@@ -12,6 +12,8 @@ router.get('/stats', asyncHandler(ColdEmailController.getStats));
 router.post('/sync', asyncHandler(ColdEmailController.syncColdEmails));
 router.post('/sync-gmail', asyncHandler(ColdEmailController.syncFromGmail));
 router.post('/', asyncHandler(ColdEmailController.createColdEmail));
+router.put('/:id', asyncHandler(ColdEmailController.updateColdEmail));
+router.patch('/:id', asyncHandler(ColdEmailController.updateColdEmail));
 router.post('/:id/revert', asyncHandler(ColdEmailController.logRevert));
 router.post('/:id/link', asyncHandler(ColdEmailController.linkToCRM));
 

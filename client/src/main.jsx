@@ -913,6 +913,20 @@ const ColdEmailTrackerView = () => {
   const [syncPayload, setSyncPayload] = useState('');
   const [syncing, setSyncing] = useState(false);
 
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    id: null,
+    recipientName: '',
+    recipientEmail: '',
+    organizationName: '',
+    recipientRole: 'talent_acquisition',
+    subject: '',
+    sentDate: '',
+    replyStatus: 'sent_awaiting_reply',
+    emailBody: ''
+  });
+  const [updating, setUpdating] = useState(false);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -936,6 +950,37 @@ const ColdEmailTrackerView = () => {
   useEffect(() => {
     loadData();
   }, [statusFilter, roleFilter, search, page, limit]);
+
+  const handleOpenEditModal = (item) => {
+    setEditForm({
+      id: item.id,
+      recipientName: item.recipientName || '',
+      recipientEmail: item.recipientEmail || '',
+      organizationName: item.organizationName || '',
+      recipientRole: item.recipientRole || 'talent_acquisition',
+      subject: item.subject || '',
+      sentDate: item.sentDate ? new Date(item.sentDate).toISOString().split('T')[0] : '',
+      replyStatus: item.replyStatus || 'sent_awaiting_reply',
+      emailBody: item.emailBody || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editForm.id) return;
+    setUpdating(true);
+    try {
+      await api.updateColdEmail(editForm.id, editForm);
+      alert('Cold email details updated successfully!');
+      setShowEditModal(false);
+      loadData();
+    } catch (err) {
+      alert(err.message || 'Failed to update cold email');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const handleDirectGmailSync = async () => {
     setSyncing(true);
@@ -1177,17 +1222,25 @@ const ColdEmailTrackerView = () => {
                   {item.replyStatus.replace(/_/g, ' ').toUpperCase()}
                 </span>
 
-                <button 
-                  className="conn-btn conn-btn--ghost conn-btn--sm"
-                  onClick={() => {
-                    setActiveItem(item);
-                    setRevertStatus(item.replyStatus || 'replied_interested');
-                    setRevertMessage(item.revertMessage || '');
-                    setShowRevertModal(true);
-                  }}
-                >
-                  📝 Log Revert / Reply
-                </button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button 
+                    className="conn-btn conn-btn--ghost conn-btn--sm"
+                    onClick={() => handleOpenEditModal(item)}
+                  >
+                    ✏️ Edit Details
+                  </button>
+                  <button 
+                    className="conn-btn conn-btn--ghost conn-btn--sm"
+                    onClick={() => {
+                      setActiveItem(item);
+                      setRevertStatus(item.replyStatus || 'replied_interested');
+                      setRevertMessage(item.revertMessage || '');
+                      setShowRevertModal(true);
+                    }}
+                  >
+                    📝 Log Revert / Reply
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -1332,6 +1385,123 @@ const ColdEmailTrackerView = () => {
               <div className="modal-actions">
                 <button type="button" className="conn-btn conn-btn--ghost" onClick={() => setShowRevertModal(false)}>Cancel</button>
                 <button type="submit" className="conn-btn conn-btn--primary">Save Revert Record</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && (
+        <div className="modal-overlay">
+          <div className="modal-content conn-modal" style={{ maxWidth: '600px' }}>
+            <h2 className="modal-title">✏️ Edit Cold Email Details</h2>
+            <p className="conn-modal-subtitle">
+              Update recipient, company name, role, sent date or subject if synced details need correction.
+            </p>
+
+            <form onSubmit={handleEditSubmit}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Recipient Name</label>
+                  <input 
+                    type="text" 
+                    value={editForm.recipientName} 
+                    onChange={e => setEditForm(prev => ({ ...prev, recipientName: e.target.value }))}
+                    className="form-input" 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Recipient Email</label>
+                  <input 
+                    type="email" 
+                    value={editForm.recipientEmail} 
+                    onChange={e => setEditForm(prev => ({ ...prev, recipientEmail: e.target.value }))}
+                    className="form-input" 
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Organization / Company</label>
+                  <input 
+                    type="text" 
+                    value={editForm.organizationName} 
+                    onChange={e => setEditForm(prev => ({ ...prev, organizationName: e.target.value }))}
+                    className="form-input" 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Recipient Role</label>
+                  <select 
+                    value={editForm.recipientRole} 
+                    onChange={e => setEditForm(prev => ({ ...prev, recipientRole: e.target.value }))}
+                    className="form-input"
+                  >
+                    <option value="talent_acquisition">Talent Acquisition / HR</option>
+                    <option value="founder">Founding Team / Executive</option>
+                    <option value="hiring_manager">Hiring Manager</option>
+                    <option value="recruiter">Recruiter</option>
+                    <option value="executive">Executive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Sent Date</label>
+                  <input 
+                    type="date" 
+                    value={editForm.sentDate} 
+                    onChange={e => setEditForm(prev => ({ ...prev, sentDate: e.target.value }))} 
+                    className="form-input" 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Reply / Outreach Status</label>
+                  <select 
+                    value={editForm.replyStatus} 
+                    onChange={e => setEditForm(prev => ({ ...prev, replyStatus: e.target.value }))}
+                    className="form-input"
+                  >
+                    <option value="sent_awaiting_reply">Sent (Awaiting Reply)</option>
+                    <option value="replied_interested">Replied (Interested)</option>
+                    <option value="interview_offered">Interview Offered</option>
+                    <option value="declined">Declined</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label className="form-label">Subject</label>
+                <input 
+                  type="text" 
+                  value={editForm.subject} 
+                  onChange={e => setEditForm(prev => ({ ...prev, subject: e.target.value }))}
+                  className="form-input" 
+                  required 
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label">Email Body Snippet</label>
+                <textarea 
+                  rows={4} 
+                  value={editForm.emailBody} 
+                  onChange={e => setEditForm(prev => ({ ...prev, emailBody: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="conn-btn conn-btn--ghost" onClick={() => setShowEditModal(false)}>Cancel</button>
+                <button type="submit" className="conn-btn conn-btn--primary" disabled={updating}>
+                  {updating ? 'Saving Changes...' : 'Save Changes'}
+                </button>
               </div>
             </form>
           </div>

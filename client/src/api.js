@@ -845,6 +845,13 @@ class ApiClient {
     });
   }
 
+  async updateColdEmail(id, payload) {
+    return this.request(`/cold-emails/${id}`, {
+      method: 'PUT',
+      body: payload
+    });
+  }
+
   async logColdEmailRevert(id, payload) {
     return this.request(`/cold-emails/${id}/revert`, {
       method: 'POST',

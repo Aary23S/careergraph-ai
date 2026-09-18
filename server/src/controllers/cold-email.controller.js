@@ -96,6 +96,35 @@ export class ColdEmailController {
     }
   }
 
+  static async updateColdEmail(req, res, next) {
+    try {
+      const userId = ColdEmailController.getUserId(req);
+      const { id } = req.params;
+      const { recipientEmail, recipientName, recipientRole, organizationName, subject, sentDate, replyStatus, emailBody } = req.body;
+
+      const updated = await ColdEmailOutreachService.updateColdEmail({
+        userId,
+        id,
+        recipientEmail,
+        recipientName,
+        recipientRole,
+        organizationName,
+        subject,
+        sentDate,
+        replyStatus,
+        emailBody
+      });
+
+      return res.json({
+        success: true,
+        message: 'Cold email outreach record updated successfully.',
+        item: updated
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async linkToCRM(req, res, next) {
     try {
       const userId = ColdEmailController.getUserId(req);

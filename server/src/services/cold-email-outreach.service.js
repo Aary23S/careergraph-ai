@@ -264,6 +264,91 @@ export class ColdEmailOutreachService {
   }
 
   /**
+   * Updates an existing cold email outreach record with new details and re-evaluates CRM links.
+   */
+  static async updateColdEmail({ userId, id, recipientEmail, recipientName, recipientRole, organizationName, subject, sentDate, replyStatus, emailBody }) {
+    if (!userId) throw new Error('User ID is required.');
+    if (!id) throw new Error('Record ID is required.');
+
+    const outreach = await models.ColdEmailOutreach.findOne({
+      where: { id, userId }
+    });
+
+    if (!outreach) {
+      throw new Error(`Cold email outreach record not found: ${id}`);
+    }
+
+    const likeOp = models.sequelize?.options?.dialect === 'postgres' ? Op.iLike : Op.like;
+
+    const newRecipientEmail = recipientEmail !== undefined ? recipientEmail.trim().toLowerCase() : outreach.recipientEmail;
+    const newRecipientName = recipientName !== undefined ? recipientName.trim() : outreach.recipientName;
+    const newOrganizationName = organizationName !== undefined ? organizationName.trim() : outreach.organizationName;
+    const normOrg = CompanyNormalizerService.normalizeCompany(newOrganizationName || newRecipientEmail.split('@')[1] || 'Unknown');
+    const newSubject = subject !== undefined ? subject.trim() : outreach.subject;
+    const newRecipientRole = recipientRole || outreach.recipientRole;
+    const newSentDate = sentDate ? new Date(sentDate) : outreach.sentDate;
+    const newReplyStatus = replyStatus || outreach.replyStatus;
+    const newEmailBody = emailBody !== undefined ? emailBody : outreach.emailBody;
+
+    // Auto-match company if companyId is missing or organization was changed
+    let companyId = outreach.companyId;
+    if (normOrg && (newOrganizationName !== outreach.organizationName || !companyId)) {
+      const matchingCompany = await models.Company.findOne({
+        where: { normalizedName: { [likeOp]: `%${normOrg}%` } }
+      });
+      if (matchingCompany) {
+        companyId = matchingCompany.id;
+      }
+    }
+
+    // Auto-match connection if connectionId is missing or recipient info was changed
+    let connectionId = outreach.connectionId;
+    if (newRecipientEmail !== outreach.recipientEmail || newRecipientName !== outreach.recipientName || !connectionId) {
+      let matchingConn = null;
+      if (newRecipientEmail) {
+        matchingConn = await models.Connection.findOne({
+          where: { user_id: userId, email: newRecipientEmail }
+        });
+      }
+      if (!matchingConn && newRecipientName) {
+        matchingConn = await models.Connection.findOne({
+          where: {
+            user_id: userId,
+            name: { [likeOp]: `%${newRecipientName}%` }
+          }
+        });
+      }
+      if (matchingConn) {
+        connectionId = matchingConn.id;
+      }
+    }
+
+    await outreach.update({
+      recipientEmail: newRecipientEmail,
+      recipientName: newRecipientName,
+      organizationName: newOrganizationName,
+      normalizedOrganization: normOrg,
+      recipientRole: newRecipientRole,
+      subject: newSubject,
+      sentDate: newSentDate,
+      replyStatus: newReplyStatus,
+      emailBody: newEmailBody,
+      companyId,
+      connectionId
+    });
+
+    return models.ColdEmailOutreach.findOne({
+      where: { id: outreach.id, userId },
+      include: [
+        { model: models.Company, as: 'company', attributes: ['id', 'name', 'normalizedName'] },
+        { model: models.Connection, as: 'connection', attributes: ['id', 'name', 'title', 'company', 'relationshipStatus'] },
+        { model: models.Job, as: 'job', attributes: ['id', 'title', 'status'] },
+        { model: models.Application, as: 'application', attributes: ['id', 'status'] }
+      ]
+    });
+  }
+
+  /**
    * Links outreach item to an existing or new CRM Connection / Company.
    */
   static async linkToCRM({ userId, id, connectionId, companyId, createConnectionIfMissing = false }) {

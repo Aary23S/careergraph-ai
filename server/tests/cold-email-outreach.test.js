@@ -128,7 +128,30 @@ describe('Cold Email & Outreach Tracking Feature', () => {
     expect(updatedConn.relationshipStatus).toBe('conversation');
   });
 
-  it('4. should integrate with Copilot tool search for cold email outreach', async () => {
+  it('4. should update cold email details via PUT /api/cold-emails/:id', async () => {
+    const msftRecord = await models.ColdEmailOutreach.findOne({
+      where: { user_id: user.id, recipient_email: 'recruiter@microsoft.com' }
+    });
+
+    const editRes = await request(app)
+      .put(`/api/cold-emails/${msftRecord.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        recipientName: 'Sarah Jenkins (VP Talent)',
+        recipientRole: 'talent_acquisition',
+        organizationName: 'Microsoft Tech',
+        subject: 'Senior Principal Engineer Inquiry',
+        sentDate: '2026-09-06'
+      });
+
+    expect(editRes.status).toBe(200);
+    expect(editRes.body.success).toBe(true);
+    expect(editRes.body.item.recipientName).toBe('Sarah Jenkins (VP Talent)');
+    expect(editRes.body.item.organizationName).toBe('Microsoft Tech');
+    expect(editRes.body.item.recipientRole).toBe('talent_acquisition');
+  });
+
+  it('5. should integrate with Copilot tool search for cold email outreach', async () => {
     const toolRes = await CopilotToolRegistry.searchColdEmails({
       userId: user.id,
       company: 'Apple'
