@@ -10,11 +10,15 @@ function truncateText(text, maxLength) {
 
 export function sanitizeJob(job) {
   if (!job) return null;
+  const companyName = typeof job.company === 'string'
+    ? job.company
+    : (job.company?.name || job.normalizedCompany || 'Company');
+
   return {
     source: 'job',
     entityId: job.id,
     title: job.title,
-    company: job.company?.name || job.normalizedCompany,
+    company: companyName,
     location: job.location,
     remoteType: job.remoteType,
     employmentType: job.employmentType,

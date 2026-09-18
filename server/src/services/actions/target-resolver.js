@@ -5,6 +5,16 @@ import { TargetTypes } from './action-registry.js';
 const likeOp = Op.like;
 
 export class TargetResolver {
+  static getLikeOp() {
+    return models.sequelize?.options?.dialect === 'postgres' ? Op.iLike : Op.like;
+  }
+
+  static cleanTerm(description) {
+    if (!description || !description.trim()) return '';
+    const cleaned = description.trim().replace(/\b(create|draft|write|send|prepare|a|the|professional|message|outreach|email|referral|for|to|in|at|job|application|status|note)\b/gi, '').trim();
+    return cleaned.length > 0 ? cleaned : description.trim();
+  }
+
   /**
    * Resolves a natural language target description to a specific entity.
    * If the target is ambiguous or missing, it returns options.
@@ -19,7 +29,7 @@ export class TargetResolver {
       return { needsClarification: true, candidates: [] };
     }
 
-    const term = targetDescription.trim();
+    const term = this.cleanTerm(targetDescription);
 
     if (targetType === TargetTypes.JOB) {
       return this._resolveJob(userId, term);
@@ -37,48 +47,50 @@ export class TargetResolver {
   }
 
   static async _resolveJob(userId, term) {
+    const activeLikeOp = this.getLikeOp();
     const jobs = await models.Job.findAll({
       where: {
         user_id: userId,
         [Op.or]: [
-          { title: { [likeOp]: `%${term}%` } },
-          { normalizedCompany: { [likeOp]: `%${term}%` } }
+          { title: { [activeLikeOp]: `%${term}%` } },
+          { normalizedCompany: { [activeLikeOp]: `%${term}%` } }
         ]
       },
       limit: 5
     });
 
-    if (jobs.length === 1) {
-      return { resolvedTarget: jobs[0] };
+    if (jobs.length >= 1) {
+      return { resolvedTarget: jobs[0], candidates: jobs.map(j => ({ id: j.id, label: `${j.title} at ${j.company || j.normalizedCompany || 'Company'}` })) };
     }
 
     return {
       needsClarification: true,
-      candidates: jobs.map(j => ({ id: j.id, label: `${j.title} at ${j.company || j.normalizedCompany || 'Company'}` }))
+      candidates: []
     };
   }
 
   static async _resolveConnection(userId, term) {
+    const activeLikeOp = this.getLikeOp();
     const connections = await models.Connection.findAll({
       where: {
         user_id: userId,
         [Op.or]: [
-          { name: { [likeOp]: `%${term}%` } },
-          { company: { [likeOp]: `%${term}%` } },
-          { title: { [likeOp]: `%${term}%` } },
-          { email: { [likeOp]: `%${term}%` } }
+          { name: { [activeLikeOp]: `%${term}%` } },
+          { company: { [activeLikeOp]: `%${term}%` } },
+          { title: { [activeLikeOp]: `%${term}%` } },
+          { email: { [activeLikeOp]: `%${term}%` } }
         ]
       },
       limit: 5
     });
 
-    if (connections.length === 1) {
-      return { resolvedTarget: connections[0] };
+    if (connections.length >= 1) {
+      return { resolvedTarget: connections[0], candidates: connections.map(c => ({ id: c.id, label: `${c.name} (${c.company || 'Company'})` })) };
     }
 
     return {
       needsClarification: true,
-      candidates: connections.map(c => ({ id: c.id, label: `${c.name} (${c.company || 'Unknown Company'})` }))
+      candidates: []
     };
   }
 
