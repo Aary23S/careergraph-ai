@@ -30,7 +30,8 @@ export class ColdEmailOutreachService {
       if (!organizationName && !recipientEmail) continue;
 
       const normOrg = CompanyNormalizerService.normalizeCompany(organizationName || recipientEmail.split('@')[1] || 'Unknown');
-      const sentDate = raw.sentDate ? new Date(raw.sentDate) : new Date();
+      const sentDateRaw = raw.sentDate || raw.sentAt || raw.date || raw.sent_date;
+      const sentDate = sentDateRaw ? new Date(sentDateRaw) : new Date();
       const recipientRole = this.classifyRole(raw.recipientRole || raw.subject || raw.body || recipientName);
       const gmailMessageId = raw.gmailMessageId || raw.messageId || null;
       const gmailThreadId = raw.gmailThreadId || raw.threadId || null;
@@ -91,6 +92,7 @@ export class ColdEmailOutreachService {
           recipientName: recipientName || existingRecord.recipientName,
           recipientRole: recipientRole || existingRecord.recipientRole,
           subject: raw.subject || existingRecord.subject,
+          sentDate: sentDateRaw ? new Date(sentDateRaw) : existingRecord.sentDate,
           emailBody: raw.emailBody || raw.body || existingRecord.emailBody,
           companyId: companyId || existingRecord.companyId,
           connectionId: connectionId || existingRecord.connectionId,

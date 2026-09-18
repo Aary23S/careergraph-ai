@@ -1128,9 +1128,11 @@ const ColdEmailTrackerView = () => {
                 <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '8px' }}>
                   Subject: {item.subject || 'Opportunity Inquiry'}
                 </div>
-                <div style={{ display: 'flex', gap: '12px', fontSize: '0.8rem', color: '#94a3b8' }}>
-                  <span>Sent: {new Date(item.sentDate).toLocaleDateString()}</span>
-                  <span>Email: {item.recipientEmail}</span>
+                <div style={{ display: 'flex', gap: '16px', fontSize: '0.82rem', color: '#94a3b8', marginTop: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>
+                    📅 Sent Date: {new Date(item.sentDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} ({formatRelativeTime(item.sentDate)})
+                  </span>
+                  <span>✉️ {item.recipientEmail}</span>
                 </div>
 
                 <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

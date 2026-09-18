@@ -281,7 +281,8 @@ export async function syncGmailColdEmails(userId, labelName = 'opportunity') {
         subject,
         snippet,
         bodyText,
-        sentAt: dateHeader ? new Date(dateHeader) : new Date(),
+        sentDate: fullMsg.internalDate ? new Date(Number(fullMsg.internalDate)) : (dateHeader ? new Date(dateHeader) : new Date()),
+        sentAt: fullMsg.internalDate ? new Date(Number(fullMsg.internalDate)) : (dateHeader ? new Date(dateHeader) : new Date()),
         status: 'sent',
         sourceLabel: labelName
       });
