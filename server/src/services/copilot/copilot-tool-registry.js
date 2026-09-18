@@ -5,6 +5,7 @@ import { GroundingContract, GroundingStatuses } from './grounding-contract.js';
 import { ReferralPathAgentService } from './referral-path-agent.service.js';
 import { MatchExplainerService } from './match-explainer.service.js';
 import { DecisionDigestService } from './decision-digest.service.js';
+import { ColdEmailOutreachService } from '../cold-email-outreach.service.js';
 
 export class CopilotToolRegistry {
   static _getLikeOp() {
@@ -350,6 +351,42 @@ export class CopilotToolRegistry {
       references: [],
       status: GroundingStatuses.GROUNDED,
       sourceCount: 1
+    });
+  }
+
+  /**
+   * Tool 8: searchColdEmails (Cold Email Outreach Tracking)
+   */
+  static async searchColdEmails({ userId, company, recipient, replyStatus }) {
+    if (!userId) throw new Error('Unauthorized user.');
+
+    const result = await ColdEmailOutreachService.getColdEmails({
+      userId,
+      organization: company,
+      search: recipient,
+      status: replyStatus,
+      limit: 10
+    });
+
+    const references = (result.data || []).map(r => ({
+      type: 'cold_email',
+      id: r.id,
+      fields: ['recipientName', 'recipientEmail', 'organizationName', 'replyStatus', 'sentDate']
+    }));
+
+    let message = `Found ${result.total} cold email outreach record(s)`;
+    if (company) message += ` for ${company}`;
+    if (replyStatus) message += ` with status "${replyStatus}"`;
+    message += `:`;
+
+    return GroundingContract.format({
+      answerType: 'cold_email_outreach',
+      message: result.total > 0 ? message : `No cold email outreach records found matching your query in your CareerGraph database.`,
+      data: result,
+      references,
+      status: result.total > 0 ? GroundingStatuses.GROUNDED : GroundingStatuses.NO_DATA,
+      sourceCount: references.length,
+      suggestedPrompts: ['Sync my cold emails from Gmail', 'Show my cold emails with reverts', 'What should I focus on today?']
     });
   }
 }

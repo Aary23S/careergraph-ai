@@ -674,7 +674,6 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
                     <button 
                       className="copilot-action-cancel"
                       onClick={() => handleCancelAction(idx, msg.data.actionPlan)}
-                      onClick={() => handleCancelAction(idx, msg.data.actionPlan)}
                     >
                       Cancel
                     </button>
@@ -887,6 +886,411 @@ const DecisionDigest = () => {
         </div>
       )}
     </section>
+  );
+};
+
+const ColdEmailTrackerView = () => {
+  const [coldEmails, setColdEmails] = useState([]);
+  const [stats, setStats] = useState({ totalSent: 0, responseRatePercentage: 0, awaitingReply: 0, interviewOffered: 0 });
+  const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ totalPages: 1 });
+
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [showRevertModal, setShowRevertModal] = useState(false);
+  const [activeItem, setActiveItem] = useState(null);
+
+  const [revertStatus, setRevertStatus] = useState('replied_interested');
+  const [revertMessage, setRevertMessage] = useState('');
+  const [revertDate, setRevertDate] = useState(new Date().toISOString().split('T')[0]);
+  const [nextActionDate, setNextActionDate] = useState('');
+  const [nextActionNotes, setNextActionNotes] = useState('');
+
+  const [syncPayload, setSyncPayload] = useState('');
+  const [syncing, setSyncing] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.getColdEmails({
+        status: statusFilter,
+        role: roleFilter,
+        search,
+        page,
+        limit: 15
+      });
+      setColdEmails(res.data || []);
+      setMeta({ totalPages: res.totalPages || 1, total: res.total });
+      setStats(res.stats || {});
+    } catch (err) {
+      console.error('Failed to load cold emails:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [statusFilter, roleFilter, search, page]);
+
+  const handleDirectGmailSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await api.syncGmailColdEmails('opportunity');
+      if (res.connected === false) {
+        if (confirm(`${res.message}\n\nWould you like to open the JSON / CSV manual paste import window instead?`)) {
+          setShowSyncModal(true);
+        }
+      } else {
+        alert(res.message || 'Direct Gmail sync completed!');
+        loadData();
+      }
+    } catch (err) {
+      alert(err.message || 'Gmail sync failed');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleSyncSubmit = async (e) => {
+    e.preventDefault();
+    setSyncing(true);
+    try {
+      let parsed = [];
+      try {
+        parsed = JSON.parse(syncPayload);
+      } catch (e) {
+        const lines = syncPayload.split('\n').filter(l => l.trim());
+        parsed = lines.map(line => {
+          const parts = line.split(',');
+          return {
+            recipientEmail: parts[0]?.trim(),
+            recipientName: parts[1]?.trim() || 'Hiring Team Member',
+            organizationName: parts[2]?.trim() || 'Target Company',
+            recipientRole: parts[3]?.trim() || 'talent_acquisition',
+            subject: parts[4]?.trim() || 'Opportunity Inquiry'
+          };
+        });
+      }
+
+      const res = await api.syncColdEmails(parsed, 'gmail_sync');
+      alert(res.message);
+      setShowSyncModal(false);
+      setSyncPayload('');
+      loadData();
+    } catch (err) {
+      alert(err.message || 'Sync failed.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleRevertSubmit = async (e) => {
+    e.preventDefault();
+    if (!activeItem) return;
+    try {
+      await api.logColdEmailRevert(activeItem.id, {
+        replyStatus: revertStatus,
+        revertDate,
+        revertMessage,
+        nextActionDate: nextActionDate || null,
+        nextActionNotes
+      });
+      alert('Revert logged successfully!');
+      setShowRevertModal(false);
+      setActiveItem(null);
+      loadData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleLinkCRM = async (item) => {
+    try {
+      await api.linkColdEmailToCRM(item.id, { createConnectionIfMissing: true });
+      alert('Linked to CRM Connection successfully!');
+      loadData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  return (
+    <div className="cold-email-tracker-view" style={{ padding: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+            Cold Email &amp; Opportunity Outreach Tracker
+          </h1>
+          <p style={{ color: '#94a3b8', marginTop: '4px', fontSize: '0.9rem' }}>
+            Track cold emails sent to Talent Acquisition, Hiring Managers &amp; Founders with Gmail "opportunity" label sync and automated CRM linking.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            className="conn-btn conn-btn--primary"
+            disabled={syncing}
+            onClick={handleDirectGmailSync}
+          >
+            {syncing ? 'Syncing Gmail...' : '✨ Direct Sync Gmail "opportunity" Label'}
+          </button>
+          <button 
+            className="conn-btn conn-btn--ghost"
+            onClick={() => setShowSyncModal(true)}
+          >
+            📋 Import JSON / CSV
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div className="dash-stat-card">
+          <div className="dash-stat-label">Total Cold Emails Sent</div>
+          <div className="dash-stat-value" style={{ color: '#38bdf8' }}>{stats.totalSent || 0}</div>
+        </div>
+        <div className="dash-stat-card">
+          <div className="dash-stat-label">Response Rate</div>
+          <div className="dash-stat-value" style={{ color: '#a855f7' }}>{stats.responseRatePercentage || 0}%</div>
+        </div>
+        <div className="dash-stat-card">
+          <div className="dash-stat-label">Awaiting Reply</div>
+          <div className="dash-stat-value" style={{ color: '#f59e0b' }}>{stats.awaitingReply || 0}</div>
+        </div>
+        <div className="dash-stat-card">
+          <div className="dash-stat-label">Interviews Arranged</div>
+          <div className="dash-stat-value" style={{ color: '#22c55e' }}>{stats.interviewOffered || 0}</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px', background: 'rgba(15, 23, 42, 0.4)', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b' }}>
+        <input 
+          type="text"
+          placeholder="Search by name, email, company..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="form-input"
+          style={{ flex: 1, minWidth: '220px' }}
+        />
+        <select 
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="form-input"
+          style={{ width: '180px' }}
+        >
+          <option value="all">All Statuses</option>
+          <option value="sent_awaiting_reply">Sent (Awaiting Reply)</option>
+          <option value="replied_interested">Replied (Interested)</option>
+          <option value="interview_offered">Interview Offered</option>
+          <option value="declined">Declined</option>
+        </select>
+        <select 
+          value={roleFilter}
+          onChange={e => setRoleFilter(e.target.value)}
+          className="form-input"
+          style={{ width: '180px' }}
+        >
+          <option value="all">All Recipient Roles</option>
+          <option value="talent_acquisition">Talent Acquisition / HR</option>
+          <option value="founder">Founding Team / Executive</option>
+          <option value="hiring_manager">Hiring Manager</option>
+          <option value="recruiter">Recruiter</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>Loading outreach records...</div>
+      ) : coldEmails.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px', background: '#0f172a', borderRadius: '12px', border: '1px border-dashed #334155', color: '#94a3b8' }}>
+          <p style={{ fontSize: '1.1rem', fontWeight: 600, color: '#f1f5f9' }}>No cold email outreach records found</p>
+          <p style={{ fontSize: '0.85rem' }}>Sync your Gmail "opportunity" label or add your cold email records to track reverts and CRM connections.</p>
+          <button className="conn-btn conn-btn--primary" onClick={() => setShowSyncModal(true)} style={{ marginTop: '12px' }}>
+            Sync Gmail Opportunity Label
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '12px' }}>
+          {coldEmails.map(item => (
+            <div key={item.id} style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                  <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#f8fafc' }}>
+                    {item.recipientName || 'Recipient'}
+                  </span>
+                  <span className="badge badge-info" style={{ fontSize: '0.75rem' }}>
+                    {item.recipientRole ? item.recipientRole.replace('_', ' ').toUpperCase() : 'RECRUITER'}
+                  </span>
+                  <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>@ <strong>{item.organizationName}</strong></span>
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '8px' }}>
+                  Subject: {item.subject || 'Opportunity Inquiry'}
+                </div>
+                <div style={{ display: 'flex', gap: '12px', fontSize: '0.8rem', color: '#94a3b8' }}>
+                  <span>Sent: {new Date(item.sentDate).toLocaleDateString()}</span>
+                  <span>Email: {item.recipientEmail}</span>
+                </div>
+
+                <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {item.connection ? (
+                    <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
+                      ✓ Linked Connection: {item.connection.name} ({item.connection.title || 'Contact'})
+                    </span>
+                  ) : (
+                    <button 
+                      onClick={() => handleLinkCRM(item)}
+                      style={{ fontSize: '0.7rem', padding: '2px 8px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '12px', color: '#38bdf8', cursor: 'pointer' }}
+                    >
+                      + Link / Add to Connection CRM
+                    </button>
+                  )}
+
+                  {item.company && (
+                    <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>
+                      ✓ Linked Company: {item.company.name}
+                    </span>
+                  )}
+                </div>
+
+                {item.revertMessage && (
+                  <div style={{ marginTop: '10px', padding: '10px', background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: '6px', fontSize: '0.85rem', color: '#4ade80' }}>
+                    <strong>Revert ({new Date(item.revertDate).toLocaleDateString()}):</strong> {item.revertMessage}
+                    {item.nextActionDate && (
+                      <div style={{ marginTop: '4px', color: '#f59e0b', fontSize: '0.8rem' }}>
+                        📅 Follow-up scheduled for: {item.nextActionDate} {item.nextActionNotes ? `(${item.nextActionNotes})` : ''}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                <span className={`badge ${
+                  item.replyStatus === 'interview_offered' ? 'badge-success' :
+                  item.replyStatus === 'replied_interested' ? 'badge-primary' :
+                  item.replyStatus === 'declined' ? 'badge-danger' : 'badge-warning'
+                }`}>
+                  {item.replyStatus.replace(/_/g, ' ').toUpperCase()}
+                </span>
+
+                <button 
+                  className="conn-btn conn-btn--ghost conn-btn--sm"
+                  onClick={() => {
+                    setActiveItem(item);
+                    setRevertStatus(item.replyStatus || 'replied_interested');
+                    setRevertMessage(item.revertMessage || '');
+                    setShowRevertModal(true);
+                  }}
+                >
+                  📝 Log Revert / Reply
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showSyncModal && (
+        <div className="modal-overlay">
+          <div className="modal-content conn-modal" style={{ maxWidth: '600px' }}>
+            <h2 className="modal-title">Sync Gmail "opportunity" Label</h2>
+            <p className="conn-modal-subtitle">
+              Paste or upload email export JSON / CSV containing your 80+ cold emails to Talent Acquisition, Founders, and Recruiters. The system will automatically resolve companies and link CRM connections.
+            </p>
+
+            <form onSubmit={handleSyncSubmit}>
+              <textarea 
+                rows={10}
+                placeholder={`Paste JSON array or CSV format:\nrecipientEmail, recipientName, organizationName, recipientRole, subject\ne.g.\nalex@apple.com, Alex Johri, Apple, talent_acquisition, DevOps Inquiry`}
+                value={syncPayload}
+                onChange={e => setSyncPayload(e.target.value)}
+                className="form-input"
+                style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.85rem' }}
+                required
+              />
+              <div className="modal-actions" style={{ marginTop: '16px' }}>
+                <button type="button" className="conn-btn conn-btn--ghost" onClick={() => setShowSyncModal(false)}>Cancel</button>
+                <button type="submit" className="conn-btn conn-btn--primary" disabled={syncing}>
+                  {syncing ? 'Ingesting & Matching CRM...' : 'Start Ingestion & CRM Linkage'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showRevertModal && activeItem && (
+        <div className="modal-overlay">
+          <div className="modal-content conn-modal" style={{ maxWidth: '550px' }}>
+            <h2 className="modal-title">Log Revert for {activeItem.recipientName} ({activeItem.organizationName})</h2>
+
+            <form onSubmit={handleRevertSubmit}>
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label className="form-label">Revert Outcome Status</label>
+                <select 
+                  value={revertStatus} 
+                  onChange={e => setRevertStatus(e.target.value)}
+                  className="form-input"
+                >
+                  <option value="replied_interested">Replied (Interested / Positive Revert)</option>
+                  <option value="interview_offered">Interview Offered / Call Scheduled</option>
+                  <option value="declined">Declined / Not Hiring</option>
+                  <option value="sent_awaiting_reply">Still Awaiting Reply</option>
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label className="form-label">Revert Date</label>
+                <input 
+                  type="date" 
+                  value={revertDate} 
+                  onChange={e => setRevertDate(e.target.value)} 
+                  className="form-input" 
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label className="form-label">Revert Message / Note</label>
+                <textarea 
+                  rows={4} 
+                  placeholder="Paste response email text or summary..."
+                  value={revertMessage} 
+                  onChange={e => setRevertMessage(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label className="form-label">Next Action / Follow-Up Date</label>
+                <input 
+                  type="date" 
+                  value={nextActionDate} 
+                  onChange={e => setNextActionDate(e.target.value)} 
+                  className="form-input" 
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label">Next Action Notes</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g., Send updated resume before call"
+                  value={nextActionNotes} 
+                  onChange={e => setNextActionNotes(e.target.value)}
+                  className="form-input" 
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="conn-btn conn-btn--ghost" onClick={() => setShowRevertModal(false)}>Cancel</button>
+                <button type="submit" className="conn-btn conn-btn--primary">Save Revert Record</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -2496,6 +2900,9 @@ function App() {
           </button>
           <button className={`nav-item ${activeTab === 'outreach' ? 'active' : ''}`} onClick={() => setActiveTab('outreach')}>
             Outreach CRM
+          </button>
+          <button className={`nav-item ${activeTab === 'cold-emails' ? 'active' : ''}`} onClick={() => setActiveTab('cold-emails')}>
+            Cold Email Tracker
           </button>
           <button className={`nav-item ${activeTab === 'ai-ops' ? 'active' : ''}`} onClick={() => setActiveTab('ai-ops')}>
             AI Operations
@@ -5885,6 +6292,11 @@ function App() {
               )}
             </div>
           </div>
+        )}
+
+        {/* COLD EMAIL TRACKER TAB */}
+        {activeTab === 'cold-emails' && (
+          <ColdEmailTrackerView />
         )}
 
         {/* AI OBSERVABILITY & OPERATIONS TAB */}

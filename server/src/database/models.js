@@ -806,6 +806,44 @@ export function initializeModels(sequelize) {
     { ...baseOptions, tableName: 'ml_predictions' }
   );
 
+  const ColdEmailOutreach = sequelize.define(
+    'ColdEmailOutreach',
+    {
+      id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+      userId: { type: DataTypes.UUID, allowNull: false, field: 'user_id' },
+      recipientEmail: { type: DataTypes.STRING, allowNull: false, field: 'recipient_email' },
+      recipientName: { type: DataTypes.STRING, field: 'recipient_name' },
+      recipientRole: { type: DataTypes.STRING, defaultValue: 'other', field: 'recipient_role' },
+      organizationName: { type: DataTypes.STRING, allowNull: false, field: 'organization_name' },
+      normalizedOrganization: { type: DataTypes.STRING, allowNull: false, field: 'normalized_organization' },
+      subject: { type: DataTypes.STRING },
+      sentDate: { type: DataTypes.DATE, allowNull: false, field: 'sent_date' },
+      emailBody: { type: DataTypes.TEXT, field: 'email_body' },
+      gmailMessageId: { type: DataTypes.STRING, field: 'gmail_message_id' },
+      gmailThreadId: { type: DataTypes.STRING, field: 'gmail_thread_id' },
+      source: { type: DataTypes.STRING, defaultValue: 'gmail_sync' },
+      replyStatus: { type: DataTypes.STRING, defaultValue: 'sent_awaiting_reply', field: 'reply_status' },
+      revertDate: { type: DataTypes.DATE, field: 'revert_date' },
+      revertMessage: { type: DataTypes.TEXT, field: 'revert_message' },
+      nextActionDate: { type: DataTypes.DATEONLY, field: 'next_action_date' },
+      nextActionNotes: { type: DataTypes.TEXT, field: 'next_action_notes' },
+      companyId: { type: DataTypes.UUID, field: 'company_id' },
+      connectionId: { type: DataTypes.UUID, field: 'connection_id' },
+      applicationId: { type: DataTypes.UUID, field: 'application_id' },
+      jobId: { type: DataTypes.UUID, field: 'job_id' },
+    },
+    {
+      ...baseOptions,
+      tableName: 'cold_email_outreach',
+      indexes: [
+        { fields: ['user_id', 'sent_date'] },
+        { fields: ['user_id', 'reply_status'] },
+        { fields: ['user_id', 'normalized_organization'] },
+      ]
+    }
+  );
+
+
 
   User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
   RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -931,6 +969,21 @@ export function initializeModels(sequelize) {
   User.hasMany(FollowedCompany, { foreignKey: 'user_id', as: 'followedCompanies' });
   FollowedCompany.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+  User.hasMany(ColdEmailOutreach, { foreignKey: 'user_id', as: 'coldEmailOutreach' });
+  ColdEmailOutreach.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+  Company.hasMany(ColdEmailOutreach, { foreignKey: 'company_id', as: 'coldEmailOutreach' });
+  ColdEmailOutreach.belongsTo(Company, { foreignKey: 'company_id', as: 'company' });
+
+  Connection.hasMany(ColdEmailOutreach, { foreignKey: 'connection_id', as: 'coldEmailOutreach' });
+  ColdEmailOutreach.belongsTo(Connection, { foreignKey: 'connection_id', as: 'connection' });
+
+  Job.hasMany(ColdEmailOutreach, { foreignKey: 'job_id', as: 'coldEmailOutreach' });
+  ColdEmailOutreach.belongsTo(Job, { foreignKey: 'job_id', as: 'job' });
+
+  Application.hasMany(ColdEmailOutreach, { foreignKey: 'application_id', as: 'coldEmailOutreach' });
+  ColdEmailOutreach.belongsTo(Application, { foreignKey: 'application_id', as: 'application' });
+
   return {
     User,
     RefreshToken,
@@ -966,5 +1019,6 @@ export function initializeModels(sequelize) {
     ModelAssignment,
     MlPrediction,
     FollowedCompany,
+    ColdEmailOutreach,
   };
 }

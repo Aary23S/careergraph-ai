@@ -20,6 +20,7 @@ import searchRoutes from '../modules/search.routes.js';
 import adminQueueRoutes from '../modules/admin-queue.routes.js';
 import modelRegistryRoutes from '../modules/model-registry.routes.js';
 import followedCompaniesRoutes from '../modules/followed-companies.routes.js';
+import coldEmailRoutes from '../modules/cold-email.routes.js';
 
 import copilotRoutes from '../modules/copilot.routes.js';
 import actionsRoutes from '../modules/actions.routes.js';
@@ -36,6 +37,7 @@ router.use('/jobs', jobRoutes);
 router.use('/applications', applicationRoutes);
 router.use('/outreach', outreachRoutes);
 router.use('/outreach/ai-drafts', outreachAiRoutes);
+router.use('/cold-emails', coldEmailRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/notes', noteRoutes);

@@ -47,14 +47,24 @@ function parseParts(parts) {
 }
 
 /**
+ * Lists user Gmail labels
+ */
+export async function listLabels(authClient) {
+  const gmail = google.gmail({ version: 'v1', auth: authClient });
+  const res = await gmail.users.labels.list({ userId: 'me' });
+  return res.data.labels || [];
+}
+
+/**
  * Lists messages for the authenticated client matching a query/label
  */
-export async function listMessages(authClient, q = '', pageToken = null) {
+export async function listMessages(authClient, q = '', pageToken = null, maxResults = 500) {
   const gmail = google.gmail({ version: 'v1', auth: authClient });
   const res = await gmail.users.messages.list({
     userId: 'me',
     q,
-    pageToken
+    pageToken,
+    maxResults
   });
   return {
     messages: res.data.messages || [],

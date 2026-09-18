@@ -80,8 +80,9 @@ export class QueryUnderstandingService {
 
     // Company extraction patterns:
     const companyPatterns = [
+      /(?:cold emails?|outreach|emails?)\s+(?:to|at|from|for|in)\s+([a-z0-9\s.\-]+?)(?:\s+recruiters|\s+team|\s+hiring|\?|\.|$)/i,
       /(?:connections?|people|contacts?|referrals?|who works?|employees?|hiring|jobs?)\s+(?:at|from|in|for)\s+([a-z0-9\s.\-]+?)(?:\?|\.|$|\s+for|\s+with)/i,
-      /(?:at|from|for)\s+([a-z0-9\s.\-]+?)\s+(?:connections?|contacts?|employees?)/i,
+      /(?:at|from|for)\s+([a-z0-9\s.\-]+?)\s+(?:connections?|contacts?|employees?|recruiters?)/i,
       /^([a-z0-9\s.\-]+?)\s+(?:connections?|referrals?|contacts?)/i
     ];
 
@@ -106,7 +107,14 @@ export class QueryUnderstandingService {
       const match = text.match(pattern);
       if (match && match[1]) {
         const candidate = match[1].trim();
-        if (CompanyNormalizerService.isPlausibleEntity(candidate) && candidate.toLowerCase() !== 'me') {
+        const candLower = candidate.toLowerCase();
+        if (
+          CompanyNormalizerService.isPlausibleEntity(candidate) && 
+          !candLower.includes('recruiter') &&
+          !candLower.includes('hiring team') &&
+          !candLower.includes('team') &&
+          candLower !== 'me'
+        ) {
           result.person = candidate;
           break;
         }
@@ -137,6 +145,10 @@ export class QueryUnderstandingService {
    * Intent classification rules engine.
    */
   static _determineIntent(lowerText, explicitEntities, companyEntity, personEntity, jobEntity) {
+    if (lowerText.includes('cold email') || lowerText.includes('revert') || lowerText.includes('cold emailed') || lowerText.includes('opportunity email') || lowerText.includes('talent acquisition email')) {
+      return 'cold_email_outreach';
+    }
+
     if (lowerText.includes('draft') || lowerText.includes('reach out to') || lowerText.includes('write a message')) {
       return 'draft_outreach';
     }

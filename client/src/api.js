@@ -603,6 +603,204 @@ class ApiClient {
   }
 
   async cancelAction(actionId, action) {
+    return this.request(/actions//cancel, {
+      method: 'POST',
+      body: { action }
+    });
+  }
+
+  async listJobSearchProfiles() {
+    const res = await this.request('/jobs/search-profiles');
+    return res.data;
+  }
+
+  async createJobSearchProfile(profileData) {
+    const res = await this.request('/jobs/search-profiles', {
+      method: 'POST',
+      body: profileData
+    });
+    return res.data;
+  }
+
+  async updateJobSearchProfile(profileId, profileData) {
+    const res = await this.request(`/jobs/search-profiles/${profileId}`, {
+      method: 'PUT',
+      body: profileData
+    });
+    return res.data;
+  }
+
+  async deleteJobSearchProfile(profileId) {
+    return this.request(`/jobs/search-profiles/${profileId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async archiveJob(jobId, isArchived) {
+    const res = await this.request(`/jobs/${jobId}/archive`, {
+      method: 'PATCH',
+      body: { isArchived },
+    });
+    return res.data;
+  }
+
+  // Applications
+  async listApplications() {
+    const res = await this.request('/applications');
+    return res.data;
+  }
+
+  async getApplication(applicationId) {
+    const res = await this.request(`/applications/${applicationId}`);
+    return res.data;
+  }
+
+  async createApplication(jobId, status, extra = {}) {
+    const res = await this.request('/applications', {
+      method: 'POST',
+      body: { jobId, status, ...extra },
+    });
+    return res.data;
+  }
+
+  async updateApplication(applicationId, data) {
+    const res = await this.request(`/applications/${applicationId}`, {
+      method: 'PUT',
+      body: data,
+    });
+    return res.data;
+  }
+
+  async createApplicationEvent(applicationId, eventData) {
+    const res = await this.request(`/applications/${applicationId}/events`, {
+      method: 'POST',
+      body: eventData,
+    });
+    return res.data;
+  }
+
+  async updateApplicationStatus(applicationId, status, notes = '') {
+    const res = await this.request(`/applications/${applicationId}/status`, {
+      method: 'PATCH',
+      body: { status, notes },
+    });
+    return res.data;
+  }
+
+  async deleteApplication(applicationId) {
+    return this.request(`/applications/${applicationId}`, { method: 'DELETE' });
+  }
+
+  // Outreach
+  async listOutreach() {
+    const res = await this.request('/outreach');
+    return res.data;
+  }
+
+  async getOutreach(outreachId) {
+    const res = await this.request(`/outreach/${outreachId}`);
+    return res.data;
+  }
+
+  async createOutreach(connectionId, status, notes = '', contactDate = null, followUpDate = null) {
+    const res = await this.request('/outreach', {
+      method: 'POST',
+      body: { connectionId, status, notes, contactDate, followUpDate },
+    });
+    return res.data;
+  }
+
+  async updateOutreach(outreachId, data) {
+    const res = await this.request(`/outreach/${outreachId}`, {
+      method: 'PUT',
+      body: data,
+    });
+    return res.data;
+  }
+
+  async createOutreachEvent(outreachId, status, notes = '') {
+    const res = await this.request(`/outreach/${outreachId}/events`, {
+      method: 'POST',
+      body: { status, notes },
+    });
+    return res.data;
+  }
+
+  async deleteOutreach(outreachId) {
+    return this.request(`/outreach/${outreachId}`, { method: 'DELETE' });
+  }
+
+  // Notifications
+  async listNotifications() {
+    const res = await this.request('/notifications');
+    return res.data;
+  }
+
+  async markNotificationRead(notificationId) {
+    const res = await this.request(`/notifications/${notificationId}/read`, {
+      method: 'PATCH',
+    });
+    return res.data;
+  }
+
+  async markAllNotificationsRead() {
+    const res = await this.request('/notifications/read-all', {
+      method: 'PATCH',
+    });
+    return res.data;
+  }
+
+  // Dashboard
+  async getDashboardStats() {
+    const res = await this.request('/dashboard');
+    return res.data;
+  }
+
+  // Copilot
+  async getCopilotContext(payload) {
+    return this.request('/copilot/context', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  async getReferralPath(jobId, query = '') {
+    return this.request('/copilot/referral-path', {
+      method: 'POST',
+      body: { jobId, query }
+    });
+  }
+
+  async getMatchExplanation(jobId, query = '') {
+    return this.request('/copilot/match-explanation', {
+      method: 'POST',
+      body: { jobId, query }
+    });
+  }
+
+  async getDecisionDigest(date, query = '') {
+    return this.request('/copilot/decision-digest', {
+      method: 'POST',
+      body: { date, query }
+    });
+  }
+
+  async sendCopilotChat(payload) {
+    return this.request('/copilot/chat', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Actions Gateway
+  async confirmAction(actionId, action) {
+    return this.request(`/actions/${actionId}/confirm`, {
+      method: 'POST',
+      body: { action }
+    });
+  }
+
+  async cancelAction(actionId, action) {
     return this.request(`/actions/${actionId}/cancel`, {
       method: 'POST',
       body: { action }
@@ -615,7 +813,51 @@ class ApiClient {
       body: { action }
     });
   }
+
+  // Cold Email Outreach Tracking
+  async getColdEmails(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/cold-emails${query ? `?${query}` : ''}`);
+  }
+
+  async getColdEmailStats() {
+    return this.request('/cold-emails/stats');
+  }
+
+  async syncColdEmails(emails, source = 'gmail_sync') {
+    return this.request('/cold-emails/sync', {
+      method: 'POST',
+      body: { emails, source }
+    });
+  }
+
+  async syncGmailColdEmails(label = 'opportunity') {
+    return this.request('/cold-emails/sync-gmail', {
+      method: 'POST',
+      body: { label }
+    });
+  }
+
+  async createColdEmail(payload) {
+    return this.request('/cold-emails', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  async logColdEmailRevert(id, payload) {
+    return this.request(`/cold-emails/${id}/revert`, {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  async linkColdEmailToCRM(id, payload) {
+    return this.request(`/cold-emails/${id}/link`, {
+      method: 'POST',
+      body: payload
+    });
+  }
 }
 
 export const api = new ApiClient();
-

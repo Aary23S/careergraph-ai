@@ -29,6 +29,11 @@ export const models = initializeModels(sequelize);
 
 export async function connectDatabase() {
   await sequelize.authenticate();
+  try {
+    await models.ColdEmailOutreach.sync();
+  } catch (e) {
+    console.error('[Database] ColdEmailOutreach sync warning:', e.message);
+  }
   return sequelize;
 }
 

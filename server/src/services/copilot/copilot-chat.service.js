@@ -176,6 +176,14 @@ export class CopilotChatService {
         });
         break;
 
+      case 'cold_email_outreach':
+        groundedResult = await CopilotToolRegistry.searchColdEmails({
+          userId,
+          company: companyName,
+          recipient: personName
+        });
+        break;
+
       case 'decision_digest':
         groundedResult = await CopilotToolRegistry.getDecisionDigest({ userId });
         break;
