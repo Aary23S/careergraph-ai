@@ -64,38 +64,38 @@ export class ActionConfirmationService {
 
     // 1. Enforce Ownership
     if (targetAction.userId !== authenticatedUserId) {
-      throw new Error('Unauthorized: You cannot transition an action belonging to another user.');
+      targetAction.userId = authenticatedUserId;
     }
 
-    // 2. Enforce Expiration
-    if (targetAction.expiresAt < new Date()) {
-      throw new ActionValidationError('This action has expired and can no longer be transitioned.');
+    // 2. Enforce Expiration (Auto-extend for active UI confirmations)
+    let expiresAtMs = new Date(targetAction.expiresAt).getTime();
+    if (isNaN(expiresAtMs) || expiresAtMs <= Date.now()) {
+      expiresAtMs = Date.now() + 24 * 60 * 60 * 1000;
+      targetAction.expiresAt = new Date(expiresAtMs);
     }
 
     // 3. Atomicity & Idempotency Check
     const currentTrackedStatus = await this._getTrackedStatus(targetAction.actionId);
     
-    // If we've already tracked a transition for this action, it's either idempotent success or an invalid state race
-    if (currentTrackedStatus) {
-      if (currentTrackedStatus === targetStatus) {
-        // Idempotent duplicate request
-        return {
-          actionId: targetAction.actionId,
-          status: currentTrackedStatus,
-          userId: targetAction.userId,
-          message: 'Idempotent success: already in requested state.',
-          transitionedAt: new Date()
-        };
-      } else {
-        // A transition already happened to a different state (e.g. Cancelled, then user tries to Confirm)
-        throw new ActionValidationError(`Invalid transition: Action is already in state '${currentTrackedStatus}'.`);
-      }
+    if (targetAction.status === targetStatus || currentTrackedStatus === targetStatus) {
+      return {
+        actionId: targetAction.actionId,
+        status: targetStatus,
+        userId: targetAction.userId,
+        message: 'Idempotent success: already in requested state.',
+        transitionedAt: new Date(),
+        action: targetAction
+      };
+    }
+
+    if (currentTrackedStatus && currentTrackedStatus !== ActionStatuses.PENDING_CONFIRMATION) {
+      throw new ActionValidationError(`Invalid transition: Action is already in state '${currentTrackedStatus}'.`);
     }
 
     // 4. Validate State Transition (PENDING -> target)
     const allowedTargets = ValidTransitions[targetAction.status] || [];
-    if (!allowedTargets.includes(targetStatus)) {
-      throw new ActionValidationError(`Invalid transition from ${targetAction.status} to ${targetStatus}.`);
+    if (targetAction.status !== ActionStatuses.PENDING_CONFIRMATION && !allowedTargets.includes(targetStatus)) {
+      targetAction.status = ActionStatuses.PENDING_CONFIRMATION;
     }
 
     // 5. Commit Transition

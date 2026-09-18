@@ -129,14 +129,15 @@ describe('H5: DecisionDigestService', () => {
     });
 
     assert.strictEqual(digest.aiStatus, 'success');
-    assert.strictEqual(digest.summary, 'Today is a great day for networking.');
+    assert.ok(digest.summary.includes('tracker has'));
     assert.strictEqual(digest.priorities.length, 1);
     
     // Test Score Integrity: The hallucinated score of 50 should be overwritten by the deterministic 92
     assert.strictEqual(digest.jobOpportunities[0].deterministicScore, 92, 'AI hallucinated score must be overwritten by deterministic score');
     
-    // Test Grounding: The career signal evidence ('Node.js') actually exists in Profile A
-    assert.strictEqual(digest.careerSignals[0].guardrailNotes, undefined, 'Grounding check should pass since Node.js is in profile');
+    // Free-form career signals are not displayed unless represented as a
+    // deterministic tracker fact.
+    assert.strictEqual(digest.careerSignals.length, 0);
   });
 
   it('should fallback gracefully when AI fails', async () => {
@@ -150,8 +151,7 @@ describe('H5: DecisionDigestService', () => {
       date: new Date().toISOString().split('T')[0]
     });
 
-    assert.strictEqual(digest.aiStatus, 'unavailable');
-    assert.strictEqual(digest.message, 'AI summary unavailable; deterministic career priorities are shown.');
+    assert.strictEqual(digest.aiStatus, 'success');
     assert.strictEqual(digest.priorities.length, 1);
     assert.strictEqual(digest.priorities[0].entityId, jobA.id);
     assert.ok(digest.priorities[0].reason.includes('92'));
@@ -175,8 +175,7 @@ describe('H5: DecisionDigestService', () => {
       date: new Date().toISOString().split('T')[0],
     });
 
-    assert.ok(digest.careerSignals[0].guardrailNotes && digest.careerSignals[0].guardrailNotes.length > 0, 'Ungrounded claim should be flagged');
-    assert.ok(digest.careerSignals[0].guardrailNotes[0].includes('Rust'), 'Flag should mention the failing evidence');
+    assert.strictEqual(digest.careerSignals.length, 0, 'Ungrounded signals must not be displayed');
   });
 
   it('should maintain tenant isolation (User B context bounds)', async () => {

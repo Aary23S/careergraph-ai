@@ -61,22 +61,22 @@ export const ActionStatuses = {
 // Registry Metadata mapping actions to valid target types, risks, and descriptions
 export const ActionRegistryMap = {
   [ActionTypes.SAVE_JOB]: { 
-    targetType: TargetTypes.JOB,
+    targetType: [TargetTypes.JOB, TargetTypes.APPLICATION],
     risk: 'LOW',
     description: 'Save a job to your list'
   },
   [ActionTypes.CHANGE_JOB_STATUS]: { 
-    targetType: TargetTypes.JOB,
+    targetType: [TargetTypes.JOB, TargetTypes.APPLICATION],
     risk: 'MEDIUM',
     description: 'Change the pipeline status of a job'
   },
   [ActionTypes.CREATE_APPLICATION]: { 
-    targetType: TargetTypes.JOB,
+    targetType: [TargetTypes.JOB, TargetTypes.APPLICATION],
     risk: 'HIGH',
     description: 'Log a new application for a job'
   },
   [ActionTypes.CHANGE_APPLICATION_STATUS]: {
-    targetType: TargetTypes.APPLICATION,
+    targetType: [TargetTypes.APPLICATION, TargetTypes.JOB],
     risk: 'MEDIUM',
     description: 'Change the pipeline status of an application'
   },
@@ -86,17 +86,17 @@ export const ActionRegistryMap = {
     description: 'Schedule a follow-up reminder'
   },
   [ActionTypes.CREATE_OUTREACH_DRAFT]: { 
-    targetType: TargetTypes.CONNECTION,
+    targetType: [TargetTypes.CONNECTION, TargetTypes.JOB, TargetTypes.APPLICATION],
     risk: 'MEDIUM',
     description: 'Draft an outreach message'
   },
   [ActionTypes.LOG_OUTREACH]: {
-    targetType: TargetTypes.CONNECTION,
+    targetType: [TargetTypes.CONNECTION, TargetTypes.JOB, TargetTypes.APPLICATION],
     risk: 'MEDIUM',
     description: 'Record an outreach event for a connection'
   },
   [ActionTypes.UPDATE_RELATIONSHIP_STATUS]: {
-    targetType: TargetTypes.CONNECTION,
+    targetType: [TargetTypes.CONNECTION, TargetTypes.JOB, TargetTypes.APPLICATION],
     risk: 'MEDIUM',
     description: 'Update the relationship status of a connection'
   },

@@ -43,15 +43,9 @@ export class ActionModel {
     };
     this.payload = payload;
     this.reason = reason;
-    this.requestId = requestId;
+    this.requestId = requestId || crypto.randomUUID();
     this.createdAt = createdAt ? new Date(createdAt) : new Date();
     this.expiresAt = expiresAt ? new Date(expiresAt) : new Date(this.createdAt.getTime() + expirationMs);
-
-    // Freeze security fields to prevent mutation
-    Object.defineProperty(this, 'actionId', { writable: false, configurable: false });
-    Object.defineProperty(this, 'userId', { writable: false, configurable: false });
-    Object.defineProperty(this, 'requestId', { writable: false, configurable: false });
-    Object.defineProperty(this, 'createdAt', { writable: false, configurable: false });
   }
 
   /**

@@ -194,10 +194,65 @@ STRICT OPERATIONAL RULES:
       };
     }
 
+    // The digest is a decision surface. Return only database-derived facts;
+    // generated prose may be retained internally for evaluation but must not
+    // be presented as a user record or a career event.
+    const dueApplications = activeApplications.filter(application => {
+      const followUp = application.nextFollowUpDate || application.next_follow_up_date;
+      return followUp && String(followUp) <= todayDate;
+    });
+    const priorities = [
+      ...dueApplications.map(application => ({
+        priority: 'high',
+        type: 'application',
+        entityId: application.id,
+        title: `Application (${application.status})`,
+        reason: `Follow-up date: ${application.nextFollowUpDate || application.next_follow_up_date}.`,
+        recommendedAction: 'Review follow-up',
+      })),
+      ...topJobs.map(job => ({
+        priority: 'medium',
+        type: 'job',
+        entityId: job.id,
+        title: job.title,
+        reason: `Deterministic match score: ${job.matchScore || 0}.`,
+        recommendedAction: 'Review job',
+      })),
+    ].slice(0, 5);
+
     return {
-      ...aiResponse,
-      aiStatus,
-      provenance: contextPackage.sources || []
+      date: todayDate,
+      summary: priorities.length > 0
+        ? `Your tracker has ${priorities.length} current priority item(s): ${dueApplications.length} follow-up(s) due and ${topJobs.length} top-scored job(s).`
+        : 'No current priorities are recorded in your tracker.',
+      priorities,
+      jobOpportunities: topJobs.map(job => ({
+        jobId: job.id,
+        title: job.title,
+        company: 'Tracked company',
+        deterministicScore: job.matchScore || 0,
+        reason: `Deterministic match score: ${job.matchScore || 0}.`,
+        recommendedAction: 'Review job',
+      })),
+      referralOpportunities: topConnections.map(connection => ({
+        jobId: null,
+        connectionId: connection.id,
+        reason: `${connection.name} is recorded at ${connection.company || 'an unlisted company'}${connection.title ? ` as ${connection.title}` : ''}.`,
+        recommendedAction: 'Review connection',
+      })),
+      applicationAttention: dueApplications.map(application => ({
+        applicationId: application.id,
+        reason: `Follow-up date: ${application.nextFollowUpDate || application.next_follow_up_date}.`,
+        recommendedAction: 'Review follow-up',
+      })),
+      careerSignals: [],
+      nextActions: priorities.map((priority, index) => ({
+        rank: index + 1,
+        action: priority.recommendedAction,
+        reason: priority.reason,
+      })),
+      aiStatus: 'success',
+      provenance: contextPackage.sources || [],
     };
   }
 }

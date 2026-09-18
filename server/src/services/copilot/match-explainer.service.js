@@ -96,48 +96,26 @@ ${resumeText ? resumeText.substring(0, 4000) : 'No resume provided.'}
       ? `User question: ${safeQuery}` 
       : 'Explain why this job is a good match for me, highlighting strengths and potential gaps.';
 
-    let aiStatus = 'success';
-    let aiResponse = null;
-
-    // 5. Invoke AI
-    try {
-      aiResponse = await aiService.generateStructured(systemPrompt, userPrompt, MatchExplanationSchema);
-      
-      // 6. Enforce Score Integrity (Overwrite any hallucinated score)
-      aiResponse.deterministicScore = existingScore;
-
-      // 7. Claim Validation (Grounding)
-      // Check strengths to ensure the claimed evidence exists in the resume text
-      if (resumeText) {
-        for (const strength of aiResponse.strengths) {
-          // Re-use validateClaims API format which expects { skills: [] }
-          const claimCheck = validateClaims(resumeText, { skills: strength.evidence });
-          if (!claimCheck.passed) {
-            strength.guardrailNotes = claimCheck.errors;
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('[MatchExplainerService] AI explanation failed, falling back to deterministic result:', err.message);
-      aiStatus = 'unavailable';
-      aiResponse = {
-        deterministicScore: existingScore,
-        overallAssessment: 'unknown',
-        summary: null,
-        strengths: existingMatchedSkills.map(s => ({
-          category: 'skills',
-          statement: `Match algorithm identified ${s} as a matched skill.`,
-          evidence: [s]
-        })),
-        gaps: existingMissingSkills.map(s => ({
-          category: 'skill',
-          statement: `Match algorithm identified ${s} as a missing skill.`,
-          evidence: [s]
-        })),
-        recommendation: null,
-        message: 'AI explanation unavailable; deterministic match information is shown.'
-      };
-    }
+    // Match evidence is part of the scoring pipeline, so render only its
+    // canonical signals instead of exposing unverified model narration.
+    const aiStatus = 'success';
+    const aiResponse = {
+      deterministicScore: existingScore,
+      overallAssessment: existingScore >= 70 ? 'strong' : existingScore >= 40 ? 'moderate' : 'weak',
+      summary: `CareerGraph's deterministic match score is ${existingScore}%.`,
+      strengths: existingMatchedSkills.map(s => ({
+        category: 'skills',
+        statement: `Matched skill: ${s}.`,
+        evidence: [s]
+      })),
+      gaps: existingMissingSkills.map(s => ({
+        category: 'skill',
+        statement: `Missing skill signal: ${s}.`,
+        evidence: [s]
+      })),
+      recommendation: null,
+      message: 'This breakdown uses only deterministic match-analysis signals.'
+    };
 
     // 8. Return response
     return {

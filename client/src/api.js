@@ -67,7 +67,9 @@ class ApiClient {
         const errorData = await response.json().catch(() => ({}));
         // Server error responses nest the message under `error.message`
         // ({success:false, error:{code, message}}), not at the top level.
-        const message = errorData.error?.message || errorData.message || `Request failed with status ${response.status}`;
+        const message = typeof errorData.error === 'string'
+          ? errorData.error
+          : errorData.error?.message || errorData.message || `Request failed with status ${response.status}`;
         const error = new Error(message);
         error.code = errorData.error?.code;
         throw error;

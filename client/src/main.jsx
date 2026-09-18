@@ -566,11 +566,16 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
       const confirmRes = await api.confirmAction(actionModelData.actionId, actionModelData);
       const confirmedAction = confirmRes.action || { ...actionModelData, status: 'confirmed' };
       const execRes = await api.executeAction(actionModelData.actionId, confirmedAction);
+      const draft = execRes.result?.draft;
+      const completionContent = draft
+        ? `Draft message (not sent):\n\n${draft}`
+        : `✓ Action completed successfully! ${execRes.message || execRes.result?.note || ''}`;
       
       setMessages(prev => prev.map((m, i) => i === msgIndex ? {
         ...m,
         actionStatus: 'completed',
-        content: `✓ Action completed successfully! ${execRes.message || ''}`
+        content: completionContent,
+        data: { ...m.data, actionResult: execRes.result }
       } : m));
 
       window.dispatchEvent(new CustomEvent('careergraph:data-refetch'));
@@ -603,6 +608,14 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
 
   return (
     <div className="copilot-chat-box">
+      <div className="copilot-chat-topbar">
+        <div className="copilot-agent-avatar">CG</div>
+        <div>
+          <div className="copilot-agent-name">Career Copilot</div>
+          <div className="copilot-agent-state"><span /> Grounded in your CareerGraph records</div>
+        </div>
+        <div className="copilot-topbar-note">Private workspace</div>
+      </div>
       <div className="copilot-chat-stream">
         {messages.map((msg, idx) => (
           <div
@@ -610,65 +623,56 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
             className={`copilot-msg-bubble ${msg.role === 'user' ? 'copilot-msg-bubble--user' : 'copilot-msg-bubble--assistant'}`}
           >
             <div className="copilot-msg-header">
-              <span>{msg.role === 'user' ? 'You' : '✨ Copilot'}</span>
+              <span>{msg.role === 'user' ? 'You' : 'Career Copilot'}</span>
               {msg.intent && (
                 <span className="copilot-msg-intent">
                   {msg.intent.replace('_', ' ')}
                 </span>
               )}
             </div>
-            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.55 }}>{msg.content}</div>
+            <div className="copilot-msg-content">{msg.content}</div>
 
             {/* Action Preview Card */}
             {msg.data?.actionPlan && (
-              <div style={{
-                marginTop: '12px',
-                background: 'var(--bg-tertiary, #1e293b)',
-                border: '1px solid var(--border-color, #334155)',
-                borderRadius: '8px',
-                padding: '12px 14px'
-              }}>
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#6366f1', marginBottom: '6px' }}>
-                  ⚡ Action Required: {msg.data.actionPlan.preview?.operation || msg.data.actionPlan.action?.actionType}
-                </div>
-                <div style={{ fontSize: '0.8rem', marginBottom: '4px' }}>
-                  <strong>Target:</strong> {msg.data.actionPlan.preview?.target}
+              <div className="copilot-action-card">
+                <div className="copilot-action-eyebrow">Review action</div>
+                <div className="copilot-action-title">
+                  {msg.data.actionPlan.preview?.operation || msg.data.actionPlan.action?.actionType}
                 </div>
                 {msg.data.actionPlan.preview?.reason && (
-                  <div style={{ fontSize: '0.8rem', opacity: 0.8, marginBottom: '6px' }}>
-                    <strong>Reason:</strong> {msg.data.actionPlan.preview.reason}
+                  <div className="copilot-action-reason">
+                    {msg.data.actionPlan.preview.reason}
                   </div>
                 )}
+                <div className="copilot-action-target">Target: {msg.data.actionPlan.preview?.target}</div>
                 {msg.data.actionPlan.action?.actionType === 'create_outreach_draft' && (
-                  <div style={{ fontSize: '0.75rem', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)', padding: '4px 8px', borderRadius: '4px', marginBottom: '8px' }}>
-                    🛡️ <strong>Draft only — nothing will be sent externally.</strong>
+                  <div className="copilot-draft-safety">
+                    Draft only. Nothing is sent externally.
                   </div>
                 )}
 
                 {msg.actionStatus === 'executing' ? (
-                  <div style={{ fontSize: '0.8rem', color: '#6366f1', fontStyle: 'italic', marginTop: '8px' }}>
-                    ⏳ Executing action...
+                  <div className="copilot-action-state copilot-action-state--working">
+                    Preparing your result...
                   </div>
                 ) : msg.actionStatus === 'completed' ? (
-                  <div style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 500, marginTop: '8px' }}>
-                    ✓ Action executed successfully!
+                  <div className="copilot-action-state copilot-action-state--complete">
+                    Action completed
                   </div>
                 ) : msg.actionStatus === 'cancelled' ? (
-                  <div style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic', marginTop: '8px' }}>
-                    ✕ Action cancelled.
+                  <div className="copilot-action-state">
+                    Action cancelled
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                  <div className="copilot-action-buttons">
                     <button 
-                      className="conn-btn conn-btn--primary" 
-                      style={{ fontSize: '0.8rem', padding: '4px 12px' }}
+                      className="copilot-action-confirm"
                       onClick={() => handleConfirmAction(idx, msg.data.actionPlan)}
                     >
                       Confirm
                     </button>
                     <button 
-                      className="conn-btn conn-btn--secondary" 
-                      style={{ fontSize: '0.8rem', padding: '4px 12px' }}
+                      className="copilot-action-cancel"
                       onClick={() => handleCancelAction(idx, msg.data.actionPlan)}
                     >
                       Cancel
@@ -679,21 +683,21 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
             )}
 
             {msg.references && msg.references.length > 0 && (
-              <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>References:</span>
+              <div className="copilot-sources">
+                <span>Grounding</span>
                 {msg.references.map((ref, rIdx) => (
-                  <span key={rIdx} style={{ fontSize: '0.75rem', background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-                    🏷️ {ref.label}
+                  <span key={rIdx} className="copilot-source-chip">
+                    {ref.label}
                   </span>
                 ))}
               </div>
             )}
 
             {msg.suggestedPrompts && msg.suggestedPrompts.length > 0 && (
-              <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              <div className="copilot-message-prompts">
                 {msg.suggestedPrompts.map((prompt, pIdx) => (
                   <button key={pIdx} className="copilot-quick-pill" onClick={() => handleSend(prompt)}>
-                    💬 {prompt}
+                    {prompt}
                   </button>
                 ))}
               </div>
@@ -771,85 +775,81 @@ const DecisionDigest = () => {
     }
   };
 
+  const priorities = digest?.priorities || [];
+  const referrals = digest?.referralOpportunities || [];
+  const attention = digest?.applicationAttention || [];
+
   return (
-    <div className="card" style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-          <IconAward /> Career Copilot: Decision Digest
-        </h2>
-        <button className="conn-btn conn-btn--primary" onClick={fetchDigest} disabled={loading}>
-          {loading ? 'Generating...' : (digest ? 'Refresh Digest' : 'Generate Daily Digest')}
+    <section className="copilot-digest">
+      <header className="copilot-digest-hero">
+        <div>
+          <p className="copilot-kicker">Daily operating brief</p>
+          <h2>Decision Digest</h2>
+          <p>Prioritized from your tracked applications, opportunities, and CRM.</p>
+        </div>
+        <button className="copilot-refresh-button" onClick={fetchDigest} disabled={loading}>
+          {loading ? 'Preparing brief...' : digest ? 'Refresh brief' : 'Generate brief'}
         </button>
-      </div>
+      </header>
 
-      {error && <div className="error-message" style={{ color: 'var(--error-color)', padding: '12px', background: 'var(--error-bg)', borderRadius: '6px' }}>{error}</div>}
-      
+      {error && <div className="copilot-digest-error">{error}</div>}
+
+      {!digest && !loading && (
+        <div className="copilot-digest-empty">
+          <span>01</span>
+          <h3>Start with today&apos;s brief</h3>
+          <p>Generate a concise, grounded view of the work that deserves attention now.</p>
+        </div>
+      )}
+
       {digest && (
-        <div className="digest-content" style={{ marginTop: '16px' }}>
-          <p style={{ fontSize: '1.1rem', marginBottom: '24px', color: 'var(--brand-accent)', fontWeight: '500' }}>
-            {digest.summary || digest.message}
-          </p>
+        <div className="copilot-digest-body">
+          <div className="copilot-digest-summary">
+            <span className="copilot-digest-mark"><IconAward /></span>
+            <p>{digest.summary || digest.message}</p>
+            <span className="copilot-digest-date">{digest.date || 'Today'}</span>
+          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-            {digest.priorities?.length > 0 && (
-              <div className="digest-section">
-                <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: 'var(--text-primary)' }}>🔥 Top Priorities</h3>
-                {digest.priorities.map((p, i) => (
-                  <div key={i} style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--border-color)' }}>
-                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>{p.title}</div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>{p.reason}</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--brand-accent)' }}>→ {p.recommendedAction}</div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="copilot-digest-metrics">
+            <div><strong>{priorities.length}</strong><span>Priorities</span></div>
+            <div><strong>{attention.length}</strong><span>Follow-ups</span></div>
+            <div><strong>{referrals.length}</strong><span>Network leads</span></div>
+          </div>
 
-            {digest.referralOpportunities?.length > 0 && (
-              <div className="digest-section">
-                <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: 'var(--text-primary)' }}>🤝 Referral Opportunities</h3>
-                {digest.referralOpportunities.map((r, i) => (
-                  <div key={i} style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--border-color)' }}>
-                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>Connection: {r.connectionId}</div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>{r.reason}</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--brand-accent)' }}>→ {r.recommendedAction}</div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="copilot-digest-grid">
+            <div className="copilot-digest-panel copilot-digest-panel--priority">
+              <div className="copilot-digest-panel-head"><span>01</span><h3>Act now</h3></div>
+              {priorities.length ? priorities.map((p, i) => (
+                <article className="copilot-brief-item" key={`${p.entityId}-${i}`}>
+                  <span className={`copilot-priority-dot copilot-priority-dot--${p.priority || 'medium'}`} />
+                  <div><h4>{p.title}</h4><p>{p.reason}</p><button>{p.recommendedAction}</button></div>
+                </article>
+              )) : <p className="copilot-brief-empty">No urgent items recorded today.</p>}
+            </div>
 
-            {digest.applicationAttention?.length > 0 && (
-              <div className="digest-section">
-                <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: 'var(--text-primary)' }}>📋 Applications Needing Attention</h3>
-                {digest.applicationAttention.map((a, i) => (
-                  <div key={i} style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--border-color)' }}>
-                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>App: {a.applicationId}</div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: '1.4' }}>{a.reason}</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--brand-accent)' }}>→ {a.recommendedAction}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {digest.careerSignals?.length > 0 && (
-              <div className="digest-section">
-                <h3 style={{ marginBottom: '12px', fontSize: '1rem', color: 'var(--text-primary)' }}>📈 Career Signals</h3>
-                {digest.careerSignals.map((s, i) => (
-                  <div key={i} style={{ padding: '16px', background: 'var(--bg-layer-2)', borderRadius: '8px', marginBottom: '12px', border: '1px solid var(--border-color)' }}>
-                    <div style={{ fontWeight: '600', marginBottom: '8px', textTransform: 'capitalize' }}>{s.type}</div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>{s.statement}</div>
-                    {s.guardrailNotes && s.guardrailNotes.length > 0 && (
-                      <div style={{ fontSize: '0.8rem', color: '#ff4d4f', marginTop: '8px', padding: '8px', background: 'rgba(255, 77, 79, 0.1)', borderRadius: '4px' }}>
-                        ⚠️ {s.guardrailNotes.join(', ')}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="copilot-digest-panel">
+              <div className="copilot-digest-panel-head"><span>02</span><h3>Network runway</h3></div>
+              {referrals.length ? referrals.map((r, i) => (
+                <article className="copilot-brief-item" key={`${r.connectionId}-${i}`}>
+                  <span className="copilot-network-initial">{String(i + 1).padStart(2, '0')}</span>
+                  <div><h4>CRM connection</h4><p>{r.reason}</p><button>{r.recommendedAction}</button></div>
+                </article>
+              )) : <p className="copilot-brief-empty">No network opportunities are recorded yet.</p>}
+            </div>
+
+            <div className="copilot-digest-panel">
+              <div className="copilot-digest-panel-head"><span>03</span><h3>Follow-through</h3></div>
+              {attention.length ? attention.map((a, i) => (
+                <article className="copilot-brief-item" key={`${a.applicationId}-${i}`}>
+                  <span className="copilot-followup-icon">+</span>
+                  <div><h4>Application follow-up</h4><p>{a.reason}</p><button>{a.recommendedAction}</button></div>
+                </article>
+              )) : <p className="copilot-brief-empty">No application follow-ups are due.</p>}
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

@@ -214,7 +214,7 @@ USER MESSAGE: "${safeMessage}"
     const lower = text.toLowerCase();
 
     // Action proposals (including message drafting, outreach creation, and status updates)
-    if (/\b(save.*job|bookmark.*job|track.*job|change.*status|mark.*interested|mark.*applying|mark.*interviewing|mark.*offer|mark.*rejected|mark.*contacted|mark.*conversation|set.*relationship|move.*pipeline|update.*status|apply.*to|create.*application|log.*application|remind.*follow.*up|schedule.*follow.*up|follow.*up|draft.*message|draft.*outreach|draft.*referral|write.*email|prepare.*referral|add.*note|write.*note|log.*note|remember.*that|note.*that|i.*contacted|log.*outreach|record.*outreach|log.*messaged|create.*message|write.*message|send.*message|prepare.*message|message to|message for|draft.*to|outreach.*to|connect.*with)\b/i.test(lower)) {
+    if (/\b(save.*job|bookmark.*job|track.*job|change.*status|mark.*interested|mark.*applying|mark.*interviewing|mark.*offer|mark.*rejected|mark.*contacted|mark.*conversation|set.*relationship|move.*pipeline|update.*status|apply.*to|create.*application|log.*application|remind.*follow.*up|schedule.*follow.*up|follow.*up|draft.*message|draft.*outreach|draft.*referral|draft.*email|create.*email|write.*email|prepare.*email|send.*email|email to|email for|personalized email|prepare.*referral|add.*note|write.*note|log.*note|remember.*that|note.*that|i.*contacted|log.*outreach|record.*outreach|log.*messaged|create.*message|write.*message|send.*message|prepare.*message|message to|message for|draft.*to|outreach.*to|connect.*with)\b/i.test(lower)) {
       return 'action_proposal';
     }
 
@@ -420,27 +420,33 @@ USER MESSAGE: "${safeMessage}"
   }
 
   static async handleReferralSearch(userId, query, context) {
-    const { job: targetJob, isDirectMatch } = await this.resolveTargetJob(userId, query, context.jobId);
     const likeOp = models.sequelize?.options?.dialect === 'postgres' ? Op.iLike : Op.like;
 
-    // Check if user asked for a specific company / entity (e.g. "Apple", "Google")
+    // Check whether the user named a company. This must be handled before we
+    // use the UI's selected job context: "connections in Microsoft" should
+    // never silently become a referral search for the previously selected job.
     const cleanWords = query ? query.toLowerCase()
       .replace(/[^a-z0-9\s]/g, '')
       .split(/\s+/)
-      .filter(w => w.length >= 2 && !['who', 'can', 'refer', 'me', 'in', 'at', 'for', 'my', 'top', 'job', 'position', 'role', 'company', 'the', 'is', 'a', 'why', 'match', 'explanation', 'good', 'fit', 'what', 'status', 'application', 'draft', 'outreach', 'suitable', 'connections', 'connection', 'people', 'contacts', 'referrals', 'referral', 'are', 'find', 'show', 'list', 'get', 'any', 'working', 'work'].includes(w))
+      .filter(w => w.length >= 2 && !['who', 'can', 'refer', 'me', 'in', 'at', 'for', 'from', 'my', 'top', 'job', 'position', 'role', 'company', 'the', 'is', 'a', 'why', 'match', 'explanation', 'good', 'fit', 'what', 'status', 'application', 'draft', 'outreach', 'suitable', 'connections', 'connection', 'people', 'contacts', 'referrals', 'referral', 'are', 'find', 'show', 'list', 'get', 'give', 'any', 'all', 'working', 'work'].includes(w))
       : [];
 
-    const explicitCompanyRequested = cleanWords.length > 0 ? cleanWords[0] : null;
+    // Prefer the company immediately following an explicit relationship
+    // preposition. This prevents verbs such as "give" and "from" from
+    // becoming a broad SQL substring query.
+    const companyPhrase = query?.match(/\b(?:at|in|from|for)\s+([a-z0-9][a-z0-9&().-]*)/i)?.[1];
+    const explicitCompanyRequested = companyPhrase?.toLowerCase() || cleanWords[0] || null;
 
-    if (!isDirectMatch && explicitCompanyRequested) {
+    if (explicitCompanyRequested) {
       const matchingConns = await models.Connection.findAll({
         where: {
           user_id: userId,
-          [Op.or]: cleanWords.flatMap(w => [
-            { company: { [likeOp]: `%${w}%` } },
-            { name: { [likeOp]: `%${w}%` } }
-          ])
-        }
+          [Op.or]: [
+            { company: { [likeOp]: `%${explicitCompanyRequested}%` } },
+            { normalizedCompany: { [likeOp]: `%${explicitCompanyRequested}%` } }
+          ]
+        },
+        order: [['connectionScore', 'DESC'], ['createdAt', 'DESC']]
       });
 
       if (matchingConns.length > 0) {
@@ -448,38 +454,32 @@ USER MESSAGE: "${safeMessage}"
         const references = matchingConns.map(c => ({
           type: 'connection',
           id: c.id,
-          label: `${c.name} (${c.title || 'Employee'} at ${c.company})`
+          label: `${c.name} (${c.title || c.headline || 'Employee'} at ${c.company || targetComp})`
         }));
 
-        const message = `You don't currently have a saved job post for **${targetComp}** in your tracker, but I found **${matchingConns.length}** connection(s) at **${targetComp}** in your CRM network:\n\n` +
-          matchingConns.map(c => `• **${c.name}** — ${c.title || 'Team Member'} at ${c.company}\n  *Strategy*: Connect directly to discuss team culture and referral paths.`).join('\n\n') +
-          `\n\n💡 **Next Step**: Draft an outreach email to ${matchingConns[0].name} to express interest in opportunities at ${targetComp}.`;
+        const message = `I found **${matchingConns.length}** connection(s) at **${targetComp}** in your CRM:\n\n` +
+          matchingConns.map(c => `• **${c.name}** — ${c.title || c.headline || 'Team Member'} at ${c.company || targetComp}${c.location ? ` (${c.location})` : ''}`).join('\n');
 
         return {
           message,
           aiStatus: 'success',
           references,
           data: { connections: matchingConns },
-          suggestedPrompts: [
-            `Draft outreach to ${matchingConns[0].name}`,
-            'What should I focus on today?'
-          ]
-        };
-      } else {
-        // User explicitly asked about a target company (e.g. "Apple"), but NO job post and NO connections exist for it
-        const targetComp = explicitCompanyRequested.charAt(0).toUpperCase() + explicitCompanyRequested.slice(1);
-        return {
-          message: `I searched your job pipeline and network for **${targetComp}**, but found no saved job postings or direct connections currently working at **${targetComp}**.\n\n💡 **Tip**: You can add job postings or imported connections for ${targetComp} to track referral opportunities!`,
-          aiStatus: 'success',
-          references: [],
-          data: {},
-          suggestedPrompts: [
-            'What should I focus on today?',
-            'Who can refer me for my top job?'
-          ]
+          suggestedPrompts: [`Draft outreach to ${matchingConns[0].name}`, 'What should I focus on today?']
         };
       }
+
+      const targetComp = explicitCompanyRequested.charAt(0).toUpperCase() + explicitCompanyRequested.slice(1);
+      return {
+        message: `I found no connections at **${targetComp}** in your CRM.`,
+        aiStatus: 'success',
+        references: [],
+        data: { connections: [] },
+        suggestedPrompts: ['Who can refer me for my top job?', 'What should I focus on today?']
+      };
     }
+
+    const { job: targetJob } = await this.resolveTargetJob(userId, query, context.jobId);
 
     if (!targetJob) {
       return {
@@ -630,21 +630,9 @@ USER MESSAGE: "${safeMessage}"
       message += ` ${followUps.length} application(s) have follow-ups scheduled.`;
     }
 
-    // Optionally synthesize natural summary with AI if enabled
-    let aiStatus = 'success';
-    try {
-      const summaryPrompt = `
-Summarize the following application statuses concisely for the user:
-${JSON.stringify(appSummaries, null, 2)}
-`;
-      const aiSummary = await aiService.generateText(summaryPrompt, {
-        operation: 'copilot_application_status',
-        userId
-      });
-      if (aiSummary) message = aiSummary;
-    } catch (err) {
-      aiStatus = 'unavailable';
-    }
+    // Statuses are canonical workflow data. Do not let a text model rewrite
+    // or infer them; the deterministic count above is the answer of record.
+    const aiStatus = 'success';
 
     const references = appSummaries.map(a => ({
       type: 'application',
@@ -675,31 +663,11 @@ ${JSON.stringify(appSummaries, null, 2)}
     const jobsCount = contextPackage.entities.jobs?.length || 0;
     const connCount = contextPackage.entities.connections?.length || 0;
 
-    let message = `I am your Career Copilot. Based on your pipeline, you have ${jobsCount} job opportunities tracked, ${connCount} professional connections, and skills including ${skills.slice(0, 5).join(', ') || 'engineering & product'}. How can I help you advance your career search today?`;
-    let aiStatus = 'success';
-
-    try {
-      const prompt = `
-YOU ARE CAREERGRAPH COPILOT - AN ELITE CAREER & OUTREACH AI ASSISTANT.
-Answer the user's query thoughtfully, clearly, and concisely.
-Provide actionable guidance, tips, or insights. If relevant, use their profile and pipeline context provided below.
-
-USER QUERY: "${query}"
-
-USER PROFILE & PIPELINE CONTEXT:
-${JSON.stringify(contextPackage.entities, null, 2)}
-`;
-      const aiResponse = await aiService.generateText(prompt, {
-        operation: 'copilot_career_query',
-        userId
-      });
-      if (aiResponse && aiResponse.trim()) {
-        message = aiResponse.trim();
-      }
-    } catch (err) {
-      console.warn('[CopilotChatService] Career query AI generation failed:', err.message);
-      aiStatus = 'unavailable';
-    }
+    const skillsText = skills.slice(0, 5).join(', ');
+    const message = skills.length > 0
+      ? `Your profile records these skills: ${skillsText}. You have ${jobsCount} tracked job opportunity(s) and ${connCount} connection(s). Select a specific job to receive a grounded match breakdown; I will not infer missing experience from this summary.`
+      : `You have ${jobsCount} tracked job opportunity(s) and ${connCount} connection(s). Add profile skills or select a specific job for a grounded match breakdown.`;
+    const aiStatus = 'success';
 
     const references = (contextPackage.sources || []).map(src => ({
       type: src.split(':')[0],

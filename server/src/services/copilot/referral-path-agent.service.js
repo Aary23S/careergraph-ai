@@ -246,6 +246,42 @@ RESPONSE FORMAT (JSON ONLY):
         };
       });
 
+      // The model may choose from bounded candidates, but user-facing facts
+      // and recommendations are always regenerated from CRM fields here.
+      // This prevents unsupported role, relationship, or referral claims.
+      recommendedContacts = selectedCandidates.map((c, idx) => ({
+        connectionId: c.entityId,
+        recommendationRank: idx + 1,
+        name: c.name,
+        company: c.company,
+        title: c.title,
+        reason: c.company && targetCompLower && c.company.toLowerCase().includes(targetCompLower)
+          ? `Works at ${c.company}.`
+          : `Works at ${c.company || 'an unlisted company'}.`,
+        referralStrategy: c.company && targetCompLower && c.company.toLowerCase().includes(targetCompLower)
+          ? `Ask ${c.name} about the team and referral process.`
+          : `Ask ${c.name} for general career advice; they are not listed as an employee of ${displayCompany}.`,
+        evidence: [
+          c.company ? `Company: ${c.company}` : null,
+          c.title ? `Title: ${c.title}` : null,
+        ].filter(Boolean),
+      }));
+
+      const groundedTopCandidate = selectedCandidates[0];
+      primaryRecommendation = groundedTopCandidate ? {
+        connectionId: groundedTopCandidate.entityId,
+        reason: groundedTopCandidate.company && targetCompLower && groundedTopCandidate.company.toLowerCase().includes(targetCompLower)
+          ? `Direct CRM contact at ${groundedTopCandidate.company}.`
+          : `CRM contact at ${groundedTopCandidate.company || 'an unlisted company'}.`,
+        recommendedAction: `Draft a message to ${groundedTopCandidate.name}.`,
+      } : null;
+
+      outreachDraft = groundedTopCandidate ? {
+        connectionId: groundedTopCandidate.entityId,
+        subject: `Question about ${job.title} at ${displayCompany}`,
+        message: `Hi ${groundedTopCandidate.name.split(' ')[0]},\n\nI saw that you work at ${groundedTopCandidate.company || 'your company'}${groundedTopCandidate.title ? ` as a ${groundedTopCandidate.title}` : ''}. I am considering a ${job.title} role at ${displayCompany} and would appreciate any perspective you are comfortable sharing.\n\nBest regards,`,
+      } : null;
+
       // Formulate clear, honest summary
       const summaryHeader = hasDirectInsiders
         ? `Here are your direct referral connections at **${displayCompany}** for **${job.title}**:`

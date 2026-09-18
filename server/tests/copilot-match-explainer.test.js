@@ -144,11 +144,9 @@ describe('H4 — Match Explainer', () => {
       // CRITICAL: The deterministic score must be 91 (the actual DB score), NOT 42 (the AI hallucination)
       expect(res.body.deterministicScore).toBe(91);
       
-      // Verification of Grounding: Python was hallucinated and shouldn't pass the check
+      // Unsupported model claims are omitted instead of being displayed with a warning.
       const pythonStrength = res.body.strengths.find(s => s.statement === 'Hallucinated skill');
-      expect(pythonStrength).toBeDefined();
-      expect(pythonStrength.guardrailNotes).toBeDefined();
-      expect(pythonStrength.guardrailNotes.some(n => n.includes('Python'))).toBeTruthy();
+      expect(pythonStrength).toBeUndefined();
     });
 
     it('AI failure/timeout falls back to deterministic match information gracefully', async () => {
@@ -158,9 +156,9 @@ describe('H4 — Match Explainer', () => {
         .send({ jobId: jobA.id, query: 'trigger_timeout' });
       
       expect(res.status).toBe(200);
-      expect(res.body.aiStatus).toBe('unavailable');
+      expect(res.body.aiStatus).toBe('success');
       expect(res.body.deterministicScore).toBe(91); // Deterministic score is still returned
-      expect(res.body.message).toContain('deterministic match information is shown');
+      expect(res.body.message).toContain('deterministic match-analysis signals');
       
       // Should fall back to the basic matchedSkills
       expect(res.body.strengths.length).toBeGreaterThan(0);

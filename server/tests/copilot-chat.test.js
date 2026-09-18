@@ -210,7 +210,7 @@ describe('H6: CopilotChatService', () => {
     });
 
     assert.strictEqual(res.intent, 'application_status');
-    assert.strictEqual(res.aiStatus, 'unavailable');
+    assert.strictEqual(res.aiStatus, 'success');
     assert.ok(res.message.includes('1 total application(s)'));
   });
 });

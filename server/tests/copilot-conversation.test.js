@@ -17,8 +17,8 @@ describe('Copilot Multi-Turn Conversation & Intent Routing Suite', () => {
     assert.strictEqual(intent, 'action_proposal', `Expected action_proposal, got ${intent}`);
   });
 
-  it('should classify "who are the suitable connections in Apple?" as referral_search', () => {
-    const intent = CopilotChatService.classifyIntentDeterminist('who are the suitable connections in Apple?');
-    assert.strictEqual(intent, 'referral_search', `Expected referral_search, got ${intent}`);
+  it('should classify "create personalized email to Vishal expressing your interest in learning more about potential DevOps opportunities at Apple" as action_proposal', () => {
+    const intent = CopilotChatService.classifyIntentDeterminist('create personalized email to Vishal expressing your interest in learning more about potential DevOps opportunities at Apple');
+    assert.strictEqual(intent, 'action_proposal', `Expected action_proposal, got ${intent}`);
   });
 });
