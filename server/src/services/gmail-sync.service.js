@@ -168,13 +168,27 @@ export async function syncGmailColdEmails(userId, labelName = 'opportunity') {
     }
 
     const queryStr = queryParts.join(' OR ');
-    const res = await listMessages(authClient, queryStr);
-    messages = res.messages || [];
+    
+    // Fetch ALL pages of messages using pageToken loop
+    const messageMap = new Map();
+    let pageToken = null;
+    do {
+      const res = await listMessages(authClient, queryStr, pageToken, 500);
+      (res.messages || []).forEach(m => messageMap.set(m.id, m));
+      pageToken = res.nextPageToken;
+    } while (pageToken);
+
+    messages = Array.from(messageMap.values());
 
     // Fallback: search query for opportunity keyword if 0 label matches
     if (messages.length === 0) {
-      const fallbackRes = await listMessages(authClient, 'subject:opportunity OR subject:Opportunity OR opportunity OR Opportunity');
-      messages = fallbackRes.messages || [];
+      let fbToken = null;
+      do {
+        const fallbackRes = await listMessages(authClient, 'subject:opportunity OR subject:Opportunity OR opportunity OR Opportunity', fbToken, 500);
+        (fallbackRes.messages || []).forEach(m => messageMap.set(m.id, m));
+        fbToken = fallbackRes.nextPageToken;
+      } while (fbToken);
+      messages = Array.from(messageMap.values());
     }
   } catch (err) {
     if (isInvalidGrantError(err)) {

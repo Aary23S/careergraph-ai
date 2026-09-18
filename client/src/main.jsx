@@ -897,7 +897,8 @@ const ColdEmailTrackerView = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [meta, setMeta] = useState({ totalPages: 1 });
+  const [limit, setLimit] = useState(15);
+  const [meta, setMeta] = useState({ totalPages: 1, total: 0 });
 
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [showRevertModal, setShowRevertModal] = useState(false);
@@ -920,7 +921,7 @@ const ColdEmailTrackerView = () => {
         role: roleFilter,
         search,
         page,
-        limit: 15
+        limit
       });
       setColdEmails(res.data || []);
       setMeta({ totalPages: res.totalPages || 1, total: res.total });
@@ -934,7 +935,7 @@ const ColdEmailTrackerView = () => {
 
   useEffect(() => {
     loadData();
-  }, [statusFilter, roleFilter, search, page]);
+  }, [statusFilter, roleFilter, search, page, limit]);
 
   const handleDirectGmailSync = async () => {
     setSyncing(true);
@@ -1188,6 +1189,50 @@ const ColdEmailTrackerView = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Bar */}
+      {!loading && coldEmails.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', padding: '16px', background: '#0f172a', border: '1px solid #1e293b', borderRadius: '10px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
+            Showing <strong>{coldEmails.length}</strong> of <strong>{meta.total || 0}</strong> outreach records
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#94a3b8' }}>
+              <span>Per page:</span>
+              <select 
+                value={limit}
+                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                className="form-input"
+                style={{ width: '80px', padding: '4px 8px', fontSize: '0.85rem' }}
+              >
+                <option value={15}>15</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                className="conn-btn conn-btn--ghost conn-btn--sm"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              >
+                ← Previous
+              </button>
+              <span style={{ display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '0.85rem', color: '#e2e8f0', fontWeight: 600 }}>
+                Page {page} of {meta.totalPages || 1}
+              </span>
+              <button
+                className="conn-btn conn-btn--ghost conn-btn--sm"
+                disabled={page >= (meta.totalPages || 1)}
+                onClick={() => setPage(p => p + 1)}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
