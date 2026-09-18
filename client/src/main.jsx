@@ -674,6 +674,7 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
                     <button 
                       className="copilot-action-cancel"
                       onClick={() => handleCancelAction(idx, msg.data.actionPlan)}
+                      onClick={() => handleCancelAction(idx, msg.data.actionPlan)}
                     >
                       Cancel
                     </button>
@@ -682,12 +683,48 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
               </div>
             )}
 
-            {msg.references && msg.references.length > 0 && (
-              <div className="copilot-sources">
-                <span>Grounding</span>
-                {msg.references.map((ref, rIdx) => (
-                  <span key={rIdx} className="copilot-source-chip">
-                    {ref.label}
+            {/* Direct Outreach Draft Card */}
+            {msg.data?.draft && (
+              <div className="copilot-draft-card" style={{ marginTop: '12px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(148, 163, 184, 0.2)', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#38bdf8', fontWeight: 600, marginBottom: '4px' }}>
+                  Direct Outreach Draft
+                </div>
+                {msg.data.recipient && (
+                  <div style={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: 500, marginBottom: '8px' }}>
+                    Draft for: <strong>{msg.data.recipient.name}</strong> ({msg.data.recipient.title} at {msg.data.recipient.company})
+                  </div>
+                )}
+                <textarea 
+                  defaultValue={msg.data.draft}
+                  rows={6}
+                  style={{ width: '100%', background: '#090d16', border: '1px solid #334155', borderRadius: '6px', color: '#f8fafc', padding: '8px', fontSize: '0.85rem', fontFamily: 'inherit', resize: 'vertical' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                    🔒 Nothing has been sent. This draft is editable.
+                  </span>
+                  <button 
+                    className="conn-btn conn-btn--primary"
+                    style={{ fontSize: '0.75rem', padding: '4px 10px' }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(msg.data.draft);
+                      alert('Draft copied to clipboard!');
+                    }}
+                  >
+                    Copy Draft
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(msg.grounding || (msg.references && msg.references.length > 0)) && (
+              <div className="copilot-sources" style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>
+                  {msg.grounding?.status === 'grounded' ? `✓ Grounded in ${msg.grounding.sourceCount} CRM record(s)` : msg.grounding?.status === 'no_data' ? '⚠️ No matching CRM record' : 'Grounding'}
+                </span>
+                {msg.references && msg.references.map((ref, rIdx) => (
+                  <span key={rIdx} className="copilot-source-chip" style={{ fontSize: '0.7rem', padding: '2px 8px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '12px', color: '#38bdf8' }}>
+                    {ref.type}: {ref.id}
                   </span>
                 ))}
               </div>

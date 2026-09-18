@@ -181,7 +181,7 @@ RESPONSE FORMAT (JSON ONLY):
         aiResponse = response;
       } catch (aiErr) {
         console.warn('[ReferralPathAgentService] AI call failed, falling back to deterministic synthesis:', aiErr.message);
-        aiStatus = 'fallback';
+        aiStatus = 'unavailable';
       }
 
       // 8. Grounding Validation: Enforce that returned connectionIds belong to candidate set
@@ -304,7 +304,7 @@ RESPONSE FORMAT (JSON ONLY):
         summary,
         provenance: contextPackage.facts || [],
         aiStatus,
-        aiMessage: aiStatus === 'fallback' ? 'AI explanation unavailable; displaying deterministic candidate ranking.' : undefined
+        aiMessage: (aiStatus === 'fallback' || aiStatus === 'unavailable') ? 'AI explanation unavailable; displaying deterministic candidate ranking.' : undefined
       };
     } catch (err) {
       console.warn('[ReferralPathAgentService] AI generation failed or unavailable, returning deterministic fallback:', err.message);

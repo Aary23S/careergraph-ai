@@ -133,6 +133,7 @@ export async function resetDemoDataset() {
   }
 
   console.log('✅ Demo dataset reset and re-seeded successfully.');
+  return { demoUserId, user, resume };
 }
 
 if (process.argv[1]?.includes('demo-reset.js')) {
