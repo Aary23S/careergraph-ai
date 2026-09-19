@@ -495,6 +495,7 @@ const CONN_STATUS_VARIANT = {
   closed: 'badge-success'
 };
 
+
 const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
   const [messages, setMessages] = useState([
     {
@@ -569,7 +570,7 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
       const draft = execRes.result?.draft;
       const completionContent = draft
         ? `Draft message (not sent):\n\n${draft}`
-        : `✓ Action completed successfully! ${execRes.message || execRes.result?.note || ''}`;
+        : `Action completed successfully! ${execRes.message || execRes.result?.note || ''}`;
       
       setMessages(prev => prev.map((m, i) => i === msgIndex ? {
         ...m,
@@ -583,7 +584,7 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
       setMessages(prev => prev.map((m, i) => i === msgIndex ? {
         ...m,
         actionStatus: 'failed',
-        content: `✕ Execution failed: ${err.message}`
+        content: `Execution failed: ${err.message}`
       } : m));
     }
   };
@@ -595,13 +596,13 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
       setMessages(prev => prev.map((m, i) => i === msgIndex ? {
         ...m,
         actionStatus: 'cancelled',
-        content: '✕ Action cancelled.'
+        content: 'Action cancelled.'
       } : m));
     } catch (err) {
       setMessages(prev => prev.map((m, i) => i === msgIndex ? {
         ...m,
         actionStatus: 'cancelled',
-        content: '✕ Action cancelled.'
+        content: 'Action cancelled.'
       } : m));
     }
   };
@@ -700,7 +701,7 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
                 />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic' }}>
-                    🔒 Nothing has been sent. This draft is editable.
+                    Nothing has been sent. This draft is editable.
                   </span>
                   <button 
                     className="conn-btn conn-btn--primary"
@@ -719,7 +720,7 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
             {(msg.grounding || (msg.references && msg.references.length > 0)) && (
               <div className="copilot-sources" style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>
-                  {msg.grounding?.status === 'grounded' ? `✓ Grounded in ${msg.grounding.sourceCount} CRM record(s)` : msg.grounding?.status === 'no_data' ? '⚠️ No matching CRM record' : 'Grounding'}
+                  {msg.grounding?.status === 'grounded' ? `Grounded in ${msg.grounding.sourceCount} CRM record(s)` : msg.grounding?.status === 'no_data' ? 'No matching CRM record' : 'Grounding'}
                 </span>
                 {msg.references && msg.references.map((ref, rIdx) => (
                   <span key={rIdx} className="copilot-source-chip" style={{ fontSize: '0.7rem', padding: '2px 8px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '12px', color: '#38bdf8' }}>
@@ -741,50 +742,24 @@ const CopilotChat = ({ initialPrompt = null, onPromptSent = null }) => {
           </div>
         ))}
         {loading && (
-          <div className="copilot-msg-bubble copilot-msg-bubble--assistant copilot-typing-indicator">
-            <span>✨ Copilot is analyzing network & generating response</span>
-            <div className="copilot-typing-dots">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
+          <div className="copilot-msg-bubble copilot-msg-bubble--assistant copilot-typing">
+            Copilot is thinking...
           </div>
         )}
+        {error && <div className="copilot-chat-error">{error}</div>}
       </div>
 
-      {error && (
-        <div style={{ color: '#ef4444', padding: '8px 16px', background: 'rgba(239, 68, 68, 0.1)', fontSize: '0.85rem' }}>
-          {error}
-        </div>
-      )}
-
       <div className="copilot-input-area">
-        <div className="copilot-quick-prompts">
-          <button className="copilot-quick-pill" onClick={() => handleSend('Who can refer me for my top job?')}>
-            🤝 Who can refer me?
-          </button>
-          <button className="copilot-quick-pill" onClick={() => handleSend('Why is my top job a good match?')}>
-            ⚡ Match explanation
-          </button>
-          <button className="copilot-quick-pill" onClick={() => handleSend('What should I focus on today?')}>
-            🎯 Daily priorities
-          </button>
-          <button className="copilot-quick-pill" onClick={() => handleSend('What is the status of my applications?')}>
-            📋 Application status
-          </button>
-        </div>
-
         <div className="copilot-input-row">
           <input
             type="text"
             className="copilot-input-field"
-            placeholder="Ask Copilot anything (e.g. 'Who can refer me?', 'Draft an outreach email')..."
+            placeholder="Ask Copilot..."
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            disabled={loading}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSend()}
           />
-          <button className="copilot-send-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>
+          <button className="copilot-send-btn" onClick={() => handleSend()} disabled={loading}>
             Send
           </button>
         </div>
@@ -802,8 +777,8 @@ const DecisionDigest = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.getDecisionDigest(new Date().toISOString().split('T')[0]);
-      setDigest(res);
+      const data = await api.getCopilotDigest();
+      setDigest(data);
     } catch (err) {
       setError(err.message || 'Failed to load Decision Digest');
     } finally {
@@ -1081,13 +1056,13 @@ const ColdEmailTrackerView = () => {
             disabled={syncing}
             onClick={handleDirectGmailSync}
           >
-            {syncing ? 'Syncing Gmail...' : '✨ Direct Sync Gmail "opportunity" Label'}
+            {syncing ? 'Syncing Gmail...' : 'Direct Sync Gmail "opportunity" Label'}
           </button>
           <button 
             className="conn-btn conn-btn--ghost"
             onClick={() => setShowSyncModal(true)}
           >
-            📋 Import JSON / CSV
+            Import JSON / CSV
           </button>
         </div>
       </div>
@@ -1175,28 +1150,28 @@ const ColdEmailTrackerView = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '16px', fontSize: '0.82rem', color: '#94a3b8', marginTop: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ color: '#38bdf8', fontWeight: 600 }}>
-                    📅 Sent Date: {new Date(item.sentDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} ({formatRelativeTime(item.sentDate)})
+                    Sent Date: {new Date(item.sentDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} ({formatRelativeTime(item.sentDate)})
                   </span>
-                  <span>✉️ {item.recipientEmail}</span>
+                  <span>{item.recipientEmail}</span>
                 </div>
 
                 <div style={{ marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {item.connection ? (
                     <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
-                      ✓ Linked Connection: {item.connection.name} ({item.connection.title || 'Contact'})
+                      Linked Connection: {item.connection.name} ({item.connection.title || 'Contact'})
                     </span>
                   ) : (
                     <button 
                       onClick={() => handleLinkCRM(item)}
                       style={{ fontSize: '0.7rem', padding: '2px 8px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '12px', color: '#38bdf8', cursor: 'pointer' }}
                     >
-                      + Link / Add to Connection CRM
+                      Link / Add to Connection CRM
                     </button>
                   )}
 
                   {item.company && (
                     <span className="badge badge-primary" style={{ fontSize: '0.7rem' }}>
-                      ✓ Linked Company: {item.company.name}
+                      Linked Company: {item.company.name}
                     </span>
                   )}
                 </div>
@@ -1206,7 +1181,7 @@ const ColdEmailTrackerView = () => {
                     <strong>Revert ({new Date(item.revertDate).toLocaleDateString()}):</strong> {item.revertMessage}
                     {item.nextActionDate && (
                       <div style={{ marginTop: '4px', color: '#f59e0b', fontSize: '0.8rem' }}>
-                        📅 Follow-up scheduled for: {item.nextActionDate} {item.nextActionNotes ? `(${item.nextActionNotes})` : ''}
+                        Follow-up scheduled for: {item.nextActionDate} {item.nextActionNotes ? `(${item.nextActionNotes})` : ''}
                       </div>
                     )}
                   </div>
@@ -1227,7 +1202,7 @@ const ColdEmailTrackerView = () => {
                     className="conn-btn conn-btn--ghost conn-btn--sm"
                     onClick={() => handleOpenEditModal(item)}
                   >
-                    ✏️ Edit Details
+                    Edit Details
                   </button>
                   <button 
                     className="conn-btn conn-btn--ghost conn-btn--sm"
@@ -1238,7 +1213,7 @@ const ColdEmailTrackerView = () => {
                       setShowRevertModal(true);
                     }}
                   >
-                    📝 Log Revert / Reply
+                    Log Revert / Reply
                   </button>
                 </div>
               </div>
@@ -1394,7 +1369,7 @@ const ColdEmailTrackerView = () => {
       {showEditModal && (
         <div className="modal-overlay">
           <div className="modal-content conn-modal" style={{ maxWidth: '600px' }}>
-            <h2 className="modal-title">✏️ Edit Cold Email Details</h2>
+            <h2 className="modal-title">Edit Cold Email Details</h2>
             <p className="conn-modal-subtitle">
               Update recipient, company name, role, sent date or subject if synced details need correction.
             </p>
@@ -1526,14 +1501,14 @@ const CopilotDashboardHub = ({ onOpenDrawer }) => {
             style={{ fontSize: '0.8rem', padding: '6px 12px' }}
             onClick={() => setInlineOpen(!inlineOpen)}
           >
-            {inlineOpen ? 'Hide Inline Chat' : '💬 Toggle Inline Chat'}
+            {inlineOpen ? 'Hide Inline Chat' : 'Toggle Inline Chat'}
           </button>
           <button 
             className="conn-btn conn-btn--primary" 
             style={{ fontSize: '0.8rem', padding: '6px 12px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
             onClick={() => onOpenDrawer()}
           >
-            ✨ Open Assistant Drawer
+            Open Assistant Drawer
           </button>
         </div>
       </div>
@@ -1544,16 +1519,16 @@ const CopilotDashboardHub = ({ onOpenDrawer }) => {
 
       <div className="copilot-hub-prompts">
         <button className="copilot-prompt-pill" onClick={() => onOpenDrawer('Who can refer me for my top job?')}>
-          🤝 Who can refer me for my top job?
+          Who can refer me for my top job?
         </button>
         <button className="copilot-prompt-pill" onClick={() => onOpenDrawer('Why is this job a good match?')}>
-          ⚡ Why is this job a good match?
+          Why is this job a good match?
         </button>
         <button className="copilot-prompt-pill" onClick={() => onOpenDrawer(null, 'digest')}>
-          🏆 Daily Decision Digest
+          Daily Decision Digest
         </button>
         <button className="copilot-prompt-pill" onClick={() => onOpenDrawer('What is the status of my applications?')}>
-          📋 Status of my applications
+          Status of my applications
         </button>
       </div>
 
